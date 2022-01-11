@@ -37,6 +37,7 @@ members = [
     "wait",
     "token-vendor",
     "token-vendor/workshop-example",
+    "inf_loop"
 ]
 
 [profile.release]

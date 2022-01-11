@@ -358,6 +358,11 @@ pub mod pallet {
                 timestamp: <pallet_timestamp::Pallet<T>>::get().unique_saturated_into(),
             };
 
+            log::debug!(target: "runtime::gear","KEK: Start new process queue, haha",);
+            log::debug!(target: "runtime::gear","KEK: messages = {:?}", messages);
+            let x = <MessageQueue<T>>::take();
+            log::debug!(target: "runtime::gear","KEK: x = {:?}", x);
+
             for message in messages {
                 match message {
                     // Initialization queue is handled separately and on the first place
@@ -491,6 +496,11 @@ pub mod pallet {
                     } else {
                         DispatchKind::HandleReply
                     };
+
+                            log::debug!(
+                                target: "runtime::gear",
+                                "KEK: Start to process message {:?}", message
+                            );
 
                     let dispatch = Dispatch {
                         kind,
@@ -748,8 +758,7 @@ pub mod pallet {
                 ExistenceRequirement::AllowDeath,
             )?;
 
-            // Only after reservation the message is actually put in the queue.
-            <MessageQueue<T>>::append(IntermediateMessage::DispatchMessage {
+            let m = IntermediateMessage::DispatchMessage {
                 id: message_id,
                 origin: who.clone().into_origin(),
                 destination,
@@ -757,7 +766,9 @@ pub mod pallet {
                 gas_limit,
                 value: value.unique_saturated_into(),
                 reply: None,
-            });
+            };
+            log::debug!(target: "runtime::gear", "KEK: send message {:?}", m);
+            <MessageQueue<T>>::append(m);
 
             Self::deposit_event(Event::DispatchMessageEnqueued(MessageInfo {
                 message_id,

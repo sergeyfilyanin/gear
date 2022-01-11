@@ -311,6 +311,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "demo-inf-loop"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+]
+
+[[package]]
 name = "demo-init-wait"
 version = "0.1.0"
 dependencies = [
