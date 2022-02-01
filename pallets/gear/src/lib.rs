@@ -54,18 +54,24 @@ pub mod pallet {
         self, CodeMetadata, GasToFeeConverter, Message, Origin, ProgramState, GAS_VALUE_PREFIX,
     };
     use core_processor::{
-        common::{Dispatch, DispatchKind, DispatchOutcome as CoreDispatchOutcome, JournalNote},
+        common::{
+            Dispatch, DispatchKind, DispatchOutcome as CoreDispatchOutcome, JournalHandler,
+            JournalNote,
+        },
         configs::BlockInfo,
         Ext,
     };
     use frame_support::{
-        dispatch::{DispatchError, DispatchResultWithPostInfo},
+        dispatch::{DispatchError, DispatchErrorWithPostInfo, DispatchResultWithPostInfo},
         pallet_prelude::*,
         traits::{BalanceStatus, Currency, ExistenceRequirement, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
     use gear_backend_sandbox::SandboxEnvironment;
-    use gear_core::program::Program;
+    use gear_core::{
+        message::MessageId,
+        program::{Program, ProgramId},
+    };
     use manager::ExtManager;
     use primitive_types::H256;
     use scale_info::TypeInfo;
@@ -400,53 +406,72 @@ pub mod pallet {
                     break;
                 }
 
-                let program_id = message.dest;
+                let program_id = ProgramId::from_origin(message.dest);
 
-                let (program, state) = if let Some(data) = ext_manager
-                    .get_program(program_id)
-                    .and_then(|p| common::get_program_state(program_id).map(|s| (p, s)))
-                {
-                    data
-                } else {
-                    log::warn!(
-                        "Couldn't find program: {:?}, message with id: {:?} will be skipped",
-                        message.dest,
-                        message.id,
-                    );
-                    // TODO: make error event log record
-                    continue;
-                };
+                let program_from_user = ext_manager
+                    .get_program(message.dest)
+                    .and_then(|p| common::get_program_state(message.dest).map(|s| (p, s)));
 
-                let kind = if let Some(kind) =
-                    message
-                        .reply
-                        .map(|_| DispatchKind::HandleReply)
-                        .or(match state {
-                            ProgramState::Initialized => Some(DispatchKind::Handle),
-                            ProgramState::Uninitialized { message_id } => {
-                                if message_id == message.id {
-                                    Some(DispatchKind::Init)
-                                } else {
-                                    None
+                let program_from_program = common::get_code_for_candidate(program_id).map(|code| {
+                    Program::new(program_id, code).expect("guaranteed to be a valid wasm")
+                });
+
+                //todo [sab] проверки для защиты в рамках одного блока
+                let (program, dispatch_kind) = match (program_from_user, program_from_program) {
+                    (Some((program, state)), None) => {
+                        let dispatch_kind = if let Some(kind) = message
+                            .reply
+                            .map(|_| DispatchKind::HandleReply)
+                            .or(match state {
+                                ProgramState::Initialized => Some(DispatchKind::Handle),
+                                ProgramState::Uninitialized { message_id } => {
+                                    if message_id == message.id {
+                                        Some(DispatchKind::Init)
+                                    } else {
+                                        None
+                                    }
                                 }
-                            }
-                        }) {
-                    kind
-                } else {
-                    Self::deposit_event(Event::AddedToWaitList(message.clone()));
-                    common::waiting_init_append_message_id(program_id, message.id);
-                    common::insert_waiting_message(
-                        program_id,
-                        message.id,
-                        message,
-                        block_info.height,
-                    );
+                            }) {
+                            kind
+                        } else {
+                            Self::deposit_event(Event::AddedToWaitList(message.clone()));
+                            common::waiting_init_append_message_id(message.dest, message.id);
+                            common::insert_waiting_message(
+                                message.dest,
+                                message.id,
+                                message,
+                                block_info.height,
+                            );
 
-                    continue;
+                            // todo [sab] dequeued + 1
+                            continue;
+                        };
+                        (program, dispatch_kind)
+                    }
+                    (None, Some(candidate)) => (candidate, DispatchKind::Init),
+                    (None, None) => {
+                        // This is reachable in several cases:
+                        // 1. Program sent a message to the other program, which failed to be initialized right before the message was sent,
+                        // i.e. 2 messages, init and dispatch, were in the storage and the init failed, so the dispatch won't have any related
+                        // program as destination.
+                        // 2. todo [sab] the case described in comment tests, which is for the new code.
+
+                        // todo [sab] event?
+                        ext_manager.message_consumed(MessageId::from_origin(message.id));
+                        log::warn!(
+                            "Couldn't find program: {:?}, message with id: {:?} will not be dispatched",
+                            message.dest,
+                            message.id,
+                        );
+                        total_handled += 1;
+
+                        continue;
+                    }
+                    _ => unreachable!("trying to initialize an existing program"),
                 };
 
                 let dispatch = Dispatch {
-                    kind,
+                    kind: dispatch_kind,
                     message: message.into(),
                 };
 
@@ -478,12 +503,16 @@ pub mod pallet {
         ///
         /// # Note
         /// Code existence in storage means that metadata is there too.
-        fn set_code_with_metadata(code: &[u8], who: H256) -> Result<H256, ()> {
+        fn set_code_with_metadata(code: &[u8], who: H256) -> Result<(), Error<T>> {
+            Program::new(ProgramId::default(), code.to_vec())
+                .map_err(|_| Error::<T>::FailedToConstructProgram)?;
+
             let code_hash = sp_io::hashing::blake2_256(code).into();
             // *Important*: checks before storage mutations!
             if common::code_exists(code_hash) {
-                return Err(());
+                return Err(Error::<T>::CodeAlreadyExists);
             }
+
             let metadata = {
                 let block_number =
                     <frame_system::Pallet<T>>::block_number().unique_saturated_into();
@@ -492,7 +521,9 @@ pub mod pallet {
             common::set_code_metadata(code_hash, metadata);
             common::set_code(code_hash, code);
 
-            Ok(code_hash)
+            Self::deposit_event(Event::CodeSaved(code_hash));
+
+            Ok(())
         }
     }
 
@@ -523,12 +554,9 @@ pub mod pallet {
         pub fn submit_code(origin: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let code_hash = Self::set_code_with_metadata(&code, who.into_origin())
-                .map_err(|_| Error::<T>::CodeAlreadyExists)?;
-
-            Self::deposit_event(Event::CodeSaved(code_hash));
-
-            Ok(().into())
+            Self::set_code_with_metadata(&code, who.into_origin())
+                .map(Into::into)
+                .map_err(DispatchErrorWithPostInfo::from)
         }
 
         /// Creates program initialization request (message), that is scheduled to be run in the same block.
@@ -538,7 +566,7 @@ pub mod pallet {
         /// could be more than remaining block gas limit. Therefore, the message processing will be postponed
         /// until the next block.
         ///
-        /// `ProgramId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
+        /// `ProgramId` is computed as Blake256 hash of concatenated bytes of hashed `code` + `salt`, i.e.  _h(h(`code_hash`), `salt`)_.
         /// Such `ProgramId` must not exist in the Program Storage at the time of this call.
         ///
         /// There is the same guarantee here as in `submit_code`. That is, future program's
@@ -583,18 +611,24 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             // Check that provided `gas_limit` value does not exceed the block gas limit
+            // log::debug!("gas limit {:?}", gas_limit);
+            // log::debug!("gas block limit {:?}", T::BlockGasLimit::get());
             ensure!(
                 gas_limit <= T::BlockGasLimit::get(),
                 Error::<T>::GasLimitTooHigh
             );
 
-            let mut data = Vec::new();
-            // TODO #512
-            code.encode_to(&mut data);
-            salt.encode_to(&mut data);
+            let id: H256 = {
+                let code_hash = sp_io::hashing::blake2_256(&code);
+                let mut data = Vec::with_capacity(code_hash.len() + salt.len());
+
+                code_hash.encode_to(&mut data);
+                salt.encode_to(&mut data);
+
+                sp_io::hashing::blake2_256(&data).into()
+            };
 
             // Make sure there is no program with such id in program storage
-            let id: H256 = sp_io::hashing::blake2_256(&data[..]).into();
             ensure!(
                 !common::program_exists(id),
                 Error::<T>::ProgramAlreadyExists
@@ -615,9 +649,13 @@ pub mod pallet {
 
             // By that call we follow the guarantee that we have in `Self::submit_code` -
             // if there's code in storage, there's also metadata for it.
-            if let Ok(code_hash) = Self::set_code_with_metadata(&code, origin) {
-                Self::deposit_event(Event::CodeSaved(code_hash));
-            }
+            Self::set_code_with_metadata(&code, origin).or_else(|err| {
+                if matches!(err, Error::<T>::CodeAlreadyExists) {
+                    Ok(())
+                } else {
+                    Err(DispatchErrorWithPostInfo::from(err))
+                }
+            })?;
 
             let init_message_id = common::next_message_id(&init_payload);
             ExtManager::<T>::default().set_program(program, init_message_id);
@@ -940,3 +978,6 @@ pub mod pallet {
         }
     }
 }
+
+// todo [sab] идея сделать отдельную абстракцию, которая "проверяет" логику посылаемых сообщений. Дело в том,что проверке init & dispatch сообщений
+// в транзакциях такие же как и в сообщениях от программ -> можно вынести логику в отдельные места и все.

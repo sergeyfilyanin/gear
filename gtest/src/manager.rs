@@ -360,4 +360,15 @@ impl JournalHandler for ExtManager {
             panic!("Program not found in storage");
         }
     }
+
+    fn bind_code_hash_to_program_ids(
+        &mut self,
+        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    ) {
+        for (code_hash, program_candidates_data) in program_candidates_data {
+            for (candidate, _) in program_candidates_data {
+                todo!("todo [sab]")
+            }
+        }
+    }
 }

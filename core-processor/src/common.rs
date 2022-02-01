@@ -26,7 +26,7 @@ use gear_core::{
     gas::GasAmount,
     memory::PageNumber,
     message::{Message, MessageId},
-    program::{Program, ProgramId},
+    program::{CodeHash, Program, ProgramId},
 };
 
 /// Type of wasm execution entry point.
@@ -88,6 +88,9 @@ pub struct DispatchResult {
     /// List of messages that should be woken.
     pub awakening: Vec<MessageId>,
 
+    /// New programs to be created with additional data (corresponding code hash and init message id).
+    pub program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    
     /// Gas amount after execution.
     pub gas_amount: GasAmount,
 
@@ -229,6 +232,11 @@ pub enum JournalNote {
         /// Updates data in case of `Some(data)` or deletes the page
         data: Option<Vec<u8>>,
     },
+    /// Bind code hash to program ids
+    BindCodeHashToProgramIds {
+        /// Map of code hash to ids of program candidates and of their init messages
+        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    },
 }
 
 /// Journal handler.
@@ -261,6 +269,13 @@ pub trait JournalHandler {
         page_number: PageNumber,
         data: Option<Vec<u8>>,
     );
+    /// Bind code hash to program ids.
+    ///
+    /// Program ids are ids of_potential_ (planned to be initialized) programs.
+    fn bind_code_hash_to_program_ids(
+        &mut self,
+        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    );
 }
 
 /// Result of the message processing.
@@ -292,6 +307,8 @@ pub struct State {
     pub programs: BTreeMap<ProgramId, Program>,
     /// Is current state failed.
     pub current_failed: bool,
+    /// Program candidates, which are going to be processed (initialized)
+    pub program_candidates: BTreeMap<ProgramId, Vec<u8>>,
 }
 
 impl alloc::fmt::Debug for State {
@@ -316,6 +333,7 @@ impl alloc::fmt::Debug for State {
                     .collect::<BTreeMap<ProgramId, BTreeSet<PageNumber>>>(),
             )
             .field("current_failed", &self.current_failed)
+            .field("program_candidates", &self.program_candidates)
             .finish()
     }
 }

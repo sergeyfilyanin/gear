@@ -317,7 +317,7 @@ fn check_allocations(
     let mut errors = Vec::new();
 
     for exp in expected_allocations {
-        let target_program_id = ProgramId::from(exp.program_id);
+        let target_program_id = exp.program_id.to_program_id();
         if let Some(program) = programs.iter().find(|p| p.id() == target_program_id) {
             let actual_pages = program
                 .get_pages()
@@ -336,7 +336,7 @@ fn check_allocations(
                             "Expectation error (Allocation page count does not match, expected: {}; actual: {}. Program id: {})",
                             expected_page_count,
                             actual_pages.len(),
-                            exp.program_id,
+                            program.id(),
                         ));
                     }
                 }
@@ -355,7 +355,7 @@ fn check_allocations(
                             "Expectation error (Following allocation pages expected: {:?}; actual: {:?}. Program id: {})",
                             expected_pages,
                             actual_pages,
-                            exp.program_id,
+                            program.id(),
                         ))
                     }
                 }
@@ -369,7 +369,7 @@ fn check_allocations(
                             errors.push(format!(
                                 "Expectation error (Allocation page {} expected, but not found. Program id: {})",
                                 expected_page,
-                                exp.program_id,
+                                program.id(),
                             ));
                         }
                     }
@@ -378,7 +378,7 @@ fn check_allocations(
         } else {
             errors.push(format!(
                 "Expectation error (Program id not found: {})",
-                exp.program_id
+                target_program_id
             ))
         }
     }

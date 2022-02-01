@@ -39,6 +39,7 @@ use storage_queue::StorageQueue;
 
 pub const STORAGE_PROGRAM_PREFIX: &[u8] = b"g::prog::";
 pub const STORAGE_PROGRAM_PAGES_PREFIX: &[u8] = b"g::pages::";
+pub const STORAGE_PROGRAM_CANDIDATE_PREFIX: &[u8] = b"g::prog_candidate";
 pub const STORAGE_PROGRAM_STATE_WAIT_PREFIX: &[u8] = b"g::prog_wait::";
 pub const STORAGE_MESSAGE_PREFIX: &[u8] = b"g::msg::";
 pub const STORAGE_MESSAGE_NONCE_KEY: &[u8] = b"g::msg::nonce";
@@ -450,6 +451,40 @@ pub fn waiting_init_take_messages(dest_prog_id: H256) -> Vec<H256> {
 
 pub fn code_exists(code_hash: H256) -> bool {
     sp_io::storage::exists(&code_key(code_hash, CodeKeyPrefixKind::RawCode))
+}
+
+// todo [sab] change `candidate` type to H256
+// todo [sab] check lifecycle
+pub fn set_program_candidate(code_hash: H256, candidate: gear_core::program::ProgramId) {
+    sp_io::storage::set(&program_candidate_key(candidate), code_hash.as_bytes())
+}
+
+// todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code
+pub fn program_candidate_exists(candidate: gear_core::program::ProgramId) -> bool {
+    sp_io::storage::exists(&program_candidate_key(candidate))
+}
+
+pub fn get_code_for_candidate(candidate: gear_core::program::ProgramId) -> Option<Vec<u8>> {
+    let ret = sp_io::storage::get(&program_candidate_key(candidate))
+        .map(|code_hash| {
+            let mut v = [0u8; 32];
+            v.copy_from_slice(&code_hash);
+            get_code(v.into())
+        })
+        .flatten();
+    ret
+}
+
+pub fn remove_program_candidate(candidate: gear_core::program::ProgramId) {
+    sp_io::storage::clear(&program_candidate_key(candidate));
+}
+
+fn program_candidate_key(candidate: gear_core::program::ProgramId) -> Vec<u8> {
+    let mut key =
+        Vec::with_capacity(STORAGE_PROGRAM_CANDIDATE_PREFIX.len() + candidate.as_slice().len());
+    key.extend(STORAGE_PROGRAM_CANDIDATE_PREFIX);
+    candidate.encode_to(&mut key);
+    key
 }
 
 pub fn reset_storage() {

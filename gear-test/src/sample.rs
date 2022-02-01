@@ -168,7 +168,8 @@ pub struct BytesAt {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Allocations {
-    pub program_id: u64,
+    #[serde(deserialize_with = "address::deserialize")]
+    pub program_id: ChainAddress,
     pub filter: Option<AllocationFilter>,
     #[serde(flatten)]
     pub kind: AllocationExpectationKind,

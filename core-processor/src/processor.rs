@@ -81,6 +81,11 @@ pub fn process<E: Environment<Ext>>(
             }
         };
 
+    // Must be handled before handling outgoing messages.
+    journal.push(JournalNote::BindCodeHashToProgramIds {
+        program_candidates_data: dispatch_result.program_candidates_data.clone(),
+    });
+
     for message in dispatch_result.outgoing.clone() {
         journal.push(JournalNote::SendMessage {
             message_id,

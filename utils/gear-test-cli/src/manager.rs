@@ -1,14 +1,17 @@
+use std::collections::{BTreeMap, BTreeSet};
+
 use gear_common::{Origin, ProgramState};
 use gear_core::{
     memory::PageNumber,
     message::{Message, MessageId},
-    program::ProgramId,
+    program::{CodeHash, ProgramId},
 };
 use gear_core_processor::common::{
     CollectState, Dispatch, DispatchKind, DispatchOutcome as CoreDispatchOutcome, JournalHandler,
     State,
 };
 use gear_runtime::{pallet_gear::Config, ExtManager};
+
 use gear_test::check::ExecutionContext;
 
 pub struct RuntestsExtManager<T: Config> {
@@ -167,5 +170,13 @@ where
         data: Option<Vec<u8>>,
     ) {
         self.inner.update_page(program_id, page_number, data)
+    }
+
+    fn bind_code_hash_to_program_ids(
+        &mut self,
+        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    ) {
+        self.inner
+            .bind_code_hash_to_program_ids(program_candidates_data)
     }
 }

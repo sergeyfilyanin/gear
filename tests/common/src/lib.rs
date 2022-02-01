@@ -23,6 +23,7 @@ use core_processor::{
     Ext,
 };
 use gear_backend_wasmtime::WasmtimeEnvironment;
+use gear_core::program::CodeHash;
 use gear_core::{
     memory::PageNumber,
     message::{Message, MessageId},
@@ -358,6 +359,14 @@ impl<'a> JournalHandler for Journal<'a> {
         } else {
             program.remove_page(page_number);
         }
+    }
+
+    fn bind_code_hash_to_program_ids(
+        &mut self,
+        _: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    ) {
+        // todo [sab]
+        unimplemented!()
     }
 }
 

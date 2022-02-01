@@ -20,12 +20,14 @@ use crate::{
     configs::{AllocationsConfig, BlockInfo},
     id::BlakeMessageIdGenerator,
 };
+use alloc::{collections::BTreeMap, vec::Vec};
+use codec::Encode;
 use gear_core::{
     env::Ext as EnvExt,
     gas::{ChargeResult, GasCounter},
     memory::{MemoryContext, PageNumber},
     message::{ExitCode, MessageContext, MessageId, OutgoingPacket, ReplyPacket},
-    program::ProgramId,
+    program::{CodeHash, ProgramId},
 };
 
 /// Structure providing externalities for running host functions.
@@ -44,6 +46,9 @@ pub struct Ext {
     pub error_explanation: Option<&'static str>,
     /// Flag signaling whether the execution interrupts and goes to the waiting state.
     pub waited: bool,
+    /// Map of code hashes to program ids of future programs, which are planned to be
+    /// initialized with the corresponding code (with the same code hash).
+    pub program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
 }
 
 impl Ext {
@@ -262,5 +267,37 @@ impl EnvExt for Ext {
             .map_err(|_| "Unable to mark the message to be woken");
 
         self.return_and_store_err(result)
+    }
+
+    fn create_program(
+        &mut self,
+        code_hash: CodeHash,
+        salt: &[u8],
+        packet: OutgoingPacket,
+    ) -> Result<ProgramId, &'static str> {
+        let program_id = {
+            let mut data = alloc::vec::Vec::with_capacity(code_hash.inner().len() + salt.len());
+            code_hash.encode_to(&mut data);
+            salt.encode_to(&mut data);
+            ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
+        };
+
+        // Send a message for program creation
+        let packet = OutgoingPacket::new(
+            program_id,
+            packet.payload().to_vec().into(),
+            packet.gas_limit(),
+            packet.value(),
+        );
+        let msg_id = self.send(packet)?;
+
+        // Save a program candidate for this run
+        let entry = self
+            .program_candidates_data
+            .entry(code_hash)
+            .or_insert(Vec::new());
+        entry.push((program_id, msg_id));
+
+        Ok(program_id)
     }
 }

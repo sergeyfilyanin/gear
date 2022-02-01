@@ -17,9 +17,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use alloc::{string::String, vec, vec::Vec};
-use gear_core::env::{Ext, LaterExt};
-use gear_core::message::{MessageId, OutgoingPacket, ReplyPacket};
-use gear_core::program::ProgramId;
+
+use gear_core::{
+    env::{Ext, LaterExt},
+    message::{MessageId, OutgoingPacket, ReplyPacket},
+    program::ProgramId,
+};
 
 pub fn alloc<E: Ext>(ext: LaterExt<E>) -> impl Fn(i32) -> Result<u32, &'static str> {
     move |pages: i32| {
@@ -183,7 +186,7 @@ pub fn send<E: Ext>(
           value_ptr: i32,
           message_id_ptr: i32| {
         let result = ext.with(|ext: &mut E| -> Result<(), &'static str> {
-            let dest: ProgramId = get_id(ext, program_id_ptr).into();
+            let dest: ProgramId = get_bytes32(ext, program_id_ptr).into();
             let payload = get_vec(ext, payload_ptr, payload_len);
             let value = get_u128(ext, value_ptr);
             let message_id = ext.send(OutgoingPacket::new(
@@ -208,7 +211,7 @@ pub fn send_commit<E: Ext>(
           gas_limit: i64,
           value_ptr: i32| {
         ext.with(|ext: &mut E| -> Result<(), &'static str> {
-            let dest: ProgramId = get_id(ext, program_id_ptr).into();
+            let dest: ProgramId = get_bytes32(ext, program_id_ptr).into();
             let value = get_u128(ext, value_ptr);
             let message_id = ext.send_commit(
                 handle_ptr as _,
@@ -237,6 +240,34 @@ pub fn send_push<E: Ext>(ext: LaterExt<E>) -> impl Fn(i32, i32, i32) -> Result<(
             ext.send_push(handle_ptr as _, &payload)
         })?
         .map_err(|_| "Trapping: unable to push payload into message")
+    }
+}
+
+pub fn create_program<E: Ext>(
+    ext: LaterExt<E>,
+) -> impl Fn(i32, i32, i32, i32, i32, i64, i32, i32) -> Result<(), &'static str> {
+    move |code_hash_ptr: i32,
+          salt_ptr: i32,
+          salt_len: i32,
+          payload_ptr: i32,
+          payload_len: i32,
+          gas_limit: i64,
+          value_ptr: i32,
+          program_id_ptr: i32| {
+        let res = ext.with(|ext: &mut E| -> Result<(), &'static str> {
+            let code_hash = get_bytes32(ext, code_hash_ptr);
+            let salt = get_vec(ext, salt_ptr, salt_len);
+            let payload = get_vec(ext, payload_ptr, payload_len);
+            let value = get_u128(ext, value_ptr);
+            let new_actor_id = ext.create_program(
+                code_hash.into(),
+                &salt,
+                OutgoingPacket::new(Default::default(), payload.into(), gas_limit as _, value),
+            )?;
+            ext.set_mem(program_id_ptr as isize as _, new_actor_id.as_slice());
+            Ok(())
+        })?;
+        res.map_err(|_| "Trapping: unable to create a new program")
     }
 }
 
@@ -277,7 +308,7 @@ pub fn wait<E: Ext>(ext: LaterExt<E>) -> impl Fn() -> Result<(), &'static str> {
 pub fn wake<E: Ext>(ext: LaterExt<E>) -> impl Fn(i32) -> Result<(), &'static str> {
     move |waker_id_ptr| {
         ext.with(|ext: &mut E| {
-            let waker_id: MessageId = get_id(ext, waker_id_ptr).into();
+            let waker_id: MessageId = get_bytes32(ext, waker_id_ptr).into();
             ext.wake(waker_id)
         })?
     }
@@ -290,10 +321,10 @@ pub fn is_exit_trap(trap: &str) -> bool {
     trap.starts_with(EXIT_TRAP_STR)
 }
 
-pub fn get_id<E: Ext>(ext: &E, ptr: i32) -> [u8; 32] {
-    let mut id = [0u8; 32];
-    ext.get_mem(ptr as _, &mut id);
-    id
+pub fn get_bytes32<E: Ext>(ext: &E, ptr: i32) -> [u8; 32] {
+    let mut ret = [0u8; 32];
+    ext.get_mem(ptr as _, &mut ret);
+    ret
 }
 
 pub fn get_u128<E: Ext>(ext: &E, ptr: i32) -> u128 {

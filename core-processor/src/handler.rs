@@ -57,6 +57,9 @@ pub fn handle_journal(
                 let entry = page_updates.entry(program_id).or_insert_with(BTreeMap::new);
                 entry.insert(page_number, data);
             }
+            JournalNote::BindCodeHashToProgramIds {
+                program_candidates_data,
+            } => handler.bind_code_hash_to_program_ids(program_candidates_data),
         }
     }
 

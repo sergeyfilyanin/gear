@@ -22,31 +22,49 @@ use crate::{
 };
 use common::{
     value_tree::{ConsumeResult, ValueView},
-    GasToFeeConverter, Origin, GAS_VALUE_PREFIX, STORAGE_PROGRAM_PREFIX,
+    GasToFeeConverter, Origin, GAS_VALUE_PREFIX, STORAGE_PROGRAM_CANDIDATE_PREFIX,
+    STORAGE_PROGRAM_PREFIX,
 };
 use core_processor::common::{
     CollectState, Dispatch, DispatchOutcome as CoreDispatchOutcome, JournalHandler, State,
 };
 use frame_support::{
     storage::PrefixIterator,
-    traits::{BalanceStatus, ReservableCurrency},
+    traits::{BalanceStatus, IsType, ReservableCurrency},
 };
 use gear_core::{
     memory::PageNumber,
     message::{Message, MessageId},
-    program::{Program, ProgramId},
+    program::{CodeHash, Program, ProgramId},
 };
 use primitive_types::H256;
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{
-    collections::{btree_map::BTreeMap, vec_deque::VecDeque},
+    collections::{btree_map::BTreeMap, btree_set::BTreeSet, vec_deque::VecDeque},
+    iter::FromIterator,
     marker::PhantomData,
     prelude::*,
 };
+use codec::Decode;
 
 pub struct ExtManager<T: Config, GH: GasHandler = ValueTreeGasHandler> {
     _phantom: PhantomData<T>,
     gas_handler: GH,
+    skip_messages: BTreeSet<SkipMessageKind>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum SkipMessageKind {
+    // Skip message with `MessageId`
+    //
+    // Such message is skipped, because it tries to initialize
+    // a program with existing address. See [`ExtManager::bind_programs_to_code_hash`] for more info.
+    WithId(MessageId),
+    // Skip all messages to the destination, which doesn't have any code
+    //
+    // More precisely, code hash which was intended to be bound
+    // to the `ProgramId` doesn't have any underlying code
+    WithDestination(ProgramId),
 }
 
 pub trait GasHandler {
@@ -123,11 +141,25 @@ where
         })
         .collect();
 
+        let program_candidates = PrefixIterator::<ProgramId>::new(
+            STORAGE_PROGRAM_CANDIDATE_PREFIX.to_vec(),
+            STORAGE_PROGRAM_CANDIDATE_PREFIX.to_vec(),
+            |mut key, _| ProgramId::decode(key.into_mut()),
+        )
+        .map(|candidate_id| {
+            (
+                candidate_id,
+                common::get_code_for_candidate(candidate_id).expect("no candidates without code"),
+            )
+        })
+        .collect();
+
         let message_queue: VecDeque<_> = common::message_iter().map(Into::into).collect();
 
         State {
             message_queue,
             programs,
+            program_candidates,
             ..Default::default()
         }
     }
@@ -142,6 +174,7 @@ where
     fn default() -> Self {
         ExtManager {
             _phantom: PhantomData,
+            skip_messages: Default::default(),
             gas_handler: GH::default(),
         }
     }
@@ -221,12 +254,21 @@ where
                 origin,
                 program,
             } => {
+                // todo issue #567
+                let message_id = message_id.into_origin();
+
                 let program_id = program.id().into_origin();
                 let event = Event::InitSuccess(MessageInfo {
-                    message_id: message_id.into_origin(),
+                    message_id,
                     origin: origin.into_origin(),
                     program_id,
                 });
+
+                // todo [sab] check the comment: "if program is initialized by program,
+                // then it is in candidates storage and must be removed."
+                common::remove_program_candidate(program.id());
+                // todo [sab] was in previous version self.set_program(program); Audit it!
+                self.set_program(program, message_id);
 
                 common::waiting_init_take_messages(program_id)
                     .into_iter()
@@ -246,6 +288,10 @@ where
                 program_id,
                 reason,
             } => {
+                // todo issue #567
+
+                common::remove_program_candidate(program_id);
+
                 let program_id = program_id.into_origin();
                 let origin = origin.into_origin();
 
@@ -303,14 +349,34 @@ where
                 T::Currency::unreserve(&<T::AccountId as Origin>::from_origin(external), refund);
         }
     }
+    //todo [sab] проверки для защиты в рамках/разных одного блока
 
     fn send_message(&mut self, message_id: MessageId, message: Message) {
+        let has_skipping_dest = self
+            .skip_messages
+            .contains(&SkipMessageKind::WithDestination(message.dest()));
+        let has_skipping_id = self
+            .skip_messages
+            .contains(&SkipMessageKind::WithId(message.id()));
+        let is_for_limbo_prog = Pallet::<T>::is_failed(message.dest().into_origin());
+
         let message_id = message_id.into_origin();
         let mut message: common::Message = message.into();
 
+        if has_skipping_dest || has_skipping_id || is_for_limbo_prog {
+            log::debug!(
+                "Message {:?} sent from {:?} will not be queued",
+                message,
+                message_id
+            );
+            return;
+        }
+
         log::debug!("Sending message {:?} from {:?}", message, message_id);
 
-        if common::program_exists(message.dest) {
+        if common::program_exists(message.dest)
+            || common::program_candidate_exists(ProgramId::from_origin(message.dest))
+        {
             self.gas_handler
                 .split(message_id, message.id, message.gas_limit);
             common::queue_message(message);
@@ -388,5 +454,45 @@ where
 
             common::set_program_persistent_pages(program_id, persistent_pages);
         };
+    }
+
+    fn bind_code_hash_to_program_ids(
+        &mut self,
+        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    ) {
+        for (code_hash, program_candidates_data) in program_candidates_data {
+            let code_hash = code_hash.inner().into();
+
+            let mut msgs_to_be_skipped = if common::code_exists(code_hash) {
+                let mut ret = BTreeSet::new();
+                'inner: for (candidate, init_message_id) in program_candidates_data {
+                    if common::program_exists(candidate.into_origin())
+                        || common::program_candidate_exists(candidate)
+                    {
+                        ret.insert(SkipMessageKind::WithId(init_message_id));
+                        continue 'inner;
+                    }
+                    common::set_program_candidate(code_hash, candidate);
+
+                    log::debug!("Set program candidate {:?}", candidate);
+                }
+                ret
+            } else {
+                log::debug!(
+                    "Code with code hash {:?} doesn't exist. Messages sent to programs with such code hash will be skipped", 
+                    code_hash,
+                );
+                BTreeSet::from_iter(
+                    program_candidates_data
+                        .iter()
+                        .copied()
+                        .map(|(program_id, _)| SkipMessageKind::WithDestination(program_id)),
+                )
+            };
+
+            if !msgs_to_be_skipped.is_empty() {
+                self.skip_messages.append(&mut msgs_to_be_skipped);
+            }
+        }
     }
 }

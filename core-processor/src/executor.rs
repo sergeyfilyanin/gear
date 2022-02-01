@@ -138,6 +138,7 @@ pub fn execute_wasm<E: Environment<Ext>>(
         config: settings.config,
         error_explanation: None,
         waited: false,
+        program_candidates_data: Default::default(),
     };
 
     let initial_pages = program.get_pages();
@@ -213,6 +214,9 @@ pub fn execute_wasm<E: Environment<Ext>>(
     // Getting read-only gas counter
     let gas_amount: GasAmount = ext.gas_counter.into();
 
+    // Getting new programs that are scheduled to be initialized (respected messages are in `outgoing` collection)
+    let program_candidates_data = ext.program_candidates_data;
+
     // Output.
     Ok(DispatchResult {
         kind,
@@ -223,5 +227,6 @@ pub fn execute_wasm<E: Environment<Ext>>(
         gas_amount,
         page_update,
         nonce,
+        program_candidates_data,
     })
 }

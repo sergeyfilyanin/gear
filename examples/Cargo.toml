@@ -18,6 +18,8 @@ members = [
     "fib",
     "fungible-token",
     "futures-unordered",
+    "init-wait",
+    "create-program",
     "mem",
     "guestbook",
     "gui-test",

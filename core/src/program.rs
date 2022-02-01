@@ -274,6 +274,23 @@ impl Program {
     }
 }
 
+/// Blake2b hash of the program code.
+#[derive(Clone, Copy, Debug, Decode, Encode, Ord, PartialOrd, Eq, PartialEq)]
+pub struct CodeHash([u8; 32]);
+
+impl CodeHash {
+    /// Get inner (32 bytes) array representation
+    pub fn inner(&self) -> [u8; 32] {
+        self.0
+    }
+}
+
+impl From<[u8; 32]> for CodeHash {
+    fn from(data: [u8; 32]) -> Self {
+        CodeHash(data)
+    }
+}
+
 #[cfg(test)]
 /// This module contains tests of `fn encode_hex(bytes: &[u8]) -> String`
 /// and ProgramId's `fn from_slice(s: &[u8]) -> Self` constructor
