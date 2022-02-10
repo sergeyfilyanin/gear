@@ -1301,7 +1301,7 @@ fn test_create_program() {
         ),
         (
             "Trying to create a child and its duplicates. The first child creation message will succeed \
-            in init due, the duplicates will be skipped, but handle messages, which were intended for the duplicates \
+            in init, the duplicates will be skipped, but handle messages, which were intended for the duplicates \
             will be executed in the context of original child",
             (vec![
                 CreateProgram::Custom(
@@ -1385,13 +1385,6 @@ fn test_create_program() {
             let current_sender = senders
                 .next()
                 .expect("iterator is not cycled and not empty");
-            // let gas_limit = {
-
-            // }
-            //     (BalancesPallet::<Test>::free_balance(current_sender) - 1_000_000) as u64;
-            
-            // log::debug!("gas limit {:?}", gas_limit);
-            log::debug!("gas block limit {:?}", <Test as super::Config>::BlockGasLimit::get());
 
             assert_ok!(GearPallet::<Test>::send_message(
                 Origin::signed(current_sender).into(),
@@ -1453,31 +1446,11 @@ fn test_create_program() {
     }
 }
 
-// todo [sab] current code version will enter to mailbox the message, which has limbo prog dest.
-// that happens when message initiator is the user. However, if the program is initiator, then we reach (None, None) branch.
-// This is because message transition from MQ to storage (common queue) happens in `process_queue`, so if init message
-// was processed and ended up in limbo, dispatch to the limbo program will definitely go to mailbox, because destination checks are performed in process-queue.
+// todo [sab] test create child with wait in init
+// todo [sab] tests for a new logic with balance transfers
+// todo [sab] test when dispatch (handle/handle_reply) in queue before init
 
-// todo [sab] in a new version the last invariant was violated. Message is added to the queue instantly without checks for
-// limbo (yes, when send dispatch message we check that program exists in storage, but in a new version we add programs to the storage before `process_queue` runs both failing and non-failing init msgs for the added program). That's how user
-// dispatch messages can reach https://github.com/gear-tech/gear/blob/7e996d14fb6e48f0763b08b05ae077849dea544a/pallets/gear/src/lib.rs#L409. Program initiated msgs work as in old code version.
-// todo [sab] even more, the program is not deleted from storage in case it was in limbo, so if program sends message to limbo program, we will reach https://github.com/gear-tech/gear/blob/7e996d14fb6e48f0763b08b05ae077849dea544a/pallets/gear/src/lib.rs#L409.
-// so delete program from storage if limbo
-
-// todo [sab] test that after rebasing!!! Should go to this https://github.com/gear-tech/gear/blob/7e996d14fb6e48f0763b08b05ae077849dea544a/pallets/gear/src/lib.rs#L409 branch.
-// a new version and an old code version should both not process such dispatch messages and return gas (As in (None, None) branch in old version code).
 #[test]
-fn test_message_processing_for_non_existing_destination() {
-    init_logger();
-    new_test_ext().execute_with(|| {
-        let program = submit_program_default(USER_1, ProgramCodeKind::GreedyInit).expect("todo");
-        let _ = send_default_message(USER_1, program);
-        run_to_block(2, None);
-        // todo [sab] despite things written upper, should mention that the defense against messages to limbo progs works only in the next block [https://github.com/gear-tech/gear/blob/7e996d14fb6e48f0763b08b05ae077849dea544a/pallets/gear/src/lib.rs#L686]
-        // so should handle situations when this happens in one block
-    })
-}
-
 fn messages_to_uninitialized_program_wait() {
     use tests_init_wait::WASM_BINARY_BLOATY;
 

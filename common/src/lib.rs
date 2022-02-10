@@ -453,17 +453,7 @@ pub fn code_exists(code_hash: H256) -> bool {
     sp_io::storage::exists(&code_key(code_hash, CodeKeyPrefixKind::RawCode))
 }
 
-// todo [sab] change `candidate` type to H256
-// todo [sab] check lifecycle
-pub fn set_program_candidate(code_hash: H256, candidate: gear_core::program::ProgramId) {
-    sp_io::storage::set(&program_candidate_key(candidate), code_hash.as_bytes())
-}
-
-// todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code
-pub fn program_candidate_exists(candidate: gear_core::program::ProgramId) -> bool {
-    sp_io::storage::exists(&program_candidate_key(candidate))
-}
-
+// todo [sab] remove
 pub fn get_code_for_candidate(candidate: gear_core::program::ProgramId) -> Option<Vec<u8>> {
     let ret = sp_io::storage::get(&program_candidate_key(candidate))
         .map(|code_hash| {
@@ -473,10 +463,6 @@ pub fn get_code_for_candidate(candidate: gear_core::program::ProgramId) -> Optio
         })
         .flatten();
     ret
-}
-
-pub fn remove_program_candidate(candidate: gear_core::program::ProgramId) {
-    sp_io::storage::clear(&program_candidate_key(candidate));
 }
 
 fn program_candidate_key(candidate: gear_core::program::ProgramId) -> Vec<u8> {

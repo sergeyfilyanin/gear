@@ -81,8 +81,6 @@ mod tests {
 
     use common::RunnerContext;
 
-    // todo [sab] write some simple tests
-
     #[test]
     fn binary_available() {
         assert!(native::WASM_BINARY.is_some());

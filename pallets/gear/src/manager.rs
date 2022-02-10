@@ -141,6 +141,7 @@ where
         })
         .collect();
 
+        // todo [sab] to be removed
         let program_candidates = PrefixIterator::<ProgramId>::new(
             STORAGE_PROGRAM_CANDIDATE_PREFIX.to_vec(),
             STORAGE_PROGRAM_CANDIDATE_PREFIX.to_vec(),
@@ -201,6 +202,7 @@ where
 
         let code_hash: H256 = sp_io::hashing::blake2_256(program.code()).into();
 
+        // todo [sab] remove? copy paste from Tx calls
         common::set_code(code_hash, program.code());
 
         let program = common::Program {
@@ -264,12 +266,6 @@ where
                     program_id,
                 });
 
-                // todo [sab] check the comment: "if program is initialized by program,
-                // then it is in candidates storage and must be removed."
-                common::remove_program_candidate(program.id());
-                // todo [sab] was in previous version self.set_program(program); Audit it!
-                self.set_program(program, message_id);
-
                 common::waiting_init_take_messages(program_id)
                     .into_iter()
                     .for_each(|m_id| {
@@ -289,12 +285,21 @@ where
                 reason,
             } => {
                 // todo issue #567
-
-                common::remove_program_candidate(program_id);
-
                 let program_id = program_id.into_origin();
                 let origin = origin.into_origin();
 
+                // Some messages addressed to the program could be processed
+                // in the queue before init message. For example, that could
+                // happen when init message had more gas limit then rest block
+                // gas allowance, but a dispatch message to the program was
+                // dequeued. The other case is async init.
+                common::waiting_init_take_messages(program_id)
+                    .into_iter()
+                    .for_each(|m_id| {
+                        if let Some((m, _)) = common::remove_waiting_message(program_id, m_id) {
+                            common::queue_message(m);
+                        }
+                    });    
                 ProgramsLimbo::<T>::insert(program_id, origin);
                 log::info!(
                     target: "runtime::gear",
@@ -315,6 +320,7 @@ where
 
         Pallet::<T>::deposit_event(event);
     }
+
     fn gas_burned(&mut self, message_id: MessageId, origin: ProgramId, amount: u64) {
         let message_id = message_id.into_origin();
 
@@ -335,6 +341,7 @@ where
             );
         }
     }
+
     fn message_consumed(&mut self, message_id: MessageId) {
         let message_id = message_id.into_origin();
 
@@ -349,8 +356,8 @@ where
                 T::Currency::unreserve(&<T::AccountId as Origin>::from_origin(external), refund);
         }
     }
-    //todo [sab] проверки для защиты в рамках/разных одного блока
 
+    //todo [sab] проверки для защиты в рамках/разных одного блока
     fn send_message(&mut self, message_id: MessageId, message: Message) {
         let has_skipping_dest = self
             .skip_messages
@@ -358,12 +365,16 @@ where
         let has_skipping_id = self
             .skip_messages
             .contains(&SkipMessageKind::WithId(message.id()));
-        let is_for_limbo_prog = Pallet::<T>::is_failed(message.dest().into_origin());
 
         let message_id = message_id.into_origin();
         let mut message: common::Message = message.into();
 
-        if has_skipping_dest || has_skipping_id || is_for_limbo_prog {
+        if has_skipping_dest || has_skipping_id {
+            log::debug!(
+                "skipping dest - {}, skipping id - {}",
+                has_skipping_dest,
+                has_skipping_id,
+            );
             log::debug!(
                 "Message {:?} sent from {:?} will not be queued",
                 message,
@@ -374,11 +385,8 @@ where
 
         log::debug!("Sending message {:?} from {:?}", message, message_id);
 
-        if common::program_exists(message.dest)
-            || common::program_candidate_exists(ProgramId::from_origin(message.dest))
-        {
-            self.gas_handler
-                .split(message_id, message.id, message.gas_limit);
+        if common::program_exists(message.dest) {
+            self.gas_handler.split(message_id, message.id, message.gas_limit);
             common::queue_message(message);
         } else {
             // Being placed into a user's mailbox means the end of a message life cycle.
@@ -456,6 +464,7 @@ where
         };
     }
 
+    // todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code
     fn bind_code_hash_to_program_ids(
         &mut self,
         program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
@@ -463,30 +472,36 @@ where
         for (code_hash, program_candidates_data) in program_candidates_data {
             let code_hash = code_hash.inner().into();
 
-            let mut msgs_to_be_skipped = if common::code_exists(code_hash) {
+            let mut msgs_to_be_skipped = if let Some(code) = common::get_code(code_hash) {
                 let mut ret = BTreeSet::new();
-                'inner: for (candidate, init_message_id) in program_candidates_data {
-                    if common::program_exists(candidate.into_origin())
-                        || common::program_candidate_exists(candidate)
-                    {
+
+                'inner: for (candidate_id, init_message_id) in program_candidates_data {
+                    if common::program_exists(candidate_id.into_origin()) {
                         ret.insert(SkipMessageKind::WithId(init_message_id));
                         continue 'inner;
                     }
-                    common::set_program_candidate(code_hash, candidate);
+                    // invalid wasm (when `Program` can't be instantiated) is not saved to storage
+                    let program =
+                        Program::new(candidate_id, code.clone()).expect("guaranteed to be valid");
+                    self.set_program(program, init_message_id.into_origin());
 
-                    log::debug!("Set program candidate {:?}", candidate);
+                    log::debug!("Submit program with id {:?} from program", candidate_id);
                 }
+
                 ret
             } else {
-                log::debug!(
-                    "Code with code hash {:?} doesn't exist. Messages sent to programs with such code hash will be skipped", 
-                    code_hash,
-                );
                 BTreeSet::from_iter(
                     program_candidates_data
                         .iter()
                         .copied()
-                        .map(|(program_id, _)| SkipMessageKind::WithDestination(program_id)),
+                        .map(|(program_id, _)| {
+                            log::debug!(
+                                "Can't initialize program with id {:?}: code with provided code hash {:?} doesn't exist.",
+                                program_id.into_origin(),
+                                code_hash,
+                            );
+                            SkipMessageKind::WithDestination(program_id)
+                        }),
                 )
             };
 
