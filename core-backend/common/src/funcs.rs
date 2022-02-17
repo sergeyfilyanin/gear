@@ -20,7 +20,7 @@ use crate::{EXIT_TRAP_STR, LEAVE_TRAP_STR, WAIT_TRAP_STR};
 use alloc::{string::String, vec, vec::Vec};
 use gear_core::{
     env::{Ext, LaterExt},
-    message::{MessageId, OutgoingPacket, ReplyPacket},
+    message::{MessageId, OutgoingPacket, ReplyPacket, ProgramInitPacket},
     program::ProgramId,
 };
 
@@ -99,7 +99,7 @@ pub fn gas_available<E: Ext>(ext: LaterExt<E>) -> impl Fn() -> i64 {
 pub fn exit<E: Ext>(ext: LaterExt<E>) -> impl Fn(i32) -> Result<(), &'static str> {
     move |program_id_ptr: i32| {
         let _ = ext.with(|ext: &mut E| -> Result<(), &'static str> {
-            let value_dest: ProgramId = get_id(ext, program_id_ptr as u32 as _).into();
+            let value_dest: ProgramId = get_bytes32(ext, program_id_ptr as u32 as _).into();
             ext.exit(value_dest)
         })?;
 
@@ -267,16 +267,16 @@ pub fn create_program<E: Ext>(
           value_ptr: i32,
           program_id_ptr: i32| {
         let res = ext.with(|ext: &mut E| -> Result<(), &'static str> {
-            let code_hash = get_bytes32(ext, code_hash_ptr);
-            let salt = get_vec(ext, salt_ptr, salt_len);
-            let payload = get_vec(ext, payload_ptr, payload_len);
-            let value = get_u128(ext, value_ptr);
+            let code_hash = get_bytes32(ext, code_hash_ptr as usize);
+            let salt = get_vec(ext, salt_ptr as usize, salt_len as usize);
+            let payload = get_vec(ext, payload_ptr as usize, payload_len as usize);
+            let value = get_u128(ext, value_ptr as usize);
             let new_actor_id = ext.create_program(
                 ProgramInitPacket::new(
                     code_hash.into(),
                     salt,
                     payload.into(),
-                    gas_limit,
+                    gas_limit as u64,
                     value,
                 ),
             )?;

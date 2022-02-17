@@ -462,32 +462,22 @@ impl Message {
     }
 }
 
+#[derive(Clone, Debug, Decode, Encode, PartialEq, Eq)]
 pub struct ProgramInitMessage {
     pub id: MessageId,
-    pub source: ProgramId,
-    pub dest: ProgramId,
+    pub new_program_id: ProgramId,
+    pub payload: Payload,
     pub gas_limit: u64,
     pub value: u128
 }
 
-impl ProgramInitMessage {
-    pub fn new(id: MessageId, source: ProgramId, dest: ProgramId, gas_limit: u64, value: u128) -> Self {
-        Self {
-            id,
-            source,
-            dest,
-            gas_limit,
-            value,
-        }
-    }
-}
-
+#[derive(Clone, Debug, Decode, Encode, PartialEq, Eq)]
 pub struct ProgramInitPacket {
-    code_hash: CodeHash,
-    salt: Vec<u8>,
-    payload: Payload,
-    gas_limit: u64,
-    value: u128,
+    pub code_hash: CodeHash,
+    pub salt: Vec<u8>,
+    pub payload: Payload,
+    pub gas_limit: u64,
+    pub value: u128,
 }
 
 impl ProgramInitPacket {
@@ -622,6 +612,22 @@ pub trait MessageIdGenerator {
             exit_code: packet.exit_code,
         }
     }
+
+    /// Build program init message
+    /// 
+    /// Message id will be generated
+    fn produce_init(&mut self, new_program_id: ProgramId, packet: ProgramInitPacket) -> ProgramInitMessage {
+        let id = self.next();
+        let ProgramInitPacket { payload, gas_limit, value, .. } = packet;
+
+        ProgramInitMessage {
+            id,
+            new_program_id,
+            payload,
+            gas_limit,
+            value
+        }
+    }
 }
 
 /// Message state of the current session.
@@ -631,6 +637,8 @@ pub trait MessageIdGenerator {
 pub struct MessageState {
     /// Collection of outgoing messages generated.
     pub outgoing: Vec<OutgoingMessage>,
+    /// Collection of a new program init messages generated.
+    pub program_init: Vec<ProgramInitMessage>,
     /// Reply generated.
     pub reply: Option<ReplyMessage>,
     /// Messages to be waken.
@@ -791,6 +799,23 @@ impl<IG: MessageIdGenerator + 'static> MessageContext<IG> {
         Rc::try_unwrap(state)
             .expect("Calling drain with references to the memory context left")
             .into_inner()
+    }
+
+    // todo [sab] maybe introduce duplicate check here.
+    pub fn send_init_program(&mut self, packet: ProgramInitPacket) -> (ProgramId, MessageId) {
+        let new_program_id = {
+            let code_hash = packet.code_hash;
+            let mut data = Vec::with_capacity(code_hash.inner().len() + packet.salt.len());
+            code_hash.encode_to(&mut data);
+            packet.salt.encode_to(&mut data);
+            ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
+        };
+
+        let msg = self.id_generator.borrow_mut().produce_init(new_program_id, packet);
+        let msg_id = msg.id;
+        self.state.borrow_mut().program_init.push(msg);
+        
+        (new_program_id, msg_id)
     }
 }
 

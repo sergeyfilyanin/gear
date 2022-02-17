@@ -353,28 +353,15 @@ impl EnvExt for Ext {
         packet: ProgramInitPacket
     ) -> Result<ProgramId, &'static str> {
         let code_hash = packet.code_hash;
-        let program_id = {
-            let mut data = Vec::with_capacity(code_hash.inner().len() + salt.len());
-            code_hash.encode_to(&mut data);
-            salt.encode_to(&mut data);
-            ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
-        };
-
         // Send a message for program creation
-        let packet = OutgoingPacket::new(
-            program_id,
-            packet.payload().to_vec().into(),
-            packet.gas_limit(),
-            packet.value(),
-        );
-        let msg_id = self.send(packet)?;
+        let (new_prog_id, init_msg_id) = self.message_context.send_init_program(packet)?;
 
         // Save a program candidate for this run
         let entry = self
             .program_candidates_data
             .entry(code_hash)
             .or_insert(Vec::new());
-        entry.push((program_id, msg_id));
+        entry.push((new_prog_id, init_msg_id));
 
         Ok(program_id)
     }

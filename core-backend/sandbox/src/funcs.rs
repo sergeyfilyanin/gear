@@ -25,7 +25,7 @@ use core::{
 use gear_backend_common::{funcs, ExtInfo, EXIT_TRAP_STR, LEAVE_TRAP_STR, WAIT_TRAP_STR};
 use gear_core::{
     env::Ext,
-    message::{MessageId, OutgoingPacket, ReplyPacket},
+    message::{MessageId, OutgoingPacket, ReplyPacket, ProgramInitPacket},
     program::ProgramId,
 };
 use sp_sandbox::{HostError, ReturnValue, Value};
@@ -522,7 +522,7 @@ pub fn wake<E: Ext + Into<ExtInfo>>(ctx: &mut Runtime<E>, args: &[Value]) -> Sys
         })?
 }
 
-fn create_program<E: Ext>(
+pub fn create_program<E: Ext>(
     ctx: &mut Runtime<E>,
     args: &[Value],
 ) -> Result<ReturnValue, HostError> {

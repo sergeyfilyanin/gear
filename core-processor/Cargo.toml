@@ -11,7 +11,6 @@ gear-backend-common = { path = "../core-backend/common" }
 gear-runtime-interface = { path = "../runtime-interface", default-features = false }
 common = { package = "gear-common", path = "../common", default-features = false }
 
-blake2-rfc = { version = "0.2.16", default-features = false }
 codec = { package = "parity-scale-codec", version = "2", features = ["derive"], default-features = false }
 log = { version = "0.4.14", default-features = false }
 
