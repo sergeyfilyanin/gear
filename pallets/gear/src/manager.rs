@@ -18,17 +18,16 @@
 
 use crate::{
     pallet::Reason, Authorship, Config, DispatchOutcome, Event, ExecutionResult, MessageInfo,
-    Pallet, ProgramsLimbo,
+    Pallet,
 };
 use codec::Decode;
 use codec::{Decode, Encode};
 use common::{
     value_tree::{ConsumeResult, ValueView},
-    GasToFeeConverter, Origin, GAS_VALUE_PREFIX, STORAGE_PROGRAM_CANDIDATE_PREFIX,
-    STORAGE_PROGRAM_PREFIX,
+    GasToFeeConverter, Origin, Program, GAS_VALUE_PREFIX, STORAGE_PROGRAM_CANDIDATE_PREFIX, STORAGE_PROGRAM_PREFIX,
 };
 use core_processor::common::{
-    CollectState, Dispatch, DispatchOutcome as CoreDispatchOutcome, JournalHandler, State,
+    CollectState, DispatchOutcome as CoreDispatchOutcome, JournalHandler, State,
 };
 use frame_support::{
     storage::PrefixIterator,
@@ -36,13 +35,13 @@ use frame_support::{
 };
 use gear_core::{
     memory::PageNumber,
-    message::{ExitCode, Message, MessageId},
-    program::{CodeHash, Program, ProgramId},
+    message::{Dispatch, ExitCode, MessageId},
+    program::{CodeHash, Program as NativeProgram, ProgramId},
 };
 use primitive_types::H256;
 use sp_runtime::traits::{UniqueSaturatedInto, Zero};
 use sp_std::{
-    collections::{btree_map::BTreeMap, btree_set::BTreeSet, vec_deque::VecDeque},
+    collections::{btree_map::BTreeMap, btree_set::BTreeSet},
     iter::FromIterator,
     marker::PhantomData,
     prelude::*,
@@ -139,14 +138,21 @@ where
     GH: GasHandler,
 {
     fn collect(&self) -> State {
-        let programs: BTreeMap<ProgramId, Program> = PrefixIterator::<H256>::new(
+        let programs: BTreeMap<ProgramId, NativeProgram> = PrefixIterator::<H256>::new(
             STORAGE_PROGRAM_PREFIX.to_vec(),
             STORAGE_PROGRAM_PREFIX.to_vec(),
             |key, _| Ok(H256::from_slice(key)),
         )
-        .map(|k| {
-            let program = self.get_program(k).expect("Can't fail");
-            (program.id(), program)
+        .filter_map(|k| self.get_program(k).map(|p| (p.id(), p)))
+        .map(|(id, mut prog)| {
+            let pages_data = {
+                let page_numbers = prog.get_pages().keys().map(|k| k.raw()).collect();
+                let data = common::get_program_pages(id.into_origin(), page_numbers)
+                    .expect("active program exists, therefore pages do");
+                data.into_iter().map(|(k, v)| (k.into(), v)).collect()
+            };
+            let _ = prog.set_pages(pages_data);
+            (id, prog)
         })
         .collect();
 
@@ -164,10 +170,10 @@ where
         })
         .collect();
 
-        let message_queue: VecDeque<_> = common::message_iter().map(Into::into).collect();
+        let dispatch_queue = common::dispatch_iter().map(Into::into).collect();
 
         State {
-            message_queue,
+            dispatch_queue,
             programs,
             program_candidates,
             ..Default::default()
@@ -196,26 +202,23 @@ where
     T::AccountId: Origin,
     GH: GasHandler,
 {
-    pub fn program_from_code(
-        &self,
-        id: H256,
-        code: Vec<u8>,
-    ) -> Option<gear_core::program::Program> {
-        Program::new(ProgramId::from_origin(id), code).ok()
+    pub fn program_from_code(&self, id: H256, code: Vec<u8>) -> Option<NativeProgram> {
+        NativeProgram::new(ProgramId::from_origin(id), code).ok()
     }
 
-    pub fn get_program(&self, id: H256) -> Option<gear_core::program::Program> {
-        common::native::get_program(ProgramId::from_origin(id))
+    /// NOTE: By calling this function we can't differ whether `None` returned, because
+    /// program with `id` doesn't exist or it's terminated
+    pub fn get_program(&self, id: H256) -> Option<NativeProgram> {
+        common::get_program(id)
+            .and_then(|prog_with_status| prog_with_status.try_into_native(id).ok())
     }
 
-    pub fn set_program(&self, program: gear_core::program::Program, message_id: H256) {
-        // TODO: This method is used only before program init, so program has no persistent pages.
+    pub fn set_program(&self, program: NativeProgram, message_id: H256) {
         assert!(
             program.get_pages().is_empty(),
             "Must has empty persistent pages, has {:?}",
             program.get_pages()
         );
-
         let persistent_pages: BTreeMap<u32, Vec<u8>> = program
             .get_pages()
             .iter()
@@ -229,7 +232,7 @@ where
         // todo [sab] remove? copy paste from Tx calls
         common::set_code(code_hash, program.code());
 
-        let program = common::Program {
+        let program = common::ActiveProgram {
             static_pages: program.static_pages(),
             nonce: program.message_nonce(),
             persistent_pages: persistent_pages.keys().copied().collect(),
@@ -291,7 +294,7 @@ where
                     .into_iter()
                     .for_each(|m_id| {
                         if let Some((m, _)) = common::remove_waiting_message(program_id, m_id) {
-                            common::queue_message(m);
+                            common::queue_dispatch(m);
                         }
                     });
 
@@ -318,14 +321,13 @@ where
                     .into_iter()
                     .for_each(|m_id| {
                         if let Some((m, _)) = common::remove_waiting_message(program_id, m_id) {
-                            common::queue_message(m);
+                            common::queue_dispatch(m);
                         }
                     });
-                ProgramsLimbo::<T>::insert(program_id, origin);
-                log::info!(
-                    target: "runtime::gear",
-                    "👻 Program {} will stay in limbo until explicitly removed",
-                    program_id
+
+                assert!(
+                    common::set_program_terminated_status(program_id).is_ok(),
+                    "only active program can cause init failure"
                 );
 
                 Event::InitFailure(
@@ -336,6 +338,9 @@ where
                     },
                     Reason::Dispatch(reason.as_bytes().to_vec()),
                 )
+            }
+            CoreDispatchOutcome::NoExecution(message_id) => {
+                Event::MessageNotExecuted(message_id.into_origin())
             }
         };
 
@@ -365,7 +370,10 @@ where
 
     fn exit_dispatch(&mut self, id_exited: ProgramId, value_destination: ProgramId) {
         let program_id = id_exited.into_origin();
-        common::remove_program(program_id);
+        assert!(
+            common::remove_program(program_id).is_ok(),
+            "`exit` can be called only from active program"
+        );
 
         let program_account = &<T::AccountId as Origin>::from_origin(program_id);
         let balance = T::Currency::total_balance(program_account);
@@ -396,60 +404,70 @@ where
     }
 
     //todo [sab] проверки для защиты в рамках/разных одного блока
-    fn send_message(&mut self, message_id: MessageId, message: Message) {
+    fn send_dispatch(&mut self, message_id: MessageId, dispatch: Dispatch) {
         let has_skipping_dest = self
             .skip_messages
             .contains(&SkipMessageKind::WithDestination(message.dest()));
         let has_skipping_id = self
             .skip_messages
             .contains(&SkipMessageKind::WithId(message.id()));
-
         let message_id = message_id.into_origin();
-        let mut message: common::Message = message.into();
+        let mut dispatch: common::Dispatch = dispatch.into();
 
-        if has_skipping_dest || has_skipping_id {
+        // TODO reserve call must be infallible in https://github.com/gear-tech/gear/issues/644
+        if has_skipping_dest || has_skipping_id || 
+            dispatch.message.value != 0
+                && T::Currency::reserve(
+                    &<T::AccountId as Origin>::from_origin(dispatch.message.source),
+                    dispatch.message.value.unique_saturated_into(),
+                )
+                .is_err() 
+        {
             log::debug!(
                 "skipping dest - {}, skipping id - {}",
                 has_skipping_dest,
                 has_skipping_id,
             );
             log::debug!(
-                "Message {:?} sent from {:?} will not be queued",
-                message,
-                message_id
+                "Message (from: {:?}) {:?} will not be executed",
+                message_id,
+                dispatch.message
             );
-            return;
+            return; // todo [sab] no returns
         }
 
         log::debug!("Sending message {:?} from {:?}", message, message_id);
 
-        if common::program_exists(message.dest) {
+        if common::program_exists(dispatch.message.dest) {
             self.gas_handler
-                .split(message_id, message.id, message.gas_limit);
-            common::queue_message(message);
+                .split(message_id, dispatch.message.id, dispatch.message.gas_limit);
+            common::queue_dispatch(dispatch);
         } else {
             // Being placed into a user's mailbox means the end of a message life cycle.
             // There can be no further processing whatsoever, hence any gas attempted to be
             // passed along must be returned (i.e. remain in the parent message's value tree).
-            if message.gas_limit > 0 {
-                message.gas_limit = 0;
+            if dispatch.message.gas_limit > 0 {
+                dispatch.message.gas_limit = 0;
             }
-            Pallet::<T>::insert_to_mailbox(message.dest, message.clone());
-            Pallet::<T>::deposit_event(Event::Log(message));
+            Pallet::<T>::insert_to_mailbox(dispatch.message.dest, dispatch.message.clone());
+            Pallet::<T>::deposit_event(Event::Log(dispatch.message));
         }
     }
 
     fn wait_dispatch(&mut self, dispatch: Dispatch) {
-        let message: common::Message = dispatch.message.into();
+        let dispatch: common::Dispatch = dispatch.into();
+
+        let dest = dispatch.message.dest;
+        let message_id = dispatch.message.id;
 
         common::insert_waiting_message(
-            message.dest,
-            message.id,
-            message.clone(),
+            dest,
+            message_id,
+            dispatch.clone(),
             <frame_system::Pallet<T>>::block_number().unique_saturated_into(),
         );
 
-        Pallet::<T>::deposit_event(Event::AddedToWaitList(message));
+        Pallet::<T>::deposit_event(Event::AddedToWaitList(dispatch.message));
     }
 
     fn wake_message(
@@ -460,10 +478,10 @@ where
     ) {
         let awakening_id = awakening_id.into_origin();
 
-        if let Some((msg, _)) =
+        if let Some((dispatch, _)) =
             common::remove_waiting_message(program_id.into_origin(), awakening_id)
         {
-            common::queue_message(msg);
+            common::queue_dispatch(dispatch);
 
             Pallet::<T>::deposit_event(Event::RemovedFromWaitList(awakening_id));
         } else {
@@ -488,7 +506,10 @@ where
         let program_id = program_id.into_origin();
         let page_number = page_number.raw();
 
-        if let Some(prog) = common::get_program(program_id) {
+        let program = common::get_program(program_id)
+            .expect("page update guaranteed to be called only for existing and active program");
+
+        if let Program::Active(prog) = program {
             let mut persistent_pages = prog.persistent_pages;
 
             if let Some(data) = data {
@@ -501,6 +522,43 @@ where
 
             common::set_program_persistent_pages(program_id, persistent_pages);
         };
+    }
+
+    // TODO reserve call must be infallible in https://github.com/gear-tech/gear/issues/644 sending less then 500 should revert execution (rollback state)
+    fn send_value(&mut self, from: ProgramId, to: Option<ProgramId>, value: u128) {
+        let from = from.into_origin();
+        if let Some(to) = to {
+            let to = to.into_origin();
+            log::debug!(
+                "Value send of amount {:?} from {:?} to {:?}",
+                value,
+                from,
+                to
+            );
+            let from = <T::AccountId as Origin>::from_origin(from);
+            let to = <T::AccountId as Origin>::from_origin(to);
+            if T::Currency::can_reserve(&to, T::Currency::minimum_balance()) {
+                // `to` account exists, so we can repatriate reserved value for it.
+                let _ = T::Currency::repatriate_reserved(
+                    &from,
+                    &to,
+                    value.unique_saturated_into(),
+                    BalanceStatus::Free,
+                );
+            } else {
+                T::Currency::unreserve(&from, value.unique_saturated_into());
+                let _ = T::Currency::transfer(
+                    &from,
+                    &to,
+                    value.unique_saturated_into(),
+                    ExistenceRequirement::AllowDeath,
+                );
+            }
+        } else {
+            log::debug!("Value unreserve of amount {:?} from {:?}", value, from,);
+            let from = <T::AccountId as Origin>::from_origin(from);
+            T::Currency::unreserve(&from, value.unique_saturated_into());
+        }
     }
 
     // todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code

@@ -2016,6 +2016,7 @@ dependencies = [
  "parity-scale-codec",
  "parity-wasm 0.42.2",
  "pwasm-utils",
+ "scale-info",
  "wabt",
 ]
 
@@ -2057,7 +2058,6 @@ dependencies = [
  "gear-runtime",
  "gear-runtime-interface",
  "gear-runtime-test-cli",
- "gear-test-cli",
  "hex-literal",
  "jsonrpc-core",
  "libc",
@@ -2226,27 +2226,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-keyring",
-]
-
-[[package]]
-name = "gear-test-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "frame-system",
- "gear-backend-sandbox",
- "gear-common",
- "gear-core",
- "gear-core-processor",
- "gear-runtime",
- "gear-test",
- "log",
- "parity-scale-codec",
- "regex",
- "sc-cli",
- "sc-service",
- "sp-io",
 ]
 
 [[package]]
@@ -3038,9 +3017,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.117"
+version = "0.2.118"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e74d72e0f9b65b5b4ca49a346af3976df0f9c61d550727f349ecd559f251a26c"
+checksum = "06e509672465a0504304aa87f9f176f2b2b716ed8fb105ebe5c02dc6dce96a94"
 
 [[package]]
 name = "libc_print"

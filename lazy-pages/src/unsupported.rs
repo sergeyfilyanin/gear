@@ -16,17 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-mod command;
-mod manager;
+//! Lazy pages for unsupported OS.
 
-/// The `runtests` command used to test gear with yaml.
-#[derive(Debug, clap::Parser)]
-pub struct GearTestCmd {
-    /// Input dir/file with yaml for testing.
-    #[clap(parse(from_os_str))]
-    pub input: Vec<std::path::PathBuf>,
-
-    #[allow(missing_docs)]
-    #[clap(flatten)]
-    pub shared_params: sc_cli::SharedParams,
+pub unsafe fn init_lazy_pages() -> bool {
+    return false;
 }

@@ -177,6 +177,10 @@ where
         self.inner.update_page(program_id, page_number, data)
     }
 
+    fn send_value(&mut self, from: ProgramId, to: Option<ProgramId>, value: u128) {
+        self.inner.send_value(from, to, value)
+    }
+
     fn store_new_programs(
         &mut self,
         program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
