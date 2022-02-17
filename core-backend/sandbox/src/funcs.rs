@@ -25,7 +25,7 @@ use core::{
 use gear_backend_common::{funcs, ExtInfo, EXIT_TRAP_STR, LEAVE_TRAP_STR, WAIT_TRAP_STR};
 use gear_core::{
     env::Ext,
-    message::{MessageId, OutgoingPacket, ReplyPacket, ProgramInitPacket},
+    message::{MessageId, OutgoingPacket, ProgramInitPacket, ReplyPacket},
     program::ProgramId,
 };
 use sp_sandbox::{HostError, ReturnValue, Value};
@@ -544,15 +544,13 @@ pub fn create_program<E: Ext>(
             let salt = funcs::get_vec(ext, salt_ptr, salt_len);
             let payload = funcs::get_vec(ext, payload_ptr, payload_len);
             let value = funcs::get_u128(ext, value_ptr);
-            let new_actor_id = ext.create_program(
-                ProgramInitPacket::new(
-                    code_hash.into(),
-                    salt,
-                    payload.into(),
-                    gas_limit,
-                    value,
-                ),
-            )?;
+            let new_actor_id = ext.create_program(ProgramInitPacket::new(
+                code_hash.into(),
+                salt,
+                payload.into(),
+                gas_limit,
+                value,
+            ))?;
             ext.set_mem(program_id_ptr as isize as _, new_actor_id.as_slice());
             Ok(())
         })

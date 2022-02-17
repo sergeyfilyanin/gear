@@ -365,10 +365,7 @@ impl<'a> JournalHandler for Journal<'a> {
         }
     }
 
-    fn store_new_programs(
-        &mut self,
-        _: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
-    ) {
+    fn store_new_programs(&mut self, _: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>) {
         // todo [sab]
         unimplemented!()
     }

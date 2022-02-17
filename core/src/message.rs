@@ -23,7 +23,7 @@ use alloc::{rc::Rc, vec::Vec};
 use core::cell::RefCell;
 use core::fmt;
 
-use crate::program::{ProgramId, CodeHash};
+use crate::program::{CodeHash, ProgramId};
 use codec::{Decode, Encode};
 
 /// Message payload.
@@ -468,7 +468,7 @@ pub struct ProgramInitMessage {
     pub new_program_id: ProgramId,
     pub payload: Payload,
     pub gas_limit: u64,
-    pub value: u128
+    pub value: u128,
 }
 
 #[derive(Clone, Debug, Decode, Encode, PartialEq, Eq)]
@@ -481,7 +481,13 @@ pub struct ProgramInitPacket {
 }
 
 impl ProgramInitPacket {
-    pub fn new(code_hash: CodeHash, salt: Vec<u8>, payload: Payload, gas_limit: u64, value: u128) -> Self {
+    pub fn new(
+        code_hash: CodeHash,
+        salt: Vec<u8>,
+        payload: Payload,
+        gas_limit: u64,
+        value: u128,
+    ) -> Self {
         Self {
             code_hash,
             salt,
@@ -614,18 +620,27 @@ pub trait MessageIdGenerator {
     }
 
     /// Build program init message
-    /// 
+    ///
     /// Message id will be generated
-    fn produce_init(&mut self, new_program_id: ProgramId, packet: ProgramInitPacket) -> ProgramInitMessage {
+    fn produce_init(
+        &mut self,
+        new_program_id: ProgramId,
+        packet: ProgramInitPacket,
+    ) -> ProgramInitMessage {
         let id = self.next();
-        let ProgramInitPacket { payload, gas_limit, value, .. } = packet;
+        let ProgramInitPacket {
+            payload,
+            gas_limit,
+            value,
+            ..
+        } = packet;
 
         ProgramInitMessage {
             id,
             new_program_id,
             payload,
             gas_limit,
-            value
+            value,
         }
     }
 }
@@ -811,10 +826,13 @@ impl<IG: MessageIdGenerator + 'static> MessageContext<IG> {
             ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
         };
 
-        let msg = self.id_generator.borrow_mut().produce_init(new_program_id, packet);
+        let msg = self
+            .id_generator
+            .borrow_mut()
+            .produce_init(new_program_id, packet);
         let msg_id = msg.id;
         self.state.borrow_mut().program_init.push(msg);
-        
+
         (new_program_id, msg_id)
     }
 }

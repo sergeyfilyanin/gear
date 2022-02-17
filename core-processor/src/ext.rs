@@ -28,7 +28,10 @@ use gear_core::{
     env::Ext as EnvExt,
     gas::{ChargeResult, GasAmount, GasCounter},
     memory::{MemoryContext, PageNumber},
-    message::{ExitCode, MessageContext, MessageId, MessageState, OutgoingPacket, ReplyPacket, ProgramInitPacket},
+    message::{
+        ExitCode, MessageContext, MessageId, MessageState, OutgoingPacket, ProgramInitPacket,
+        ReplyPacket,
+    },
     program::{CodeHash, ProgramId},
 };
 
@@ -348,10 +351,7 @@ impl EnvExt for Ext {
         self.memory_context.memory().get_wasm_memory_begin_addr()
     }
 
-    fn create_program(
-        &mut self,
-        packet: ProgramInitPacket
-    ) -> Result<ProgramId, &'static str> {
+    fn create_program(&mut self, packet: ProgramInitPacket) -> Result<ProgramId, &'static str> {
         let code_hash = packet.code_hash;
         // Send a message for program creation
         let (new_prog_id, init_msg_id) = self.message_context.send_init_program(packet)?;

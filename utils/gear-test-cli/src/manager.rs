@@ -181,7 +181,6 @@ where
         &mut self,
         program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
     ) {
-        self.inner
-            .store_new_programs(program_candidates_data)
+        self.inner.store_new_programs(program_candidates_data)
     }
 }

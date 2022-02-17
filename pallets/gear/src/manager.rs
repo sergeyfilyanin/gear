@@ -20,6 +20,7 @@ use crate::{
     pallet::Reason, Authorship, Config, DispatchOutcome, Event, ExecutionResult, MessageInfo,
     Pallet, ProgramsLimbo,
 };
+use codec::Decode;
 use codec::{Decode, Encode};
 use common::{
     value_tree::{ConsumeResult, ValueView},
@@ -46,7 +47,6 @@ use sp_std::{
     marker::PhantomData,
     prelude::*,
 };
-use codec::Decode;
 
 pub struct ExtManager<T: Config, GH: GasHandler = ValueTreeGasHandler> {
     _phantom: PhantomData<T>,
@@ -320,7 +320,7 @@ where
                         if let Some((m, _)) = common::remove_waiting_message(program_id, m_id) {
                             common::queue_message(m);
                         }
-                    });    
+                    });
                 ProgramsLimbo::<T>::insert(program_id, origin);
                 log::info!(
                     target: "runtime::gear",
@@ -424,7 +424,8 @@ where
         log::debug!("Sending message {:?} from {:?}", message, message_id);
 
         if common::program_exists(message.dest) {
-            self.gas_handler.split(message_id, message.id, message.gas_limit);
+            self.gas_handler
+                .split(message_id, message.id, message.gas_limit);
             common::queue_message(message);
         } else {
             // Being placed into a user's mailbox means the end of a message life cycle.

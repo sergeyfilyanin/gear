@@ -91,7 +91,7 @@ pub struct DispatchResult {
 
     /// New programs to be created with additional data (corresponding code hash and init message id).
     pub program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
-    
+
     /// Gas amount after execution.
     pub gas_amount: GasAmount,
 

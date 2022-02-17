@@ -20,7 +20,7 @@ use crate::{EXIT_TRAP_STR, LEAVE_TRAP_STR, WAIT_TRAP_STR};
 use alloc::{string::String, vec, vec::Vec};
 use gear_core::{
     env::{Ext, LaterExt},
-    message::{MessageId, OutgoingPacket, ReplyPacket, ProgramInitPacket},
+    message::{MessageId, OutgoingPacket, ProgramInitPacket, ReplyPacket},
     program::ProgramId,
 };
 
@@ -271,15 +271,13 @@ pub fn create_program<E: Ext>(
             let salt = get_vec(ext, salt_ptr as usize, salt_len as usize);
             let payload = get_vec(ext, payload_ptr as usize, payload_len as usize);
             let value = get_u128(ext, value_ptr as usize);
-            let new_actor_id = ext.create_program(
-                ProgramInitPacket::new(
-                    code_hash.into(),
-                    salt,
-                    payload.into(),
-                    gas_limit as u64,
-                    value,
-                ),
-            )?;
+            let new_actor_id = ext.create_program(ProgramInitPacket::new(
+                code_hash.into(),
+                salt,
+                payload.into(),
+                gas_limit as u64,
+                value,
+            ))?;
             ext.set_mem(program_id_ptr as isize as _, new_actor_id.as_slice());
             Ok(())
         })?;
