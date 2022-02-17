@@ -272,9 +272,13 @@ pub fn create_program<E: Ext>(
             let payload = get_vec(ext, payload_ptr, payload_len);
             let value = get_u128(ext, value_ptr);
             let new_actor_id = ext.create_program(
-                code_hash.into(),
-                &salt,
-                OutgoingPacket::new(Default::default(), payload.into(), gas_limit as _, value),
+                ProgramInitPacket::new(
+                    code_hash.into(),
+                    salt,
+                    payload.into(),
+                    gas_limit,
+                    value,
+                ),
             )?;
             ext.set_mem(program_id_ptr as isize as _, new_actor_id.as_slice());
             Ok(())

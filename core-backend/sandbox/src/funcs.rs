@@ -545,12 +545,11 @@ fn create_program<E: Ext>(
             let payload = funcs::get_vec(ext, payload_ptr, payload_len);
             let value = funcs::get_u128(ext, value_ptr);
             let new_actor_id = ext.create_program(
-                code_hash.into(),
-                &salt,
-                OutgoingPacket::new(
-                    Default::default(),
+                ProgramInitPacket::new(
+                    code_hash.into(),
+                    salt,
                     payload.into(),
-                    gas_limit as _,
+                    gas_limit,
                     value,
                 ),
             )?;

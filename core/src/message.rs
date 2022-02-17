@@ -23,7 +23,7 @@ use alloc::{rc::Rc, vec::Vec};
 use core::cell::RefCell;
 use core::fmt;
 
-use crate::program::ProgramId;
+use crate::program::{ProgramId, CodeHash};
 use codec::{Decode, Encode};
 
 /// Message payload.
@@ -459,6 +459,46 @@ impl Message {
     /// Message identifier.
     pub fn id(&self) -> MessageId {
         self.id
+    }
+}
+
+pub struct ProgramInitMessage {
+    pub id: MessageId,
+    pub source: ProgramId,
+    pub dest: ProgramId,
+    pub gas_limit: u64,
+    pub value: u128
+}
+
+impl ProgramInitMessage {
+    pub fn new(id: MessageId, source: ProgramId, dest: ProgramId, gas_limit: u64, value: u128) -> Self {
+        Self {
+            id,
+            source,
+            dest,
+            gas_limit,
+            value,
+        }
+    }
+}
+
+pub struct ProgramInitPacket {
+    code_hash: CodeHash,
+    salt: Vec<u8>,
+    payload: Payload,
+    gas_limit: u64,
+    value: u128,
+}
+
+impl ProgramInitPacket {
+    pub fn new(code_hash: CodeHash, salt: Vec<u8>, payload: Payload, gas_limit: u64, value: u128) -> Self {
+        Self {
+            code_hash,
+            salt,
+            payload,
+            gas_limit,
+            value,
+        }
     }
 }
 

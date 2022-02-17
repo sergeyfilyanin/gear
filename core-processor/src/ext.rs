@@ -28,7 +28,7 @@ use gear_core::{
     env::Ext as EnvExt,
     gas::{ChargeResult, GasAmount, GasCounter},
     memory::{MemoryContext, PageNumber},
-    message::{ExitCode, MessageContext, MessageId, MessageState, OutgoingPacket, ReplyPacket},
+    message::{ExitCode, MessageContext, MessageId, MessageState, OutgoingPacket, ReplyPacket, ProgramInitPacket},
     program::{CodeHash, ProgramId},
 };
 
@@ -350,12 +350,11 @@ impl EnvExt for Ext {
 
     fn create_program(
         &mut self,
-        code_hash: CodeHash,
-        salt: &[u8],
-        packet: OutgoingPacket,
+        packet: ProgramInitPacket
     ) -> Result<ProgramId, &'static str> {
+        let code_hash = packet.code_hash;
         let program_id = {
-            let mut data = alloc::vec::Vec::with_capacity(code_hash.inner().len() + salt.len());
+            let mut data = Vec::with_capacity(code_hash.inner().len() + salt.len());
             code_hash.encode_to(&mut data);
             salt.encode_to(&mut data);
             ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
