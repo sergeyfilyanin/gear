@@ -468,14 +468,11 @@ pub fn code_exists(code_hash: H256) -> bool {
 
 // todo [sab] remove
 pub fn get_code_for_candidate(candidate: gear_core::program::ProgramId) -> Option<Vec<u8>> {
-    let ret = sp_io::storage::get(&program_candidate_key(candidate))
-        .map(|code_hash| {
-            let mut v = [0u8; 32];
-            v.copy_from_slice(&code_hash);
-            get_code(v.into())
-        })
-        .flatten();
-    ret
+    sp_io::storage::get(&program_candidate_key(candidate)).and_then(|code_hash| {
+        let mut v = [0u8; 32];
+        v.copy_from_slice(&code_hash);
+        get_code(v.into())
+    })
 }
 
 fn program_candidate_key(candidate: gear_core::program::ProgramId) -> Vec<u8> {

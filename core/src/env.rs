@@ -26,7 +26,7 @@ use codec::{Decode, Encode};
 
 use crate::memory::PageNumber;
 use crate::message::{ExitCode, MessageId, OutgoingPacket, ProgramInitPacket, ReplyPacket};
-use crate::program::{CodeHash, ProgramId};
+use crate::program::ProgramId;
 
 /// Page access rights.
 #[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, Copy)]
@@ -291,12 +291,7 @@ mod tests {
         fn wake(&mut self, _waker_id: MessageId) -> Result<(), &'static str> {
             Ok(())
         }
-        fn create_program(
-            &mut self,
-            code_hash: CodeHash,
-            salt: &[u8],
-            packet: OutgoingPacket,
-        ) -> Result<ProgramId, &'static str> {
+        fn create_program(&mut self, packet: ProgramInitPacket) -> Result<ProgramId, &'static str> {
             Ok(Default::default())
         }
     }

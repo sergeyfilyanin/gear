@@ -462,25 +462,38 @@ impl Message {
     }
 }
 
+/// Outgoing program initialization message
 #[derive(Clone, Debug, Decode, Encode, PartialEq, Eq)]
 pub struct ProgramInitMessage {
+    /// Message id
     pub id: MessageId,
+    /// New program id
     pub new_program_id: ProgramId,
+    /// Payload to init function
     pub payload: Payload,
+    /// Provided to the message gas limit
     pub gas_limit: u64,
+    /// Provided to the message value
     pub value: u128,
 }
 
+/// Program initialization packet
 #[derive(Clone, Debug, Decode, Encode, PartialEq, Eq)]
 pub struct ProgramInitPacket {
+    /// Code hash of a new program
     pub code_hash: CodeHash,
+    /// Salt used to generate id for a new program
     pub salt: Vec<u8>,
+    /// Payload to init function
     pub payload: Payload,
+    /// Provided to the message gas limit
     pub gas_limit: u64,
+    /// Provided to the message value
     pub value: u128,
 }
 
 impl ProgramInitPacket {
+    /// Create a new program init packet
     pub fn new(
         code_hash: CodeHash,
         salt: Vec<u8>,
@@ -817,6 +830,10 @@ impl<IG: MessageIdGenerator + 'static> MessageContext<IG> {
     }
 
     // todo [sab] maybe introduce duplicate check here.
+    /// Send a new init program message
+    ///
+    /// Generates a new program id from provided `packet` data and returns it
+    /// along with init message id.
     pub fn send_init_program(&mut self, packet: ProgramInitPacket) -> (ProgramId, MessageId) {
         let new_program_id = {
             let code_hash = packet.code_hash;

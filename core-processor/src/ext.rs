@@ -354,7 +354,7 @@ impl EnvExt for Ext {
     fn create_program(&mut self, packet: ProgramInitPacket) -> Result<ProgramId, &'static str> {
         let code_hash = packet.code_hash;
         // Send a message for program creation
-        let (new_prog_id, init_msg_id) = self.message_context.send_init_program(packet)?;
+        let (new_prog_id, init_msg_id) = self.message_context.send_init_program(packet);
 
         // Save a program candidate for this run
         let entry = self
