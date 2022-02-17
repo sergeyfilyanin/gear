@@ -18,7 +18,7 @@
 
 use codec::{Decode, Encode, Error as CodecError};
 use core_processor::{
-    common::{Dispatch, DispatchKind, DispatchOutcome, JournalHandler, ProcessResult},
+    common::{Dispatch, DispatchKind, DispatchOutcome, JournalHandler},
     configs::BlockInfo,
     Ext,
 };
@@ -91,13 +91,15 @@ impl InitProgram {
             .map(|msg| msg.into_ext(context))
             .unwrap_or_else(|| MessageBuilder::from(()).into_ext(context));
 
+        let new_program_id = self.program_id.unwrap_or_else(|| context.next_program_id());
+
         InitializeProgramInfo {
-            new_program_id: self.program_id.unwrap_or_else(|| context.next_program_id()),
+            new_program_id,
             code: self.code,
             message: Message {
                 id: message.id,
                 source: self.source_id.unwrap_or_else(ProgramId::system),
-                dest: self.program_id.unwrap_or_else(|| context.next_program_id()),
+                dest: new_program_id,
                 payload: message.payload.into(),
                 gas_limit: message.gas_limit,
                 value: message.value,
@@ -268,9 +270,7 @@ impl<'a> JournalHandler for Journal<'a> {
                     RunResult::Trap(trap.unwrap_or("No message").to_string()),
                 );
             }
-            DispatchOutcome::InitSuccess { program, .. } => {
-                self.context.programs.insert(program.id(), program);
-            }
+            DispatchOutcome::InitSuccess { .. } => {}
             DispatchOutcome::InitFailure {
                 program_id,
                 message_id,
@@ -287,6 +287,10 @@ impl<'a> JournalHandler for Journal<'a> {
 
     fn gas_burned(&mut self, message_id: MessageId, _origin: ProgramId, amount: u64) {
         self.context.gas_spent.insert(message_id, amount);
+    }
+
+    fn exit_dispatch(&mut self, id_exited: ProgramId, _value_destination: ProgramId) {
+        self.context.programs.remove(&id_exited);
     }
 
     fn message_consumed(&mut self, _message_id: MessageId) {}
@@ -361,7 +365,7 @@ impl<'a> JournalHandler for Journal<'a> {
         }
     }
 
-    fn bind_code_hash_to_program_ids(
+    fn store_new_programs(
         &mut self,
         _: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
     ) {
@@ -406,23 +410,19 @@ impl RunnerContext {
         };
         let message_id = dispatch.message.id;
 
-        let journal = {
-            let program = self
-                .programs
-                .remove(&new_program_id)
-                .expect("Program not found");
-            let ProcessResult { program, journal } =
-                core_processor::process::<WasmtimeEnvironment<Ext>>(
-                    program,
-                    dispatch,
-                    BlockInfo {
-                        height: 1,
-                        timestamp: 1,
-                    },
-                );
-            self.programs.insert(program.id(), program);
-            journal
-        };
+        let program = self
+            .programs
+            .get(&new_program_id)
+            .expect("Program not found");
+
+        let journal = core_processor::process::<WasmtimeEnvironment<Ext>>(
+            program.clone(),
+            dispatch,
+            BlockInfo {
+                height: 1,
+                timestamp: 1,
+            },
+        );
 
         core_processor::handle_journal(journal, &mut Journal { context: self });
 

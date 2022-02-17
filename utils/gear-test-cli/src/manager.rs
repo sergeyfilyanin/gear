@@ -112,6 +112,11 @@ where
     fn gas_burned(&mut self, message_id: MessageId, origin: ProgramId, amount: u64) {
         self.inner.gas_burned(message_id, origin, amount)
     }
+
+    fn exit_dispatch(&mut self, id_exited: ProgramId, value_destination: ProgramId) {
+        self.inner.exit_dispatch(id_exited, value_destination);
+    }
+
     fn message_consumed(&mut self, message_id: MessageId) {
         self.inner.message_consumed(message_id)
     }
@@ -172,11 +177,11 @@ where
         self.inner.update_page(program_id, page_number, data)
     }
 
-    fn bind_code_hash_to_program_ids(
+    fn store_new_programs(
         &mut self,
         program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
     ) {
         self.inner
-            .bind_code_hash_to_program_ids(program_candidates_data)
+            .store_new_programs(program_candidates_data)
     }
 }

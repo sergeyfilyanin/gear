@@ -20,6 +20,7 @@ use crate::{
     pallet::Reason, Authorship, Config, DispatchOutcome, Event, ExecutionResult, MessageInfo,
     Pallet, ProgramsLimbo,
 };
+use codec::{Decode, Encode};
 use common::{
     value_tree::{ConsumeResult, ValueView},
     GasToFeeConverter, Origin, GAS_VALUE_PREFIX, STORAGE_PROGRAM_CANDIDATE_PREFIX,
@@ -30,15 +31,15 @@ use core_processor::common::{
 };
 use frame_support::{
     storage::PrefixIterator,
-    traits::{BalanceStatus, IsType, ReservableCurrency},
+    traits::{BalanceStatus, Currency, ExistenceRequirement, ReservableCurrency},
 };
 use gear_core::{
     memory::PageNumber,
-    message::{Message, MessageId},
+    message::{ExitCode, Message, MessageId},
     program::{CodeHash, Program, ProgramId},
 };
 use primitive_types::H256;
-use sp_runtime::traits::UniqueSaturatedInto;
+use sp_runtime::traits::{UniqueSaturatedInto, Zero};
 use sp_std::{
     collections::{btree_map::BTreeMap, btree_set::BTreeSet, vec_deque::VecDeque},
     iter::FromIterator,
@@ -53,6 +54,7 @@ pub struct ExtManager<T: Config, GH: GasHandler = ValueTreeGasHandler> {
     skip_messages: BTreeSet<SkipMessageKind>,
 }
 
+// todo [sab] REMOVE, forbidden
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum SkipMessageKind {
     // Skip message with `MessageId`
@@ -65,6 +67,13 @@ enum SkipMessageKind {
     // More precisely, code hash which was intended to be bound
     // to the `ProgramId` doesn't have any underlying code
     WithDestination(ProgramId),
+}
+
+#[derive(Decode, Encode)]
+pub enum HandleKind {
+    Init(Vec<u8>),
+    Handle(H256),
+    Reply(H256, ExitCode),
 }
 
 pub trait GasHandler {
@@ -187,15 +196,30 @@ where
     T::AccountId: Origin,
     GH: GasHandler,
 {
+    pub fn program_from_code(
+        &self,
+        id: H256,
+        code: Vec<u8>,
+    ) -> Option<gear_core::program::Program> {
+        Program::new(ProgramId::from_origin(id), code).ok()
+    }
+
     pub fn get_program(&self, id: H256) -> Option<gear_core::program::Program> {
         common::native::get_program(ProgramId::from_origin(id))
     }
 
     pub fn set_program(&self, program: gear_core::program::Program, message_id: H256) {
+        // TODO: This method is used only before program init, so program has no persistent pages.
+        assert!(
+            program.get_pages().is_empty(),
+            "Must has empty persistent pages, has {:?}",
+            program.get_pages()
+        );
+
         let persistent_pages: BTreeMap<u32, Vec<u8>> = program
             .get_pages()
             .iter()
-            .map(|(k, v)| (k.raw(), v.to_vec()))
+            .map(|(k, v)| (k.raw(), v.as_ref().expect("Must have page data").to_vec()))
             .collect();
 
         let id = program.id().into_origin();
@@ -254,12 +278,9 @@ where
             CoreDispatchOutcome::InitSuccess {
                 message_id,
                 origin,
-                program,
+                program_id,
             } => {
-                // todo issue #567
-                let message_id = message_id.into_origin();
-
-                let program_id = program.id().into_origin();
+                let program_id = program_id.into_origin();
                 let event = Event::InitSuccess(MessageInfo {
                     message_id,
                     origin: origin.into_origin(),
@@ -339,6 +360,23 @@ where
                 charge,
                 BalanceStatus::Free,
             );
+        }
+    }
+
+    fn exit_dispatch(&mut self, id_exited: ProgramId, value_destination: ProgramId) {
+        let program_id = id_exited.into_origin();
+        common::remove_program(program_id);
+
+        let program_account = &<T::AccountId as Origin>::from_origin(program_id);
+        let balance = T::Currency::total_balance(program_account);
+        if !balance.is_zero() {
+            T::Currency::transfer(
+                program_account,
+                &<T::AccountId as Origin>::from_origin(value_destination.into_origin()),
+                balance,
+                ExistenceRequirement::AllowDeath,
+            )
+            .expect("balance is not zero; should not fail");
         }
     }
 
@@ -465,7 +503,7 @@ where
     }
 
     // todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code
-    fn bind_code_hash_to_program_ids(
+    fn store_new_programs(
         &mut self,
         program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
     ) {

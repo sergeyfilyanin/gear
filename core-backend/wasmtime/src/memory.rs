@@ -20,7 +20,6 @@
 
 use alloc::boxed::Box;
 use core::any::Any;
-
 use gear_core::memory::{Error, Memory, PageNumber};
 
 /// Wrapper for wasmtime memory.
@@ -70,6 +69,10 @@ impl Memory for MemoryWrap {
 
     fn as_any(&self) -> &dyn Any {
         &self.0
+    }
+
+    fn get_wasm_memory_begin_addr(&self) -> usize {
+        panic!("Not implemented");
     }
 }
 

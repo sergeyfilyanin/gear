@@ -88,11 +88,17 @@ pub trait Ext {
     /// Get the source of the message currently being handled.
     fn source(&mut self) -> ProgramId;
 
+    /// Terminate the program and transfer all available value to the address.
+    fn exit(&mut self, value_destination: ProgramId) -> Result<(), &'static str>;
+
     /// Get the id of the message currently being handled.
     fn message_id(&mut self) -> MessageId;
 
     /// Get the id of program itself
-    fn program_id(&mut self) -> ProgramId;
+    fn program_id(&self) -> ProgramId;
+
+    /// Returns native addr of wasm memory buffer in wasm executor
+    fn get_wasm_memory_begin_addr(&self) -> usize;
 
     /// Free specific memory page.
     ///
@@ -110,6 +116,9 @@ pub trait Ext {
 
     /// Reads memory contents at the given offset into a buffer.
     fn get_mem(&self, ptr: usize, buffer: &mut [u8]);
+
+    /// Interrupt the program, saving it's state.
+    fn leave(&mut self) -> Result<(), &'static str>;
 
     /// Access currently handled message payload.
     fn msg(&mut self) -> &[u8];
@@ -142,9 +151,16 @@ pub trait Ext {
 }
 
 /// Struct for interacting with Ext
-#[derive(Default)]
 pub struct LaterExt<E: Ext> {
     inner: Rc<RefCell<Option<E>>>,
+}
+
+impl<E: Ext> Default for LaterExt<E> {
+    fn default() -> Self {
+        Self {
+            inner: Rc::new(RefCell::new(None)),
+        }
+    }
 }
 
 impl<E: Ext> Clone for LaterExt<E> {
@@ -156,13 +172,6 @@ impl<E: Ext> Clone for LaterExt<E> {
 }
 
 impl<E: Ext> LaterExt<E> {
-    /// Create empty ext
-    pub fn new() -> Self {
-        Self {
-            inner: Rc::new(RefCell::new(None)),
-        }
-    }
-
     /// Set ext
     pub fn set(&mut self, e: E) {
         *self.inner.borrow_mut() = Some(e)
@@ -243,11 +252,17 @@ mod tests {
         fn source(&mut self) -> ProgramId {
             ProgramId::from(0)
         }
+        fn exit(&mut self, _value_destination: ProgramId) -> Result<(), &'static str> {
+            Ok(())
+        }
         fn message_id(&mut self) -> MessageId {
             0.into()
         }
-        fn program_id(&mut self) -> ProgramId {
+        fn program_id(&self) -> ProgramId {
             0.into()
+        }
+        fn get_wasm_memory_begin_addr(&self) -> usize {
+            0usize
         }
         fn free(&mut self, _ptr: PageNumber) -> Result<(), &'static str> {
             Ok(())
@@ -272,6 +287,9 @@ mod tests {
         fn value(&self) -> u128 {
             0
         }
+        fn leave(&mut self) -> Result<(), &'static str> {
+            Ok(())
+        }
         fn wait(&mut self) -> Result<(), &'static str> {
             Ok(())
         }
@@ -291,7 +309,7 @@ mod tests {
     #[test]
     /// Test that the new LaterExt object contains reference on None value
     fn empty_ext_creation() {
-        let ext = LaterExt::<ExtImplementedStruct>::new();
+        let ext: LaterExt<ExtImplementedStruct> = Default::default();
 
         assert_eq!(ext.inner, Rc::new(RefCell::new(None)));
     }
@@ -299,7 +317,7 @@ mod tests {
     #[test]
     /// Test that we are able to set and unset LaterExt value
     fn setting_and_unsetting_inner_ext() {
-        let mut ext = LaterExt::<ExtImplementedStruct>::new();
+        let mut ext: LaterExt<_> = Default::default();
 
         ext.set(ExtImplementedStruct(0));
 
@@ -327,7 +345,7 @@ mod tests {
     #[should_panic(expected = "Unset should be paired with set and called after")]
     /// Test that unsetting an empty value causes panic
     fn unsetting_empty_ext() {
-        let mut ext = LaterExt::<ExtImplementedStruct>::new();
+        let mut ext: LaterExt<ExtImplementedStruct> = Default::default();
 
         let _ = ext.unset();
     }
@@ -335,7 +353,7 @@ mod tests {
     #[test]
     /// Test that ext's clone still refers to the same inner object as the original one
     fn ext_cloning() {
-        let mut ext_source = LaterExt::<ExtImplementedStruct>::new();
+        let mut ext_source: LaterExt<_> = Default::default();
         let mut ext_clone = ext_source.clone();
 
         // ext_clone refers the same inner as ext_source,
@@ -357,7 +375,7 @@ mod tests {
     #[test]
     /// Test that ext's `with<R>(...)` works correct when the inner is set
     fn calling_fn_with_inner_ext() {
-        let mut ext = LaterExt::<ExtImplementedStruct>::new();
+        let mut ext: LaterExt<_> = Default::default();
         ext.set(ExtImplementedStruct(0));
 
         let converted_inner = ext.with(converter);
@@ -369,7 +387,7 @@ mod tests {
     /// Test that calling ext's `with<R>(...)` throws error
     /// when the inner value was not set or was unsetted
     fn calling_fn_with_empty_ext() {
-        let ext = LaterExt::<ExtImplementedStruct>::new();
+        let ext: LaterExt<_> = Default::default();
 
         assert!(ext.with(converter).is_err());
     }

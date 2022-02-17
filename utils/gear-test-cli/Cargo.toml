@@ -7,7 +7,7 @@ license = "GPL-3.0"
 
 [dependencies]
 anyhow = "1.0.53"
-codec = { version = "2.0.0", package = "parity-scale-codec", default-features = false }
+codec = { version = "2.3.1", package = "parity-scale-codec", default-features = false }
 regex = "1.4"
 clap = { version = "3.0", features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
@@ -21,7 +21,7 @@ sp-io = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.g
 # Internal deps
 gear-common = { path = "../../common" }
 gear-core = { path = "../../core" }
-gear-core-processor = { path = "../../core-processor" }
+gear-core-processor = { path = "../../core-processor", features = ["lazy-pages"] }
 gear-runtime = { path = "../../runtime" }
 gear-test = { path = "../../gear-test" }
 gear-backend-sandbox = { path = "../../core-backend/sandbox" }

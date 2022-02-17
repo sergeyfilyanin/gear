@@ -6,10 +6,8 @@ edition = "2018"
 license = "GPL-3.0"
 
 [dependencies]
-anyhow = { version = "1.0.53", default-features = false }
-cfg-if = "1.0.0"
-log = { version = "0.4.14", default-features = false }
-num-derive = { version = "0.3.3", optional = true }
-num-traits = { version = "0.2.14", optional = true }
-
 gear-core = { path = "../../core" }
+gear-runtime-interface = { path = "../../runtime-interface", default-features = false }
+common = { package = "gear-common", path = "../../common", default-features = false }
+
+log = { version = "0.4.14", default-features = false }

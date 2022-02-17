@@ -81,11 +81,10 @@ impl JournalHandler for InMemoryExtManager {
         self.current_failed = match outcome {
             DispatchOutcome::MessageTrap { .. } | DispatchOutcome::InitFailure { .. } => true,
             DispatchOutcome::Success(_) => false,
-            DispatchOutcome::InitSuccess { ref program, .. } => {
-                let id = program.id();
-                let waiting_messages = self.waiting_init.borrow_mut().remove(&id);
+            DispatchOutcome::InitSuccess { program_id, .. } => {
+                let waiting_messages = self.waiting_init.borrow_mut().remove(&program_id);
                 for m_id in waiting_messages.iter().flatten() {
-                    if let Some(msg) = self.wait_list.remove(&(id, *m_id)) {
+                    if let Some(msg) = self.wait_list.remove(&(program_id, *m_id)) {
                         self.message_queue.push_back(msg);
                     }
                 }
@@ -95,6 +94,11 @@ impl JournalHandler for InMemoryExtManager {
         };
     }
     fn gas_burned(&mut self, _message_id: MessageId, _origin: ProgramId, _amount: u64) {}
+
+    fn exit_dispatch(&mut self, id_exited: ProgramId, _value_destination: ProgramId) {
+        self.programs.borrow_mut().remove(&id_exited);
+    }
+
     fn message_consumed(&mut self, message_id: MessageId) {
         if let Some(index) = self
             .message_queue

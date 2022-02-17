@@ -27,6 +27,7 @@ use frame_support::{
     dispatch::DispatchError,
     weights::{IdentityFee, WeightToFeePolynomial},
 };
+use gear_runtime_interface as gear_ri;
 use primitive_types::H256;
 use scale_info::TypeInfo;
 use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
@@ -35,7 +36,7 @@ use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 use sp_std::prelude::*;
 
 pub use storage_queue::Iterator;
-use storage_queue::StorageQueue;
+pub use storage_queue::StorageQueue;
 
 pub const STORAGE_PROGRAM_PREFIX: &[u8] = b"g::prog::";
 pub const STORAGE_PROGRAM_PAGES_PREFIX: &[u8] = b"g::pages::";
@@ -156,7 +157,7 @@ enum CodeKeyPrefixKind {
     CodeMetadata,
 }
 
-fn program_key(id: H256) -> Vec<u8> {
+pub fn program_key(id: H256) -> Vec<u8> {
     let mut key = Vec::new();
     key.extend(STORAGE_PROGRAM_PREFIX);
     id.encode_to(&mut key);
@@ -278,6 +279,18 @@ fn release_code(code_hash: H256) {
 pub fn get_program(id: H256) -> Option<Program> {
     sp_io::storage::get(&program_key(id))
         .map(|val| Program::decode(&mut &val[..]).expect("values encoded correctly"))
+}
+
+/// Returns mem page data from storage for program `id` and `page_idx`
+pub fn get_program_page_data(id: H256, page_idx: u32) -> Option<Vec<u8>> {
+    let key = page_key(id, page_idx);
+    sp_io::storage::get(&key)
+}
+
+/// Save page data key in storage
+pub fn save_page_lazy_info(id: H256, page_num: u32) {
+    let key = page_key(id, page_num);
+    gear_ri::gear_ri::save_page_lazy_info(page_num, &key);
 }
 
 pub fn get_program_pages(id: H256, pages: BTreeSet<u32>) -> BTreeMap<u32, Vec<u8>> {

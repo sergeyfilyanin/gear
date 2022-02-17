@@ -20,11 +20,13 @@ use codec::Encode;
 use common::{self, GasToFeeConverter, Origin as _};
 use frame_support::{assert_noop, assert_ok};
 use frame_system::Pallet as SystemPallet;
+use gear_runtime_interface as gear_ri;
 use pallet_balances::{self, Pallet as BalancesPallet};
 use tests_distributor::{Request, WASM_BINARY_BLOATY as DISTRIBUTOR_WASM_BINARY};
 use tests_program_factory::{CreateProgram, WASM_BINARY_BLOATY as PROGRAM_FACTORY_WASM_BINARY};
 
 use super::{
+    manager::HandleKind,
     mock::{
         new_test_ext, run_to_block, Event as MockEvent, Gear, Origin, System, Test, BLOCK_AUTHOR,
         LOW_BALANCE_USER, USER_1, USER_2, USER_3,
@@ -299,6 +301,96 @@ fn unused_gas_released_back_works() {
 }
 
 #[test]
+fn lazy_pages() {
+    // This test access different pages in linear wasm memory
+    // and check that lazy-pages (see gear-lazy-pages) works correct:
+    // For each page, which has been loaded from storage <=> page has been accessed.
+    let wat = r#"
+	(module
+		(import "env" "memory" (memory 1))
+        (import "env" "alloc" (func $alloc (param i32) (result i32)))
+		(export "handle" (func $handle))
+		(export "init" (func $init))
+		(func $init
+            ;; allocate 9 pages in init, so mem will contain 10 pages
+            i32.const 0x0
+            i32.const 0x9
+            call $alloc
+            i32.store
+        )
+        (func $handle
+            ;; write access page 0
+            i32.const 0x0
+            i32.const 0x42
+            i32.store
+
+            ;; write access page 2
+            i32.const 0x20000
+            i32.const 0x42
+            i32.store
+
+            ;; read access page 5
+            i32.const 0x0
+            i32.const 0x50000
+            i32.load
+            i32.store
+
+            ;; write access page 8 and 9 by one store
+            i32.const 0x8fffc
+            i64.const 0xffffffffffffffff
+            i64.store
+		)
+	)"#;
+
+    init_logger();
+    new_test_ext().execute_with(|| {
+        let pid = {
+            let code = ProgramCodeKind::Custom(wat).to_bytes();
+            let salt = DEFAULT_SALT.to_vec();
+            let prog_id = generate_program_id(&code, &salt);
+            let res = GearPallet::<Test>::submit_program(
+                Origin::signed(USER_1).into(),
+                code,
+                salt,
+                EMPTY_PAYLOAD.to_vec(),
+                5_000_000,
+                0,
+            )
+            .map(|_| prog_id);
+            assert_ok!(res);
+            res.expect("submit result was asserted")
+        };
+
+        run_to_block(2, Some(10_000_000));
+        log::debug!("submit done {:?}", pid);
+        SystemPallet::<Test>::assert_last_event(Event::MessagesDequeued(1).into());
+
+        let res = GearPallet::<Test>::send_message(
+            Origin::signed(USER_1).into(),
+            pid,
+            EMPTY_PAYLOAD.to_vec(),
+            1_000_000,
+            100,
+        );
+        log::debug!("res = {:?}", res);
+        assert_ok!(res);
+
+        run_to_block(3, Some(10_000_000));
+
+        // Dirty hack: lazy pages info is stored in thread local static variables,
+        // so after contract execution lazy-pages information
+        // remains correct and we can use it here.
+        let released_pages = gear_ri::gear_ri::get_released_pages();
+        let lazy_pages = gear_ri::gear_ri::get_wasm_lazy_pages_numbers();
+
+        // checks not accessed pages
+        assert_eq!(lazy_pages, [1, 3, 4, 6, 7]);
+        // checks accessed pages
+        assert_eq!(released_pages, [0, 2, 5, 8, 9]);
+    });
+}
+
+#[test]
 fn block_gas_limit_works() {
     // Same as `ProgramCodeKind::GreedyInit`, but greedy handle
     let wat = r#"
@@ -349,13 +441,23 @@ fn block_gas_limit_works() {
         run_to_block(2, Some(remaining_weight));
         SystemPallet::<Test>::assert_last_event(Event::MessagesDequeued(2).into());
 
+        // We send 10M of gas from inside the program (see `ProgramCodeKind::OutgoingWithValueInHandle` WAT code).
+        let gas_to_send = 10_000_000;
+
         // Count gas needed to process programs with default payload
-        let expected_gas_msg_to_pid1 =
-            GearPallet::<Test>::get_gas_spent(pid1, EMPTY_PAYLOAD.to_vec())
-                .expect("internal error: get gas spent (pid1) failed");
-        let expected_gas_msg_to_pid2 =
-            GearPallet::<Test>::get_gas_spent(pid2, EMPTY_PAYLOAD.to_vec())
-                .expect("internal error: get gas spent (pid2) failed");
+        let expected_gas_msg_to_pid1 = GearPallet::<Test>::get_gas_spent(
+            USER_1.into_origin(),
+            HandleKind::Handle(pid1),
+            EMPTY_PAYLOAD.to_vec(),
+        )
+        .expect("internal error: get gas spent (pid1) failed")
+            - gas_to_send;
+        let expected_gas_msg_to_pid2 = GearPallet::<Test>::get_gas_spent(
+            USER_1.into_origin(),
+            HandleKind::Handle(pid2),
+            EMPTY_PAYLOAD.to_vec(),
+        )
+        .expect("internal error: get gas spent (pid2) failed");
 
         // TrapInHandle code kind is used because processing default payload in its
         // context requires such an amount of gas, that the following assertion can be passed.
@@ -875,8 +977,12 @@ fn claim_value_from_mailbox_works() {
             populate_mailbox_from_program(prog_id, USER_2, USER_1, 2, 0, gas_sent, value_sent);
 
         let gas_burned = GasConverter::gas_to_fee(
-            GearPallet::<Test>::get_gas_spent(prog_id, EMPTY_PAYLOAD.to_vec())
-                .expect("program exists and not faulty"),
+            GearPallet::<Test>::get_gas_spent(
+                USER_1.into_origin(),
+                HandleKind::Handle(prog_id),
+                EMPTY_PAYLOAD.to_vec(),
+            )
+            .expect("program exists and not faulty"),
         );
 
         run_to_block(3, None);
@@ -895,8 +1001,10 @@ fn claim_value_from_mailbox_works() {
             expected_claimer_balance
         );
 
+        // We send 10M of gas from inside the program (see `ProgramCodeKind::OutgoingWithValueInHandle` WAT code).
+        let gas_to_send = 10_000_000;
         // Gas left returns to sender from consuming of value tree while claiming.
-        let expected_sender_balance = sender_balance - value_sent - gas_burned;
+        let expected_sender_balance = sender_balance - value_sent - gas_burned + gas_to_send;
         assert_eq!(
             BalancesPallet::<Test>::free_balance(USER_2),
             expected_sender_balance
@@ -1716,12 +1824,115 @@ fn wake_messages_after_program_inited() {
     })
 }
 
+#[test]
+fn exit_init() {
+    use tests_exit_init::WASM_BINARY_BLOATY;
+
+    init_logger();
+    new_test_ext().execute_with(|| {
+        System::reset_events();
+
+        let code = WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec();
+        assert_ok!(GearPallet::<Test>::submit_program(
+            Origin::signed(USER_1).into(),
+            code.clone(),
+            vec![],
+            Vec::new(),
+            10_000_000u64,
+            0u128
+        ));
+
+        let program_id = utils::get_last_program_id();
+
+        run_to_block(2, None);
+
+        assert!(!Gear::is_failed(program_id));
+        assert!(!Gear::is_initialized(program_id));
+
+        let actual_n = Gear::mailbox(USER_1)
+            .map(|t| t.into_values().fold(0usize, |i, _| i + 1))
+            .unwrap_or(0);
+
+        assert_eq!(actual_n, 0);
+
+        // Program is removed and can be submitted again
+        assert_ok!(GearPallet::<Test>::submit_program(
+            Origin::signed(USER_1).into(),
+            code,
+            vec![],
+            Vec::new(),
+            10_000_000u64,
+            0u128
+        ));
+    })
+}
+
+#[test]
+fn exit_handle() {
+    use tests_exit_handle::WASM_BINARY_BLOATY;
+
+    init_logger();
+    new_test_ext().execute_with(|| {
+        System::reset_events();
+
+        let code = WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec();
+        assert_ok!(GearPallet::<Test>::submit_program(
+            Origin::signed(USER_1).into(),
+            code.clone(),
+            vec![],
+            Vec::new(),
+            10_000_000u64,
+            0u128
+        ));
+
+        let program_id = utils::get_last_program_id();
+
+        run_to_block(2, None);
+
+        assert!(Gear::is_initialized(program_id));
+
+        assert_ok!(GearPallet::<Test>::send_message(
+            Origin::signed(USER_1).into(),
+            program_id,
+            vec![],
+            10_000_000u64,
+            0u128
+        ));
+
+        run_to_block(3, None);
+
+        assert!(!Gear::is_failed(program_id));
+
+        let actual_n = Gear::mailbox(USER_1)
+            .map(|t| t.into_values().fold(0usize, |i, _| i + 1))
+            .unwrap_or(0);
+
+        assert_eq!(actual_n, 0);
+
+        assert!(!Gear::is_initialized(program_id));
+        assert!(!Gear::is_failed(program_id));
+
+        // Program is removed and can be submitted again
+        assert_ok!(GearPallet::<Test>::submit_program(
+            Origin::signed(USER_1).into(),
+            code,
+            vec![],
+            Vec::new(),
+            10_000_000u64,
+            0u128
+        ));
+    })
+}
+
 mod utils {
     use codec::Encode;
     use frame_support::dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo};
     use sp_core::H256;
 
-    use super::{assert_ok, pallet, run_to_block, GearPallet, Mailbox, Origin, Test};
+    use super::{
+        assert_ok, pallet, run_to_block, Event, GearPallet, Mailbox, MessageInfo, MockEvent,
+        Origin, SystemPallet, Test,
+    };
 
     pub(super) const DEFAULT_GAS_LIMIT: u64 = 10_000;
     pub(super) const DEFAULT_SALT: &'static [u8; 4] = b"salt";
@@ -1841,6 +2052,23 @@ mod utils {
         let mut id = program_id.to_vec();
         id.extend_from_slice(&program_nonce.to_le_bytes());
         sp_io::hashing::blake2_256(&id).into()
+    }
+
+    pub(super) fn get_last_program_id() -> H256 {
+        let event = match SystemPallet::<Test>::events()
+            .last()
+            .map(|r| r.event.clone())
+        {
+            Some(MockEvent::Gear(e)) => e,
+            _ => unreachable!("Should be one Gear event"),
+        };
+
+        let MessageInfo { program_id, .. } = match event {
+            Event::InitMessageEnqueued(info) => info,
+            _ => unreachable!("expect Event::InitMessageEnqueued"),
+        };
+
+        program_id
     }
 
     #[derive(Debug, Copy, Clone)]

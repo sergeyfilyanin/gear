@@ -18,6 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
 pub use pallet::*;
 pub use weights::WeightInfo;
 
@@ -35,11 +37,17 @@ mod tests;
 pub type Authorship<T> = pallet_authorship::Pallet<T>;
 
 pub trait DebugInfo {
+    fn is_remap_id_enabled() -> bool;
+    fn remap_id();
     fn do_snapshot();
     fn is_enabled() -> bool;
 }
 
 impl DebugInfo for () {
+    fn is_remap_id_enabled() -> bool {
+        false
+    }
+    fn remap_id() {}
     fn do_snapshot() {}
     fn is_enabled() -> bool {
         false
@@ -68,18 +76,12 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use gear_backend_sandbox::SandboxEnvironment;
-    use gear_core::{
-        message::{MessageId, Message as CoreMessage},
-        program::{Program, ProgramId},
-    };
-    use manager::ExtManager;
+    use gear_core::program::{Program, ProgramId};
+    use manager::{ExtManager, HandleKind};
     use primitive_types::H256;
     use scale_info::TypeInfo;
     use sp_runtime::traits::{Saturating, UniqueSaturatedInto};
-    use sp_std::{
-        collections::{btree_map::BTreeMap, vec_deque::VecDeque},
-        prelude::*,
-    };
+    use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
     #[pallet::config]
     pub trait Config:
@@ -268,6 +270,14 @@ pub mod pallet {
             });
         }
 
+        pub fn get_from_mailbox(user: H256, message_id: H256) -> Option<common::Message> {
+            let user_id = &<T::AccountId as Origin>::from_origin(user);
+
+            <Mailbox<T>>::try_get(user_id)
+                .ok()
+                .and_then(|mut messages| messages.remove(&message_id))
+        }
+
         pub fn remove_from_mailbox(user: H256, message_id: H256) -> Option<common::Message> {
             let user_id = &<T::AccountId as Origin>::from_origin(user);
 
@@ -309,60 +319,75 @@ pub mod pallet {
             Ok(message)
         }
 
-        pub fn get_gas_spent(dest: H256, payload: Vec<u8>) -> Option<u64> {
-            let mut ext_manager = ExtManager::<T>::default();
+        pub fn get_gas_spent(source: H256, kind: HandleKind, payload: Vec<u8>) -> Option<u64> {
+            let ext_manager = ExtManager::<T>::default();
 
             let block_info = BlockInfo {
                 height: <frame_system::Pallet<T>>::block_number().unique_saturated_into(),
                 timestamp: <pallet_timestamp::Pallet<T>>::get().unique_saturated_into(),
             };
 
-            let mut messages: VecDeque<Message> = VecDeque::from([Message {
+            let (dest, reply) = match kind {
+                HandleKind::Init(ref code) => (sp_io::hashing::blake2_256(code).into(), None),
+                HandleKind::Handle(dest) => (dest, None),
+                HandleKind::Reply(msg_id, exit_code) => {
+                    let msg = Self::get_from_mailbox(source, msg_id)?;
+                    (msg.source, Some((msg_id, exit_code)))
+                }
+            };
+
+            let message = Message {
                 id: common::next_message_id(&payload),
-                source: 100001.into_origin(),
+                source,
                 dest,
                 gas_limit: u64::MAX,
                 payload,
                 value: 0,
-                reply: None,
-            }]);
+                reply,
+            };
 
             let mut gas_burned = 0;
+            let mut gas_to_send = 0;
 
-            while let Some(message) = messages.pop_front() {
-                let program = ext_manager.get_program(message.dest).or(None)?;
-
-                let kind = if message.reply.is_none() {
-                    DispatchKind::Handle
-                } else {
-                    DispatchKind::HandleReply
-                };
-
-                let dispatch = Dispatch {
-                    kind,
-                    message: message.into(),
-                };
-
-                let res = core_processor::process::<SandboxEnvironment<Ext>>(
-                    program, dispatch, block_info,
-                );
-
-                for note in &res.journal {
-                    match note {
-                        JournalNote::GasBurned { amount, .. } => {
-                            gas_burned = gas_burned.saturating_add(*amount)
-                        }
-                        JournalNote::MessageDispatched(CoreDispatchOutcome::MessageTrap {
-                            ..
-                        }) => return None,
-                        _ => {}
-                    }
+            let (kind, program) = match kind {
+                HandleKind::Init(code) => {
+                    gas_burned = gas_burned
+                        .saturating_add(<T as Config>::WeightInfo::submit_code(code.len() as u32));
+                    (
+                        DispatchKind::Init,
+                        ext_manager.program_from_code(dest, code)?,
+                    )
                 }
+                HandleKind::Handle(dest) => (DispatchKind::Handle, ext_manager.get_program(dest)?),
+                HandleKind::Reply(..) => {
+                    (DispatchKind::HandleReply, ext_manager.get_program(dest)?)
+                }
+            };
 
-                core_processor::handle_journal(res.journal, &mut ext_manager);
+            let dispatch = Dispatch {
+                kind,
+                message: message.into(),
+            };
+
+            let journal =
+                core_processor::process::<SandboxEnvironment<Ext>>(program, dispatch, block_info);
+
+            for note in &journal {
+                match note {
+                    JournalNote::GasBurned { amount, .. } => {
+                        gas_burned = gas_burned.saturating_add(*amount);
+                    }
+                    JournalNote::SendMessage { message, .. } => {
+                        gas_to_send = gas_to_send.saturating_add(message.gas_limit);
+                    }
+                    JournalNote::MessageDispatched(CoreDispatchOutcome::MessageTrap { .. }) => {
+                        return None;
+                    }
+                    _ => (),
+                }
             }
 
-            Some(gas_burned)
+            Some(gas_burned.saturating_add(gas_to_send))
         }
 
         pub(crate) fn decrease_gas_allowance(gas_charge: u64) {
@@ -399,6 +424,9 @@ pub mod pallet {
                 timestamp: <pallet_timestamp::Pallet<T>>::get().unique_saturated_into(),
             };
 
+            if T::DebugInfo::is_remap_id_enabled() {
+                T::DebugInfo::remap_id();
+            }
             while let Some(message) = common::dequeue_message() {
                 // Check whether we have enough of gas allowed for message processing
                 if message.gas_limit > GasAllowance::<T>::get() {
@@ -456,16 +484,20 @@ pub mod pallet {
                     message: message.into(),
                 };
 
-                let res = core_processor::process::<SandboxEnvironment<Ext>>(
+                let journal = core_processor::process::<SandboxEnvironment<Ext>>(
                     program, dispatch, block_info,
                 );
 
-                core_processor::handle_journal(res.journal, &mut ext_manager);
+                core_processor::handle_journal(journal, &mut ext_manager);
 
                 total_handled += 1;
 
                 if T::DebugInfo::is_enabled() {
                     T::DebugInfo::do_snapshot();
+                }
+
+                if T::DebugInfo::is_remap_id_enabled() {
+                    T::DebugInfo::remap_id();
                 }
             }
 

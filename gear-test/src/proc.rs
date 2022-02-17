@@ -11,22 +11,13 @@ use regex::Regex;
 use sp_core::{crypto::Ss58Codec, hexdisplay::AsBytesRef, sr25519::Public};
 use sp_keyring::sr25519::Keyring;
 use std::{
-    fmt::Write,
     io::Error as IoError,
     io::ErrorKind as IoErrorKind,
     str::FromStr,
     time::{SystemTime, UNIX_EPOCH},
 };
 
-fn encode_hex(bytes: &[u8]) -> String {
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for &b in bytes {
-        write!(s, "{:02x}", b).expect("Format failed")
-    }
-    s
-}
-
-fn parse_payload(payload: String) -> String {
+pub fn parse_payload(payload: String) -> String {
     let program_id_regex = Regex::new(r"\{(?P<id>[0-9]+)\}").unwrap();
     let account_regex = Regex::new(r"\{(?P<id>[a-z]+)\}").unwrap();
     let ss58_regex = Regex::new(r"\{(?P<id>[A-Za-z0-9]+)\}").unwrap();
@@ -35,14 +26,14 @@ fn parse_payload(payload: String) -> String {
     let mut s = payload;
     while let Some(caps) = program_id_regex.captures(&s) {
         let id = caps["id"].parse::<u64>().unwrap();
-        s = s.replace(&caps[0], &encode_hex(ProgramId::from(id).as_slice()));
+        s = s.replace(&caps[0], &hex::encode(ProgramId::from(id).as_slice()));
     }
 
     while let Some(caps) = account_regex.captures(&s) {
         let id = &caps["id"];
         s = s.replace(
             &caps[0],
-            &encode_hex(
+            &hex::encode(
                 ProgramId::from_slice(Keyring::from_str(id).unwrap().to_h256_public().as_bytes())
                     .as_slice(),
             ),
@@ -53,7 +44,7 @@ fn parse_payload(payload: String) -> String {
         let id = &caps["id"];
         s = s.replace(
             &caps[0],
-            &encode_hex(
+            &hex::encode(
                 ProgramId::from_slice(Public::from_ss58check(id).unwrap().as_bytes_ref())
                     .as_slice(),
             ),
@@ -101,9 +92,9 @@ where
 
     journal_handler.store_program(program.clone(), message.message.id());
 
-    let res = core_processor::process::<E>(program, message.into(), block_info);
+    let journal = core_processor::process::<E>(program, message.into(), block_info);
 
-    core_processor::handle_journal(res.journal, journal_handler);
+    core_processor::handle_journal(journal, journal_handler);
 
     Ok(())
 }
@@ -255,13 +246,13 @@ where
             if let Some(m) = state.message_queue.pop_front() {
                 let program = state.programs.get(&m.dest()).expect("Can't find program");
 
-                let res = core_processor::process::<E>(
+                let journal = core_processor::process::<E>(
                     program.clone(),
                     journal_handler.message_to_dispatch(m),
                     BlockInfo { height, timestamp },
                 );
 
-                core_processor::handle_journal(res.journal, journal_handler);
+                core_processor::handle_journal(journal, journal_handler);
 
                 log::debug!("step: {}", step_no + 1);
             }
@@ -280,7 +271,7 @@ where
                 .map(|d| d.as_millis())
                 .unwrap_or(0) as u64;
 
-            let res = core_processor::process::<E>(
+            let journal = core_processor::process::<E>(
                 program.clone(),
                 journal_handler.message_to_dispatch(m),
                 BlockInfo {
@@ -290,7 +281,7 @@ where
             );
             counter += 1;
 
-            core_processor::handle_journal(res.journal, journal_handler);
+            core_processor::handle_journal(journal, journal_handler);
 
             state = journal_handler.collect();
             log::debug!("{:?}", state);

@@ -19,14 +19,16 @@
 use crate::{
     configs::{AllocationsConfig, BlockInfo},
     id::BlakeMessageIdGenerator,
+    lazy_pages,
 };
 use alloc::{collections::BTreeMap, vec::Vec};
 use codec::Encode;
+use gear_backend_common::ExtInfo;
 use gear_core::{
     env::Ext as EnvExt,
-    gas::{ChargeResult, GasCounter},
+    gas::{ChargeResult, GasAmount, GasCounter},
     memory::{MemoryContext, PageNumber},
-    message::{ExitCode, MessageContext, MessageId, OutgoingPacket, ReplyPacket},
+    message::{ExitCode, MessageContext, MessageId, MessageState, OutgoingPacket, ReplyPacket},
     program::{CodeHash, ProgramId},
 };
 
@@ -42,13 +44,59 @@ pub struct Ext {
     pub block_info: BlockInfo,
     /// Allocations config.
     pub config: AllocationsConfig,
+    /// Is lazy-pages mode enabled ?
+    pub lazy_pages_enabled: Option<lazy_pages::LazyPagesEnabled>,
     /// Any guest code panic explanation, if available.
     pub error_explanation: Option<&'static str>,
-    /// Flag signaling whether the execution interrupts and goes to the waiting state.
-    pub waited: bool,
+    /// Contains argument to the `exit` if it was called.
+    pub exit_argument: Option<ProgramId>,
     /// Map of code hashes to program ids of future programs, which are planned to be
     /// initialized with the corresponding code (with the same code hash).
     pub program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+}
+
+// todo [sab] add programs
+impl From<Ext> for ExtInfo {
+    fn from(ext: Ext) -> ExtInfo {
+        let lazy_pages_numbers = lazy_pages::get_lazy_pages_numbers();
+        let mut accessed_pages_numbers = ext.memory_context.allocations().clone();
+
+        // accessed pages are all pages except current lazy pages
+        lazy_pages_numbers.into_iter().for_each(|p| {
+            accessed_pages_numbers.remove(&p.into());
+        });
+
+        let mut accessed_pages = BTreeMap::new();
+        for page in accessed_pages_numbers {
+            let mut buf = vec![0u8; PageNumber::size()];
+            ext.get_mem(page.offset(), &mut buf);
+            accessed_pages.insert(page, buf);
+        }
+
+        let nonce = ext.message_context.nonce();
+
+        let MessageState {
+            outgoing,
+            reply,
+            awakening,
+        } = ext.message_context.into_state();
+
+        let gas_amount: GasAmount = ext.gas_counter.into();
+
+        let trap_explanation = ext.error_explanation;
+
+        ExtInfo {
+            gas_amount,
+            pages: ext.memory_context.allocations().clone(),
+            accessed_pages,
+            outgoing,
+            reply,
+            awakening,
+            nonce,
+            trap_explanation,
+            exit_argument: ext.exit_argument,
+        }
+    }
 }
 
 impl Ext {
@@ -72,6 +120,18 @@ impl EnvExt for Ext {
 
         let old_mem_size = self.memory_context.memory().size().raw();
 
+        // New pages allocation may change wasm memory buffer location.
+        // So, if lazy-pages are enabled we remove protections from lazy-pages
+        // and returns it back for new wasm memory buffer pages.
+        // Also we correct lazy-pages info if need.
+        let old_mem_addr = if self.lazy_pages_enabled.is_some() {
+            let mem_addr = self.get_wasm_memory_begin_addr();
+            lazy_pages::remove_lazy_pages_prot(mem_addr);
+            mem_addr
+        } else {
+            0
+        };
+
         let result = self
             .memory_context
             .alloc(pages_num)
@@ -79,6 +139,11 @@ impl EnvExt for Ext {
 
         if result.is_err() {
             return self.return_and_store_err(result);
+        }
+
+        if self.lazy_pages_enabled.is_some() {
+            let new_mem_addr = self.get_wasm_memory_begin_addr();
+            lazy_pages::protect_lazy_pages_and_update_wasm_mem_addr(old_mem_addr, new_mem_addr);
         }
 
         // Returns back greedily used gas for grow
@@ -178,11 +243,20 @@ impl EnvExt for Ext {
         self.message_context.current().source()
     }
 
+    fn exit(&mut self, value_destination: ProgramId) -> Result<(), &'static str> {
+        if self.exit_argument.is_some() {
+            Err("Cannot call `exit' twice")
+        } else {
+            self.exit_argument = Some(value_destination);
+            Ok(())
+        }
+    }
+
     fn message_id(&mut self) -> MessageId {
         self.message_context.current().id()
     }
 
-    fn program_id(&mut self) -> ProgramId {
+    fn program_id(&self) -> ProgramId {
         self.memory_context.program_id()
     }
 
@@ -243,19 +317,20 @@ impl EnvExt for Ext {
         self.message_context.current().value()
     }
 
+    fn leave(&mut self) -> Result<(), &'static str> {
+        let result = self
+            .message_context
+            .check_uncommitted()
+            .map_err(|_| "There are uncommited messages when leaving");
+
+        self.return_and_store_err(result)
+    }
+
     fn wait(&mut self) -> Result<(), &'static str> {
         let result = self
             .message_context
             .check_uncommitted()
-            .map_err(|_| "There are uncommited messages when passing to waiting state")
-            .and_then(|_| {
-                if self.waited {
-                    Err("Cannot pass to the waiting state twice")
-                } else {
-                    self.waited = true;
-                    Ok(())
-                }
-            });
+            .map_err(|_| "There are uncommited messages when passing to waiting state");
 
         self.return_and_store_err(result)
     }
@@ -267,6 +342,10 @@ impl EnvExt for Ext {
             .map_err(|_| "Unable to mark the message to be woken");
 
         self.return_and_store_err(result)
+    }
+
+    fn get_wasm_memory_begin_addr(&self) -> usize {
+        self.memory_context.memory().get_wasm_memory_begin_addr()
     }
 
     fn create_program(

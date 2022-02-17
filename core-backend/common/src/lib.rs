@@ -24,25 +24,75 @@ extern crate alloc;
 
 pub mod funcs;
 
-use alloc::{boxed::Box, collections::BTreeMap};
+use alloc::{
+    borrow::Cow,
+    boxed::Box,
+    collections::{BTreeMap, BTreeSet},
+    vec::Vec,
+};
 use gear_core::{
     env::Ext,
+    gas::GasAmount,
     memory::{Memory, PageBuf, PageNumber},
+    message::{MessageId, OutgoingMessage, ReplyMessage},
+    program::ProgramId,
 };
 
-// Dummy: create program from program
+pub const EXIT_TRAP_STR: &str = "exit";
+pub const LEAVE_TRAP_STR: &str = "leave";
+pub const WAIT_TRAP_STR: &str = "wait";
 
-pub trait Environment<E: Ext>: Default + Sized {
-    fn new() -> Self;
+pub enum TerminationReason<'a> {
+    Exit(ProgramId),
+    Leave,
+    Success,
+    Trap {
+        explanation: Option<&'static str>,
+        description: Option<Cow<'a, str>>,
+    },
+    Wait,
+}
 
-    fn setup_and_run(
+pub struct ExtInfo {
+    pub gas_amount: GasAmount,
+    pub pages: BTreeSet<PageNumber>,
+    pub accessed_pages: BTreeMap<PageNumber, Vec<u8>>,
+    pub outgoing: Vec<OutgoingMessage>,
+    pub reply: Option<ReplyMessage>,
+    pub awakening: Vec<MessageId>,
+    pub nonce: u64,
+
+    pub trap_explanation: Option<&'static str>,
+
+    pub exit_argument: Option<ProgramId>,
+}
+
+pub struct BackendReport<'a> {
+    pub termination: TerminationReason<'a>,
+    pub info: ExtInfo,
+}
+
+pub struct BackendError<'a> {
+    pub gas_amount: GasAmount,
+    pub reason: &'static str,
+    pub description: Option<Cow<'a, str>>,
+}
+
+pub trait Environment<E: Ext + Into<ExtInfo> + 'static>: Default + Sized {
+    /// Setup external environment, provide `ext`, set the beginning of the memory region
+    /// to the `static_area` content after creatig instance.
+    fn setup(
         &mut self,
         ext: E,
         binary: &[u8],
-        memory_pages: &BTreeMap<PageNumber, Box<PageBuf>>,
-        memory: &dyn gear_core::memory::Memory,
-        entry_point: &str,
-    ) -> (anyhow::Result<()>, E);
+        memory_pages: &BTreeMap<PageNumber, Option<Box<PageBuf>>>,
+        memory: &dyn Memory,
+    ) -> Result<(), BackendError<'static>>;
 
-    fn create_memory(&self, total_pages: u32) -> Box<dyn Memory>;
+    /// Run setuped instance starting at `entry_point` - wasm export function name.
+    /// NOTE: expternal environment must be setuped.
+    fn execute(&mut self, entry_point: &str) -> Result<BackendReport, BackendError>;
+
+    /// Create internal representation of wasm memory with size `total_pages`
+    fn create_memory(&self, total_pages: u32) -> Result<Box<dyn Memory>, &'static str>;
 }

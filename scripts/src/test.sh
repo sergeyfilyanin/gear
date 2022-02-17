@@ -45,7 +45,7 @@ gtest() {
 
   if  [ -n "$has_yamls" ]
   then
-    if ! command -v perl &> /dev/null
+    if ! hash perl 2>/dev/null
     then
       echo "Can not parse yamls without \"perl\" installed =("
       exit 1
@@ -66,6 +66,10 @@ gtest() {
 # $1 - ROOT DIR
 ntest() {
   cargo run --package gear-node --release -- runtests "$1"/gear-test/spec/*.yaml
+}
+
+rtest() {
+  cargo run --package gear-node --release -- runtime-spec-tests "$1"/gear-test/spec/*.yaml -l0
 }
 
 pallet_test() {
