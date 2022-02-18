@@ -74,7 +74,10 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use gear_backend_sandbox::SandboxEnvironment;
-    use gear_core::{message::DispatchKind, program::{Program as NativeProgram, ProgramId}};
+    use gear_core::{
+        message::DispatchKind,
+        program::{Program as NativeProgram, ProgramId},
+    };
     use manager::{ExtManager, HandleKind};
     use primitive_types::H256;
     use scale_info::TypeInfo;

@@ -187,7 +187,7 @@ fn process_success(res: DispatchResult) -> Vec<JournalNote> {
     for (code_hash, candidates) in res.program_candidates_data {
         journal.push(JournalNote::StoreNewPrograms {
             code_hash,
-            candidates
+            candidates,
         });
     }
 

@@ -58,7 +58,6 @@ pub struct Ext {
     pub program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
 }
 
-
 impl From<Ext> for ExtInfo {
     fn from(ext: Ext) -> ExtInfo {
         let lazy_pages_numbers = lazy_pages::get_lazy_pages_numbers();

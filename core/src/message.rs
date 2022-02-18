@@ -481,7 +481,13 @@ pub struct ProgramInitMessage {
 impl ProgramInitMessage {
     /// Converts init message into general `Message`
     pub fn into_message(self, source: ProgramId) -> Message {
-        let ProgramInitMessage { id, new_program_id, payload, gas_limit, value } = self;
+        let ProgramInitMessage {
+            id,
+            new_program_id,
+            payload,
+            gas_limit,
+            value,
+        } = self;
         Message {
             id,
             source,
@@ -489,7 +495,7 @@ impl ProgramInitMessage {
             payload,
             gas_limit,
             value,
-            reply: None
+            reply: None,
         }
     }
 }

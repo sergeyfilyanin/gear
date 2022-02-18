@@ -24,7 +24,8 @@ use codec::Decode;
 use codec::{Decode, Encode};
 use common::{
     value_tree::{ConsumeResult, ValueView},
-    GasToFeeConverter, Origin, Program, GAS_VALUE_PREFIX, STORAGE_PROGRAM_CANDIDATE_PREFIX, STORAGE_PROGRAM_PREFIX,
+    GasToFeeConverter, Origin, Program, GAS_VALUE_PREFIX, STORAGE_PROGRAM_CANDIDATE_PREFIX,
+    STORAGE_PROGRAM_PREFIX,
 };
 use core_processor::common::{
     CollectState, DispatchOutcome as CoreDispatchOutcome, JournalHandler, State,
@@ -50,22 +51,6 @@ use sp_std::{
 pub struct ExtManager<T: Config, GH: GasHandler = ValueTreeGasHandler> {
     _phantom: PhantomData<T>,
     gas_handler: GH,
-    skip_messages: BTreeSet<SkipMessageKind>,
-}
-
-// todo [sab] REMOVE, forbidden
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum SkipMessageKind {
-    // Skip message with `MessageId`
-    //
-    // Such message is skipped, because it tries to initialize
-    // a program with existing address. See [`ExtManager::bind_programs_to_code_hash`] for more info.
-    WithId(MessageId),
-    // Skip all messages to the destination, which doesn't have any code
-    //
-    // More precisely, code hash which was intended to be bound
-    // to the `ProgramId` doesn't have any underlying code
-    WithDestination(ProgramId),
 }
 
 #[derive(Decode, Encode)]
@@ -190,7 +175,6 @@ where
     fn default() -> Self {
         ExtManager {
             _phantom: PhantomData,
-            skip_messages: Default::default(),
             gas_handler: GH::default(),
         }
     }
@@ -405,35 +389,24 @@ where
 
     //todo [sab] проверки для защиты в рамках/разных одного блока
     fn send_dispatch(&mut self, message_id: MessageId, dispatch: Dispatch) {
-        let has_skipping_dest = self
-            .skip_messages
-            .contains(&SkipMessageKind::WithDestination(message.dest()));
-        let has_skipping_id = self
-            .skip_messages
-            .contains(&SkipMessageKind::WithId(message.id()));
         let message_id = message_id.into_origin();
         let mut dispatch: common::Dispatch = dispatch.into();
 
         // TODO reserve call must be infallible in https://github.com/gear-tech/gear/issues/644
-        if has_skipping_dest || has_skipping_id || 
-            dispatch.message.value != 0
-                && T::Currency::reserve(
-                    &<T::AccountId as Origin>::from_origin(dispatch.message.source),
-                    dispatch.message.value.unique_saturated_into(),
-                )
-                .is_err() 
+        // so no returns should be here.
+        if dispatch.message.value != 0
+            && T::Currency::reserve(
+                &<T::AccountId as Origin>::from_origin(dispatch.message.source),
+                dispatch.message.value.unique_saturated_into(),
+            )
+            .is_err()
         {
-            log::debug!(
-                "skipping dest - {}, skipping id - {}",
-                has_skipping_dest,
-                has_skipping_id,
-            );
             log::debug!(
                 "Message (from: {:?}) {:?} will not be executed",
                 message_id,
                 dispatch.message
             );
-            return; // todo [sab] no returns
+            return;
         }
 
         log::debug!("Sending message {:?} from {:?}", message, message_id);
@@ -563,45 +536,24 @@ where
 
     // todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code
     fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
-        for (code_hash, program_candidates_data) in program_candidates_data {
-            let code_hash = code_hash.inner().into();
+        let code_hash = code_hash.inner().into();
 
-            let mut msgs_to_be_skipped = if let Some(code) = common::get_code(code_hash) {
-                let mut ret = BTreeSet::new();
-
-                'inner: for (candidate_id, init_message_id) in program_candidates_data {
-                    if common::program_exists(candidate_id.into_origin()) {
-                        ret.insert(SkipMessageKind::WithId(init_message_id));
-                        continue 'inner;
-                    }
-                    // invalid wasm (when `Program` can't be instantiated) is not saved to storage
-                    let program =
-                        Program::new(candidate_id, code.clone()).expect("guaranteed to be valid");
-                    self.set_program(program, init_message_id.into_origin());
-
-                    log::debug!("Submit program with id {:?} from program", candidate_id);
+        if let Some(code) = common::get_code(code_hash) {
+            for (candidate_id, init_message) in candidates {
+                if !common::program_exists(candidate_id) {
+                    // Code hash for invalid code isn't added to the storage from extrinsics.
+                    let new_program =
+                        NativeProgram::new(candidate_id, code).expect("guaranteed to be valid");
+                    self.set_program(new_program, init_message.into_origin());
+                } else {
+                    log::debug!("Program with id {:?} already exists", candidate_id);
                 }
-
-                ret
-            } else {
-                BTreeSet::from_iter(
-                    program_candidates_data
-                        .iter()
-                        .copied()
-                        .map(|(program_id, _)| {
-                            log::debug!(
-                                "Can't initialize program with id {:?}: code with provided code hash {:?} doesn't exist.",
-                                program_id.into_origin(),
-                                code_hash,
-                            );
-                            SkipMessageKind::WithDestination(program_id)
-                        }),
-                )
-            };
-
-            if !msgs_to_be_skipped.is_empty() {
-                self.skip_messages.append(&mut msgs_to_be_skipped);
             }
+        } else {
+            log::debug!(
+                "No referencing code with code hash {:?} for candidate programs",
+                code_hash
+            );
         }
     }
 }

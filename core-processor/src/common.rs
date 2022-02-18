@@ -189,7 +189,7 @@ pub enum JournalNote {
         ///
         /// Updates data in case of `Some(data)` or deletes the page
         data: Option<Vec<u8>>,
-    },  
+    },
     /// Send value
     SendValue {
         /// Value sender
@@ -244,11 +244,7 @@ pub trait JournalHandler {
     /// Bind code hash to program ids.
     ///
     /// Program ids are ids of_potential_ (planned to be initialized) programs.
-    fn store_new_programs(
-        &mut self,
-        code_hash: CodeHash, 
-        candidates: Vec<(ProgramId, MessageId)>,
-    );
+    fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>);
 }
 
 /// Execution error.

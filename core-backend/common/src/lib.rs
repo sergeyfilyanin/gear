@@ -34,7 +34,7 @@ use gear_core::{
     env::Ext,
     gas::GasAmount,
     memory::{Memory, PageBuf, PageNumber},
-    message::{MessageId, OutgoingMessage, ReplyMessage, ProgramInitMessage},
+    message::{MessageId, OutgoingMessage, ProgramInitMessage, ReplyMessage},
     program::ProgramId,
 };
 
