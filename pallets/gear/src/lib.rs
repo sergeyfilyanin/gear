@@ -498,19 +498,17 @@ pub mod pallet {
         /// Sets `code` and metadata, if code doesn't exist in storage.
         ///
         /// On success returns Blake256 hash of the `code`. If code already
-        /// exists (*so, metadata exists as well*), returns unit type as error.
+        /// exists (*so, metadata exists as well*), returns unit `CodeAlreadyExists` error.
         ///
         /// # Note
         /// Code existence in storage means that metadata is there too.
-        fn set_code_with_metadata(code: &[u8], who: H256) -> Result<(), Error<T>> {
-            Program::new(ProgramId::default(), code.to_vec())
-                .map_err(|_| Error::<T>::FailedToConstructProgram)?;
-
+        fn set_code_with_metadata(code: &[u8], who: H256) -> Result<H256, Error<T>> {
             let code_hash = sp_io::hashing::blake2_256(code).into();
             // *Important*: checks before storage mutations!
-            if common::code_exists(code_hash) {
-                return Err(Error::<T>::CodeAlreadyExists);
-            }
+            ensure!(
+                !common::code_exists(code_hash),
+                Error::<T>::CodeAlreadyExists
+            );
 
             let metadata = {
                 let block_number =
@@ -553,9 +551,14 @@ pub mod pallet {
         pub fn submit_code(origin: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            Self::set_code_with_metadata(&code, who.into_origin())
-                .map(Into::into)
-                .map_err(DispatchErrorWithPostInfo::from)
+            NativeProgram::new(Default::default(), code.clone())
+                .map_err(|_| Error::<T>::FailedToConstructProgram)?;
+
+            let code_hash = Self::set_code_with_metadata(&code, who.into_origin())?;
+
+            Self::deposit_event(Event::CodeSaved(code_hash));
+
+            Ok(().into())
         }
 
         /// Creates program initialization request (message), that is scheduled to be run in the same block.

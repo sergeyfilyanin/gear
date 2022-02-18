@@ -1846,6 +1846,8 @@ fn test_message_processing_for_non_existing_destination() {
     init_logger();
     new_test_ext().execute_with(|| {
         let program_id = submit_program_default(USER_1, ProgramCodeKind::GreedyInit).expect("todo");
+        let code_hash =
+            sp_io::hashing::blake2_256(ProgramCodeKind::GreedyInit.to_bytes().as_slice()).into();
         let user_balance_before = BalancesPallet::<Test>::free_balance(USER_1);
 
         // After running, first message will end up with init failure, so destination address won't exist.
@@ -1870,6 +1872,9 @@ fn test_message_processing_for_non_existing_destination() {
         SystemPallet::<Test>::assert_has_event(
             Event::MessageNotExecuted(skipped_message_id).into(),
         );
+
+        assert!(Gear::is_terminated(program_id));
+        assert!(common::code_exists(code_hash))
     })
 }
 
@@ -1895,7 +1900,7 @@ fn exit_init() {
 
         run_to_block(2, None);
 
-        assert!(!Gear::is_terminated(program_id));
+        assert!(Gear::is_terminated(program_id));
         assert!(!Gear::is_initialized(program_id));
 
         let actual_n = Gear::mailbox(USER_1)
@@ -1904,15 +1909,18 @@ fn exit_init() {
 
         assert_eq!(actual_n, 0);
 
-        // Program is removed and can be submitted again
-        assert_ok!(GearPallet::<Test>::submit_program(
-            Origin::signed(USER_1).into(),
-            code,
-            vec![],
-            Vec::new(),
-            10_000_000u64,
-            0u128
-        ));
+        // Program is not removed and can't be submitted again
+        assert_noop!(
+            GearPallet::<Test>::submit_program(
+                Origin::signed(USER_1).into(),
+                code,
+                vec![],
+                Vec::new(),
+                10_000_000u64,
+                0u128
+            ),
+            Error::<Test>::ProgramAlreadyExists,
+        );
     })
 }
 
@@ -1925,6 +1933,7 @@ fn exit_handle() {
         System::reset_events();
 
         let code = WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec();
+        let code_hash = sp_io::hashing::blake2_256(&code).into();
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
             code.clone(),
@@ -1950,7 +1959,7 @@ fn exit_handle() {
 
         run_to_block(3, None);
 
-        assert!(!Gear::is_terminated(program_id));
+        assert!(Gear::is_terminated(program_id));
 
         let actual_n = Gear::mailbox(USER_1)
             .map(|t| t.into_values().fold(0usize, |i, _| i + 1))
@@ -1959,17 +1968,22 @@ fn exit_handle() {
         assert_eq!(actual_n, 0);
 
         assert!(!Gear::is_initialized(program_id));
-        assert!(!Gear::is_terminated(program_id));
+        assert!(Gear::is_terminated(program_id));
 
-        // Program is removed and can be submitted again
-        assert_ok!(GearPallet::<Test>::submit_program(
-            Origin::signed(USER_1).into(),
-            code,
-            vec![],
-            Vec::new(),
-            10_000_000u64,
-            0u128
-        ));
+        assert!(common::code_exists(code_hash));
+
+        // Program is not removed and can't be submitted again
+        assert_noop!(
+            GearPallet::<Test>::submit_program(
+                Origin::signed(USER_1).into(),
+                code,
+                vec![],
+                Vec::new(),
+                10_000_000u64,
+                0u128
+            ),
+            Error::<Test>::ProgramAlreadyExists,
+        );
     })
 }
 
