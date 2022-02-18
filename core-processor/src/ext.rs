@@ -58,7 +58,7 @@ pub struct Ext {
     pub program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
 }
 
-// todo [sab] add programs
+
 impl From<Ext> for ExtInfo {
     fn from(ext: Ext) -> ExtInfo {
         let lazy_pages_numbers = lazy_pages::get_lazy_pages_numbers();
@@ -79,6 +79,7 @@ impl From<Ext> for ExtInfo {
         let nonce = ext.message_context.nonce();
 
         let MessageState {
+            program_init,
             outgoing,
             reply,
             awakening,
@@ -92,6 +93,7 @@ impl From<Ext> for ExtInfo {
             gas_amount,
             pages: ext.memory_context.allocations().clone(),
             accessed_pages,
+            program_init,
             outgoing,
             reply,
             awakening,

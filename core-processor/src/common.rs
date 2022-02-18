@@ -51,8 +51,8 @@ pub struct DispatchResult {
     /// Original dispatch.
     pub dispatch: Dispatch,
 
-    /// List of generated outgoing messages.
-    pub outgoing: Vec<Dispatch>,
+    /// List of generated from program messages.
+    pub generated_dispatches: Vec<Dispatch>,
     /// List of messages that should be woken.
     pub awakening: Vec<MessageId>,
 
@@ -202,7 +202,8 @@ pub enum JournalNote {
     /// Store programs requested by user to be initialized later
     StoreNewPrograms {
         /// Map of code hash to ids of program candidates and of their init messages
-        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+        code_hash: CodeHash,
+        candidates: Vec<(ProgramId, MessageId)>,
     },
 }
 
@@ -245,7 +246,8 @@ pub trait JournalHandler {
     /// Program ids are ids of_potential_ (planned to be initialized) programs.
     fn store_new_programs(
         &mut self,
-        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+        code_hash: CodeHash, 
+        candidates: Vec<(ProgramId, MessageId)>,
     );
 }
 

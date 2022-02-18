@@ -270,14 +270,18 @@ pub fn execute_wasm<E: Environment<Ext>>(
         });
 
     // Storing outgoing dispatches
-    let mut outgoing = Vec::new();
+    let mut generated_dispatches = Vec::new();
+
+    for msg in info.program_init {
+        generated_dispatches.push(Dispatch::new_init(msg.into_message(program_id)));
+    }
 
     for msg in info.outgoing {
-        outgoing.push(Dispatch::new_handle(msg.into_message(program_id)));
+        generated_dispatches.push(Dispatch::new_handle(msg.into_message(program_id)));
     }
 
     if let Some(reply_message) = info.reply {
-        outgoing.push(Dispatch::new_reply(reply_message.into_message(
+        generated_dispatches.push(Dispatch::new_reply(reply_message.into_message(
             message.id(),
             program_id,
             message.source(),
@@ -291,7 +295,7 @@ pub fn execute_wasm<E: Environment<Ext>>(
     Ok(DispatchResult {
         kind,
         dispatch,
-        outgoing,
+        generated_dispatches,
         awakening: info.awakening,
         gas_amount: info.gas_amount,
         page_update,

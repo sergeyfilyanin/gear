@@ -478,6 +478,22 @@ pub struct ProgramInitMessage {
     pub value: u128,
 }
 
+impl ProgramInitMessage {
+    /// Converts init message into general `Message`
+    pub fn into_message(self, source: ProgramId) -> Message {
+        let ProgramInitMessage { id, new_program_id, payload, gas_limit, value } = self;
+        Message {
+            id,
+            source,
+            dest: new_program_id,
+            payload,
+            gas_limit,
+            value,
+            reply: None
+        }
+    }
+}
+
 /// Program initialization packet
 #[derive(Clone, Debug, Decode, Encode, PartialEq, Eq)]
 pub struct ProgramInitPacket {

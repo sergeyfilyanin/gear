@@ -562,10 +562,7 @@ where
     }
 
     // todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code
-    fn store_new_programs(
-        &mut self,
-        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
-    ) {
+    fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
         for (code_hash, program_candidates_data) in program_candidates_data {
             let code_hash = code_hash.inner().into();
 

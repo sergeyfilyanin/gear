@@ -64,8 +64,9 @@ pub fn handle_journal(
             }
             JournalNote::SendValue { from, to, value } => handler.send_value(from, to, value),
             JournalNote::StoreNewPrograms {
-                program_candidates_data,
-            } => handler.store_new_programs(program_candidates_data),
+                code_hash,
+                candidates,
+            } => handler.store_new_programs(code_hash, candidates),
         }
     }
 

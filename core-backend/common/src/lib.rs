@@ -34,7 +34,7 @@ use gear_core::{
     env::Ext,
     gas::GasAmount,
     memory::{Memory, PageBuf, PageNumber},
-    message::{MessageId, OutgoingMessage, ReplyMessage},
+    message::{MessageId, OutgoingMessage, ReplyMessage, ProgramInitMessage},
     program::ProgramId,
 };
 
@@ -58,6 +58,7 @@ pub struct ExtInfo {
     pub pages: BTreeSet<PageNumber>,
     pub accessed_pages: BTreeMap<PageNumber, Vec<u8>>,
     pub outgoing: Vec<OutgoingMessage>,
+    pub program_init: Vec<ProgramInitMessage>,
     pub reply: Option<ReplyMessage>,
     pub awakening: Vec<MessageId>,
     pub nonce: u64,

@@ -183,12 +183,15 @@ fn process_success(res: DispatchResult) -> Vec<JournalNote> {
         });
     }
 
-    // Must be handled before handling outgoing messages.
-    journal.push(JournalNote::StoreNewPrograms {
-        program_candidates_data: res.program_candidates_data.clone(),
-    });
+    // Must be handled before handling generated dispatches.
+    for (code_hash, candidates) in res.program_candidates_data {
+        journal.push(JournalNote::StoreNewPrograms {
+            code_hash,
+            candidates
+        });
+    }
 
-    for dispatch in res.outgoing {
+    for dispatch in res.generated_dispatches {
         journal.push(JournalNote::SendDispatch {
             message_id,
             dispatch,
