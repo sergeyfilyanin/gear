@@ -32,7 +32,7 @@ use frame_support::{
 };
 use gear_core::{
     memory::PageNumber,
-    message::{Dispatch, ExitCode, MessageId},
+    message::{Dispatch, DispatchKind, ExitCode, MessageId},
     program::{CodeHash, Program as NativeProgram, ProgramId},
 };
 use primitive_types::H256;
@@ -346,7 +346,13 @@ where
 
         log::debug!("Sending message {:?} from {:?}", message, message_id);
 
-        if common::program_exists(dispatch.message.dest) {
+        // Allow any init message to be processed
+        // If program doesn't exist for such message, which is when program tries 
+        // to create another one with non existing code hash, then it an error reply
+        // will be sent
+        if common::program_exists(dispatch.message.dest)
+            || matches!(dispatch.kind, DispatchKind::Init) 
+        {
             let _ =
                 T::GasHandler::split(message_id, dispatch.message.id, dispatch.message.gas_limit);
             common::queue_dispatch(dispatch);

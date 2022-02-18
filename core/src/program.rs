@@ -225,6 +225,11 @@ impl Program {
         Ok(())
     }
 
+    /// Returns true of persistent pages are empty
+    pub fn has_empty_pages(&self) -> bool {
+        self.persistent_pages.is_empty()
+    }
+
     /// Remove memory page from buffer.
     pub fn remove_page(&mut self, page: PageNumber) {
         self.persistent_pages.remove(&page);

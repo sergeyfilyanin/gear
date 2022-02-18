@@ -444,11 +444,10 @@ pub mod pallet {
                     let current_message_id = dispatch.message.id;
                     let maybe_message_reply = dispatch.message.reply;
 
-                    let maybe_active_program = common::get_program(program_id)
-                        .expect("program with id got from message is guaranteed to exist");
+                    let maybe_program = common::get_program(program_id);
 
                     // Check whether message should be added to the wait list
-                    if let Program::Active(ref prog) = maybe_active_program {
+                    if let Some(Program::Active(ref prog)) = maybe_program {
                         let is_for_wait_list = maybe_message_reply.is_none()
                             && matches!(prog.state, ProgramState::Uninitialized {message_id} if message_id != current_message_id);
                         if is_for_wait_list {
@@ -465,7 +464,7 @@ pub mod pallet {
                         }
                     }
 
-                    maybe_active_program.try_into_native(program_id).ok()
+                    maybe_program.and_then(|prog| prog.try_into_native(program_id).ok())
                 };
 
                 let journal = core_processor::process::<SandboxEnvironment<Ext>>(

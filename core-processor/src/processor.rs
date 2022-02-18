@@ -25,7 +25,7 @@ use crate::{
 use alloc::{collections::BTreeMap, vec::Vec};
 use gear_backend_common::Environment;
 use gear_core::{
-    message::{Dispatch, DispatchKind, Message},
+    message::{Dispatch, DispatchKind, Message, ExitCode},
     program::{Program, ProgramId},
 };
 
@@ -35,7 +35,10 @@ pub fn process<E: Environment<Ext>>(
     dispatch: Dispatch,
     block_info: BlockInfo,
 ) -> Vec<JournalNote> {
-    if let Some(program) = program {
+    if let Some(exit_code) = is_non_executable(&program, &dispatch) {
+        process_non_executable(dispatch, exit_code)
+    } else {
+        let program = program.expect("checked earlier");
         let execution_settings = ExecutionSettings::new(block_info);
         let initial_nonce = program.message_nonce();
 
@@ -53,8 +56,6 @@ pub fn process<E: Environment<Ext>>(
                 Some(e.reason),
             ),
         }
-    } else {
-        process_non_executable(dispatch)
     }
 }
 
@@ -95,6 +96,10 @@ pub fn process_many<E: Environment<Ext>>(
     }
 
     journal
+}
+
+fn is_non_executable(program: &Option<Program>, dispatch: &Dispatch) -> Option<ExitCode> {
+    None
 }
 
 /// Helper function for journal creation in trap/error case
@@ -255,7 +260,7 @@ fn process_success(res: DispatchResult) -> Vec<JournalNote> {
 }
 
 /// Helper function for journal creation in message no execution case
-fn process_non_executable(dispatch: Dispatch) -> Vec<JournalNote> {
+fn process_non_executable(dispatch: Dispatch, exit_code: ExitCode) -> Vec<JournalNote> {
     // Number of notes is predetermined
     let mut journal = Vec::with_capacity(4);
 
@@ -283,7 +288,7 @@ fn process_non_executable(dispatch: Dispatch) -> Vec<JournalNote> {
         // must be 0!
         0,
         message_id,
-        crate::TERMINATED_DEST_EXIT_CODE,
+        exit_code,
     );
     journal.push(JournalNote::SendDispatch {
         message_id,
