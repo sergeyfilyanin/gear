@@ -35,12 +35,19 @@ mod lazy_pages;
 mod processor;
 
 /// Error exit code.
-pub const ERR_EXIT_CODE: i32 = 1;
+pub const ERR_EXIT_CODE: ExitCode = 1;
 /// Destination doesn't exist anymore for the message
-pub const TERMINATED_DEST_EXIT_CODE: i32 = 2;
+pub const TERMINATED_DEST_EXIT_CODE: ExitCode = 2;
+/// A try to init again active program 
+pub const RE_INIT_EXIT_CODE: ExitCode = 3;
+/// Returned in 2 cases:
+/// 1. Program tries to init program with non existing code hash
+/// 2. Program tries to init terminated program.
+pub const INIT_UNAVAILABLE_EXIT_CODE: ExitCode = 4;
 
 pub use executor::execute_wasm;
 pub use ext::Ext;
 pub use handler::handle_journal;
 pub use id::next_message_id;
 pub use processor::{process, process_many};
+use gear_core::message::ExitCode;

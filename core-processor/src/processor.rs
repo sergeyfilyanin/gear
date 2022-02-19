@@ -38,7 +38,7 @@ pub fn process<E: Environment<Ext>>(
     if let Some(exit_code) = is_non_executable(&program, &dispatch) {
         process_non_executable(dispatch, exit_code)
     } else {
-        let program = program.expect("checked earlier");
+        let program = program.expect("message is not executed if program is none");
         let execution_settings = ExecutionSettings::new(block_info);
         let initial_nonce = program.message_nonce();
 
@@ -99,7 +99,12 @@ pub fn process_many<E: Environment<Ext>>(
 }
 
 fn is_non_executable(program: &Option<Program>, dispatch: &Dispatch) -> Option<ExitCode> {
-    None
+    match program.map(|p| p.has_pages()) {
+        Some(true) if matches!(dispatch.kind, DispatchKind::Init) => Some(crate::RE_INIT_EXIT_CODE),
+        None if matches(dispatch.kind, DispatchKind::Init) => Some(crate::INIT_UNAVAILABLE_EXIT_CODE),
+        None => Some(crate::TERMINATED_DEST_EXIT_CODE),
+        _ => None,
+    }
 }
 
 /// Helper function for journal creation in trap/error case

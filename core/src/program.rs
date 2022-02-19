@@ -226,8 +226,8 @@ impl Program {
     }
 
     /// Returns true of persistent pages are empty
-    pub fn has_empty_pages(&self) -> bool {
-        self.persistent_pages.is_empty()
+    pub fn has_pages(&self) -> bool {
+        !self.persistent_pages.is_empty()
     }
 
     /// Remove memory page from buffer.
