@@ -289,7 +289,7 @@ pub fn execute_wasm<E: Environment<Ext>>(
     }
 
     // Getting new programs that are scheduled to be initialized (respected messages are in `outgoing` collection)
-    let program_candidates_data = ext.program_candidates_data;
+    let program_candidates_data = info.program_candidates_data;
 
     // Output.
     Ok(DispatchResult {

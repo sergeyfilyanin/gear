@@ -368,7 +368,7 @@ impl<'a> JournalHandler for Journal<'a> {
         // "TODO https://github.com/gear-tech/gear/issues/644"
     }
 
-    fn store_new_programs(&mut self, _: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>) {
+    fn store_new_programs(&mut self, _: CodeHash, _: Vec<(ProgramId, MessageId)>) {
         todo!("todo [sab]")
     }
 }

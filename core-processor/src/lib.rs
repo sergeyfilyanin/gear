@@ -36,18 +36,21 @@ mod processor;
 
 /// Error exit code.
 pub const ERR_EXIT_CODE: ExitCode = 1;
-/// Destination doesn't exist anymore for the message
-pub const TERMINATED_DEST_EXIT_CODE: ExitCode = 2;
-/// A try to init again active program 
-pub const RE_INIT_EXIT_CODE: ExitCode = 3;
-/// Returned in 2 cases:
+/// Destination isn't available for the message.
+///
+/// These messages can be any of `init`,`handle`, `handle_reply`.
+/// If the message is `init` it means either:
 /// 1. Program tries to init program with non existing code hash
 /// 2. Program tries to init terminated program.
-pub const INIT_UNAVAILABLE_EXIT_CODE: ExitCode = 4;
+/// If the message is `handle` or `handle_reply` it means, that destination
+/// was terminated while the message was in the queue.
+pub const UNAVAILABLE_DEST_EXIT_CODE: ExitCode = 2;
+/// A try to init again initialized, existing program
+pub const RE_INIT_EXIT_CODE: ExitCode = 3;
 
 pub use executor::execute_wasm;
 pub use ext::Ext;
+use gear_core::message::ExitCode;
 pub use handler::handle_journal;
 pub use id::next_message_id;
 pub use processor::{process, process_many};
-use gear_core::message::ExitCode;

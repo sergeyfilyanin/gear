@@ -312,6 +312,7 @@ pub mod pallet {
 
             if message.value > 0 {
                 // Assuming the programs has enough balance
+                // TODO #644 check existential deposit!
                 T::Currency::repatriate_reserved(
                     &<T::AccountId as Origin>::from_origin(message.source),
                     user_id,
@@ -517,9 +518,7 @@ pub mod pallet {
             common::set_code_metadata(code_hash, metadata);
             common::set_code(code_hash, code);
 
-            Self::deposit_event(Event::CodeSaved(code_hash));
-
-            Ok(())
+            Ok(code_hash)
         }
     }
 
@@ -567,7 +566,7 @@ pub mod pallet {
         /// could be more than remaining block gas limit. Therefore, the message processing will be postponed
         /// until the next block.
         ///
-        /// `ProgramId` is computed as Blake256 hash of concatenated bytes of hashed `code` + `salt`, i.e.  _h(h(`code_hash`), `salt`)_.
+        /// `ProgramId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
         /// Such `ProgramId` must not exist in the Program Storage at the time of this call.
         ///
         /// There is the same guarantee here as in `submit_code`. That is, future program's
@@ -611,6 +610,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
+            // Check that provided `gas_limit` value does not exceed the block gas limit
             ensure!(
                 gas_limit <= T::BlockGasLimit::get(),
                 Error::<T>::GasLimitTooHigh
@@ -625,7 +625,6 @@ pub mod pallet {
 
                 sp_io::hashing::blake2_256(&data).into()
             };
-
             // Make sure there is no program with such id in program storage
             ensure!(
                 !common::program_exists(id),
@@ -633,7 +632,6 @@ pub mod pallet {
             );
 
             let H256(id_bytes) = id;
-            // todo [sab] refactor to remove this
             let program = NativeProgram::new(id_bytes.into(), code.to_vec())
                 .map_err(|_| Error::<T>::FailedToConstructProgram)?;
 
@@ -648,13 +646,9 @@ pub mod pallet {
 
             // By that call we follow the guarantee that we have in `Self::submit_code` -
             // if there's code in storage, there's also metadata for it.
-            Self::set_code_with_metadata(&code, origin).or_else(|err| {
-                if matches!(err, Error::<T>::CodeAlreadyExists) {
-                    Ok(())
-                } else {
-                    Err(DispatchErrorWithPostInfo::from(err))
-                }
-            })?;
+            if let Ok(code_hash) = Self::set_code_with_metadata(&code, origin) {
+                Self::deposit_event(Event::CodeSaved(code_hash));
+            }
 
             let init_message_id = common::next_message_id(&init_payload);
             ExtManager::<T>::default().set_program(program, init_message_id);
@@ -803,12 +797,6 @@ pub mod pallet {
                 gas_limit <= T::BlockGasLimit::get(),
                 Error::<T>::GasLimitTooHigh
             );
-
-            // Message is not guaranteed to be executed, that's why value is not immediately transferred.
-            // That's because destination can fail to be initialized, while this dispatch message is next
-            // in the queue.
-            T::Currency::reserve(&who, value.unique_saturated_into())
-                .map_err(|_| Error::<T>::NotEnoughBalanceForReserve)?;
 
             // Claim outstanding value from the original message first
             let original_message = Self::remove_and_claim_from_mailbox(&who, reply_to_id)?;

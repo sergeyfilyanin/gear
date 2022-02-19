@@ -1066,10 +1066,9 @@ fn distributor_distribute() {
             .to_vec();
 
         let program_id = generate_program_id(&code, DEFAULT_SALT);
-        
+
         // Initial value in all gas trees is 0
         assert_eq!(<Test as Config>::GasHandler::total_supply(), 0);
-
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
@@ -1201,6 +1200,7 @@ fn test_code_is_not_resetted_within_program_submission() {
 
 #[test]
 fn test_create_program() {
+    use std::convert::TryInto;
     use WasmKind::{Constructable, NonConstructable};
 
     // Expected values are counted only in the context of the messages with child (created from factory program) address destination
@@ -1256,199 +1256,230 @@ fn test_create_program() {
     let tests = vec![
         (
             "Create single child (simple)",
-            // 1 child init message succeed, 1 child message dispatched = 2 dequeued 
-            (vec![CreateProgram::Default(true)], Some(Constructable(vec![child1_code_kind])), (2, 1, 1)),
+            // 1 child init message succeed, 1 child message dispatched = 2 dequeued
+            (
+                vec![CreateProgram::Default(true)],
+                Some(Constructable(vec![child1_code_kind])),
+                (2, 1, 1),
+            ),
         ),
-        // (
-        //     "Try to create a child with non existing code for the code hash",
-        //     // Messages are skipped
-        //     (vec![CreateProgram::Default(true)], None, (0, 0, 0))
-        // ),
-        // (
-        //     "Try to create a child providing few gas (child init will fail)",
-        //     // 1 child init message fails but processed (dequeued), 
-        //     // 1 child dispatch message dequeued, but skipped in process queue
-        //     (vec![CreateProgram::Custom(vec![(child1_code_hash, b"default".to_vec(), 1000)])],
-        //     Some(Constructable(vec![child1_code_kind])), (2, 0, 0))
-        // ),
-        // (
-        //     "Try to create a program with non constructable code",
-        //     // Messages skipped (non constructable code isn't stored, so the same as non existing code test)
-        //     (vec![CreateProgram::Custom(vec![(invalid_prog_code_hash, b"default".to_vec(), 10_000)])],
-        //     Some(NonConstructable(invalid_prog_code_kind)), (0, 0, 0))
-        // ),
-        // (
-        //     "Try to create a program with existing address",
-        //     // 1 dispatch message from factory is sent to the existing destination (so 1 dequeued)
-        //     // child init message is skipped, because duplicates existing contract
-        //     (vec![CreateProgram::Custom(vec![(child1_code_hash, DEFAULT_SALT.to_vec(), 10_000)])],
-        //     Some(Constructable(vec![child1_code_kind])), (1, 1, 0))
-        // ),
-        // (
-        //     "Try to create a program with existing address, but the original \
-        //     program and its duplicate are being created from the factory program.",
-        //     // 2 children init messages are successfully processed (+2 dequeued)
-        //     // 6 children handle messages are successfully dispatched (+6 dequeued)
-        //     (vec![
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 (child1_code_hash, b"default".to_vec(), 10_000),
-        //                 (child1_code_hash, b"default".to_vec(), 10_000), // duplicate
-        //             ]
-        //         ),
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 (child2_code_hash, b"default".to_vec(), 10_000),
-        //                 (child2_code_hash, b"default".to_vec(), 10_000), // duplicate
-        //             ]
-        //         ),
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 (child2_code_hash, b"default".to_vec(), 10_000), // duplicate
-        //                 (child1_code_hash, b"default".to_vec(), 10_000), // duplicate
-        //             ]
-        //         ),
-        //     ],
-        //     Some(Constructable(vec![child1_code_kind, child2_code_kind])),
-        //     (8, 6, 2)
-        //     )
-        // ),
-        // (
-        //     "Simple passing case for creating multiple children",
-        //     // 3 children init messages + 3 children dispatch messages = 6 messages dequeued
-        //     (vec![CreateProgram::Custom(vec![
-        //             (child1_code_hash, b"salt1".to_vec(), 10_000),
-        //             (child1_code_hash, b"salt2".to_vec(), 10_000),
-        //             (child2_code_hash, b"salt3".to_vec(), 10_000),
-        //         ]),
-        //     ],
-        //     Some(Constructable(vec![child1_code_kind, child2_code_kind])),
-        //     (6, 3, 3)
-        //     )
-        // ),
-        // (
-        //     "Trying to create a child and its duplicate. The first child creation message will fail \
-        //     in init due to lack of gas, the duplicate will be skipped, despite having \
-        //     enough gas limit",
-        //     (vec![
-        //         CreateProgram::Custom(
-        //             // 1 failing child init message is processed (+1 dequeued, but 0 successfully init)
-        //             // 2 dispatch messages are sent, dequeued, but skipped in `process_queue` (+2 dequeued) 
-        //             vec![
-        //                 (child1_code_hash, b"salt1".to_vec(), 1000), // fail init (not enough gas)
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000), // duplicate
-        //             ]
-        //         ),
-        //         // this message is in the next block
-        //         CreateProgram::Custom(
-        //             // messages aren't queued
-        //             vec![
-        //                 // Not a duplicate (no program with such id), nor the candidate
-        //                 // Still messages aren't queued, because such messages are intended 
-        //                 // to be sent to limbo program (see payload upper).
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000), 
-        //             ]
-        //         ),
-        //     ],
-        //     Some(Constructable(vec![child1_code_kind])),
-        //     (3, 0, 0)
-        //     )
-        // ),
-        // (
-        //     "Creating multiple children with some duplicates and some failing in init",
-        //     (vec![
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 // one successful init with one handle message (2 dequeued, 1 dispatched)
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000),
-        //                 // init fail (not enough gas), handle message is consumed, but not executed  (2 dequeued, 0 dispatched)
-        //                 (child1_code_hash, b"salt2".to_vec(), 1000),
-        //             ]
-        //         ),
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 // init fail (not enough gas), handle message is consumed, but not executed (2 dequeued, 0 dispatched)
-        //                 (child2_code_hash, b"salt1".to_vec(), 3000),
-        //                 // init message is skipped (duplicate), handle message is consumed, but not executed (1 dequeued, 0  dispatched) 
-        //                 (child2_code_hash, b"salt1".to_vec(), 10_000),
-        //                  // one successful init with one handle message (2 dequeued, 1 dispatched)
-        //                 (child2_code_hash, b"salt2".to_vec(), 10_000),
-        //             ]
-        //         ),
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 // init is skipped (program with such address exists, but in limbo), dispatch message is skipped, because of limbo destination (0 dispatched, 0 dequeued)
-        //                 (child2_code_hash, b"salt1".to_vec(), 10_000),
-        //                  // one successful init with one handle message (2 dequeued, 1 dispatched)
-        //                 (child2_code_hash, b"salt3".to_vec(), 10_000),
-        //             ]
-        //         ),
-        //     ],
-        //     Some(Constructable(vec![child1_code_kind, child2_code_kind])),
-        //     (11, 3, 3)
-        //     )
-        // ),
-        // (
-        //     "Factory sending different message kinds", 
-        //     (vec![
-        //         // init and handle dispatch are created (2 dequeued, 1 dispatched)
-        //         CreateProgram::Default(true),
-        //         // init and handle_reply are created (1 dequeued, 0 dispatched)
-        //         CreateProgram::Default(false),
-        //         // init and handle_reply are created (1 dequeued, 0 dispatched)
-        //         CreateProgram::Default(false),
-        //         // init and handle dispatch are created (2 dequeued, 1 dispatched)
-        //         CreateProgram::Default(true),
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 // init and handle dispatch are created (2 dequeued, 1 dispatched)
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000),
-        //                 // init and handle dispatch are created (2 dequeued, 1 dispatched)
-        //                 (child1_code_hash, b"salt2".to_vec(), 10_000),
-        //                 // init is skipped, handle is processed and dispatched (1 dequeued, 1 dispatched)
-        //                 (child1_code_hash, b"salt2".to_vec(), 10_000), // duplicate
-        //             ]
-        //         )
-        //     ], Some(Constructable(vec![child1_code_kind])), (11, 5, 6)
-        //     ),
-        // ),
-        // (
-        //     "Creating multiple children with non existent code hash", 
-        //     (vec![
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000),
-        //                 (child1_code_hash, b"salt2".to_vec(), 10_000),
-        //                 (child1_code_hash, b"salt2".to_vec(), 10_000), // duplicate, but will be skipped for no code hash
-        //             ]
-        //         )
-        //     ], None, (0, 0, 0)
-        //     ),
-        // ),
-        // (
-        //     "Trying to create a child and its duplicates. The first child creation message will succeed \
-        //     in init, the duplicates will be skipped, but handle messages, which were intended for the duplicates \
-        //     will be executed in the context of original child",
-        //     (vec![
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 // 1 successful child init and handle (+2 dequeued, +1 dispatched)
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000),
-        //                 // init is skipped (duplicate), but handle message is sent and executed (+1 dequeued, +1 dispatched)
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000),
-        //             ]
-        //         ),
-        //         CreateProgram::Custom(
-        //             vec![
-        //                 // init is skipped (duplicate), but handle message is sent and executed (+1 dequeued, +1 dispatched)
-        //                 (child1_code_hash, b"salt1".to_vec(), 10_000), 
-        //             ]
-        //         ),
-        //     ],
-        //     Some(Constructable(vec![child1_code_kind])),
-        //     (4, 3, 1)
-        //     )
-        // ),
+        (
+            "Try to create a child with non existing code for the code hash",
+            // New program init message, dispatch message to it - dequeued, but not executed;
+            // 2 error reply messages (for init and handle) are dequeued and executed
+            (vec![CreateProgram::Default(true)], None, (4, 2, 0)),
+        ),
+        (
+            "Try to create a child providing few gas (child init will fail)",
+            // 1 child init message fails, a reply generated (buf fails with trap)
+            // 1 child dispatch message dequeued, but addressed for unavailable destination,
+            // so reply will be sent.
+            (
+                vec![CreateProgram::Custom(vec![(
+                    child1_code_hash,
+                    b"default".to_vec(),
+                    1000,
+                )])],
+                Some(Constructable(vec![child1_code_kind])),
+                (4, 2, 0),
+            ),
+        ),
+        (
+            "Try to create a program with non constructable code",
+            // Messages not executed (non constructable code isn't stored, so the same as non existing code test)
+            (
+                vec![CreateProgram::Custom(vec![(
+                    invalid_prog_code_hash,
+                    b"default".to_vec(),
+                    100_000,
+                )])],
+                Some(NonConstructable(invalid_prog_code_kind)),
+                (4, 2, 0),
+            ),
+        ),
+        (
+            "Try to create a program with existing address",
+            // 1 dispatch message from factory is sent to the existing destination (so 1 dequeued and dispatched)
+            // child init message is replied with an error, because duplicates existing contract (2 dequeued and dispatched)
+            (
+                vec![CreateProgram::Custom(vec![(
+                    child1_code_hash,
+                    DEFAULT_SALT.to_vec(),
+                    100_000,
+                )])],
+                Some(Constructable(vec![child1_code_kind])),
+                (3, 2, 0),
+            ),
+        ),
+        (
+            "Try to create a program with existing address, but the original \
+            program and its duplicate are being created from the factory program.",
+            // 2 children init messages are successfully processed (+2 dequeued)
+            // 6 children handle messages are successfully dispatched (+6 dequeued)
+            (
+                vec![
+                    CreateProgram::Custom(vec![
+                        (child1_code_hash, b"default".to_vec(), 100_000),
+                        (child1_code_hash, b"default".to_vec(), 100_000), // duplicate
+                    ]),
+                    CreateProgram::Custom(vec![
+                        (child2_code_hash, b"default".to_vec(), 100_000),
+                        (child2_code_hash, b"default".to_vec(), 100_000), // duplicate
+                    ]),
+                    CreateProgram::Custom(vec![
+                        (child2_code_hash, b"default".to_vec(), 100_000), // duplicate
+                        (child1_code_hash, b"default".to_vec(), 100_000), // duplicate
+                    ]),
+                ],
+                Some(Constructable(vec![child1_code_kind, child2_code_kind])),
+                (16, 10, 2),
+            ),
+        ),
+        (
+            "Simple passing case for creating multiple children",
+            // 3 children init messages + 3 children dispatch messages = 6 messages dequeued
+            (
+                vec![CreateProgram::Custom(vec![
+                    (child1_code_hash, b"salt1".to_vec(), 10_000),
+                    (child1_code_hash, b"salt2".to_vec(), 10_000),
+                    (child2_code_hash, b"salt3".to_vec(), 10_000),
+                ])],
+                Some(Constructable(vec![child1_code_kind, child2_code_kind])),
+                (6, 3, 3),
+            ),
+        ),
+        (
+            "Trying to create a child and its duplicate. The first child creation message will fail \
+            in init due to lack of gas, the duplicate will be skipped, despite having \
+            enough gas limit",
+            (vec![
+                CreateProgram::Custom(
+                    // 1 failing child init message is processed, a reply is genearted and executed (+2 dequeued, +1 dispatched, but 0 successfully init)
+                    // handle message to failed child is not executed, but processed, reply is generated and dispatched (+2 dequeued, +1 dispatched)
+                    // duplicate init is processed, but not executed, a reply is generated and executed (+2 dequeued, +1 dispatched)
+                    // handle message to a known dormant program is processed, but not executed, a reply is generated and executed (+2 dequeued, +1 dispatched)
+                    vec![
+                        (child1_code_hash, b"salt1".to_vec(), 1000), // fail init (not enough gas)
+                        (child1_code_hash, b"salt1".to_vec(), 10_000), // duplicate
+                    ]
+                ),
+                // this message is in the next block
+                CreateProgram::Custom(
+                    vec![
+                        // same for duplicate, which is upper (+4 dequeued, +2 dispatched)
+                        (child1_code_hash, b"salt1".to_vec(), 10_000), // next block duplicate
+                    ]
+                ),
+            ],
+            Some(Constructable(vec![child1_code_kind])),
+            (12, 6, 0)
+            )
+        ),
+        (
+            "Creating multiple children with some duplicates and some failing in init",
+            (vec![
+                CreateProgram::Custom(
+                    vec![
+                        // one successful init with one handle message (+2 dequeued, +1 dispatched, +1 successful init)
+                        (child1_code_hash, b"salt1".to_vec(), 10_000),
+                        // init fail (not enough gas) and reply generated (+2 dequeued, +1 dispatched), 
+                        // handle message is processed, but not executed, reply generated (+2 dequeued, +1 dispatched)
+                        (child1_code_hash, b"salt2".to_vec(), 1000),
+                    ]
+                ),
+                CreateProgram::Custom(
+                    vec![
+                        // init fail (not enough gas) and reply generated (+2 dequeued, +1 dispatched), 
+                        // handle message is processed, but not executed, reply generated (+2 dequeued, +1 dispatched)
+                        (child2_code_hash, b"salt1".to_vec(), 3000),
+                        // init message is not executed (duplicate), reply generated (+2 dequeued, +1 dispatched), 
+                        // handle message is processed, but not executed, because destination is dormant +
+                        // reply is generated (+2 dequeued, +1 dispatched)
+                        (child2_code_hash, b"salt1".to_vec(), 10_000),
+                         // one successful init with one handle message (+2 dequeued, +1 dispatched, +1 successful init)
+                        (child2_code_hash, b"salt2".to_vec(), 10_000),
+                    ]
+                ),
+                CreateProgram::Custom(
+                    vec![
+                        // duplicate in the next block: init not executed, nor the handle, replies are generated (+4 dequeue, +2 dispatched) 
+                        (child2_code_hash, b"salt1".to_vec(), 10_000),
+                         // one successful init with one handle message (+2 dequeued, +1 dispatched, +1 successful init)
+                        (child2_code_hash, b"salt3".to_vec(), 10_000),
+                    ]
+                ),
+            ],
+            Some(Constructable(vec![child1_code_kind, child2_code_kind])),
+            (22, 11, 3)
+            )
+        ),
+        (
+            "Factory sending different message kinds",
+            (vec![
+                // init and handle dispatch are created (+2 dequeued, +1 dispatched)
+                CreateProgram::Default(true),
+                // init and handle_reply are created (+1 dequeued, 0 dispatched)
+                CreateProgram::Default(false),
+                // init and handle_reply are created (+1 dequeued, 0 dispatched)
+                CreateProgram::Default(false),
+                // init and handle dispatch are created (+2 dequeued, +1 dispatched)
+                CreateProgram::Default(true),
+                CreateProgram::Custom(
+                    vec![
+                        // init and handle dispatch are created (+2 dequeued, +1 dispatched)
+                        (child1_code_hash, b"salt1".to_vec(), 10_000),
+                        // init and handle dispatch are created (+2 dequeued, +1 dispatched)
+                        (child1_code_hash, b"salt2".to_vec(), 10_000),
+                        // init is not executed, reply is generated (+2 dequeued, +1 dispatched), 
+                        // handle is processed and executed (+1 dequeued, +1 dispatched)
+                        (child1_code_hash, b"salt2".to_vec(), 10_000), // duplicate
+                    ]
+                )
+            ], Some(Constructable(vec![child1_code_kind])), (13, 6, 6)
+            ),
+        ),
+        (
+            "Creating multiple children with non existent code hash",
+            (vec![
+                CreateProgram::Custom(
+                    // 3 init messages cause 3 replies (+6 dequeued, +3 dispatched)
+                    // 3 dispatch messages cause 3 replies (+6 dequeued, +3 dispatched)
+                    vec![
+                        (child1_code_hash, b"salt1".to_vec(), 10_000),
+                        (child1_code_hash, b"salt2".to_vec(), 10_000),
+                        (child1_code_hash, b"salt2".to_vec(), 10_000),
+                    ]
+                )
+            ], None, (12, 6, 0)
+            ),
+        ),
+        (
+            "Trying to create a child and its duplicates. The first child creation message will succeed \
+            in init, the duplicates will be skipped, but handle messages, which were intended for the duplicates \
+            will be executed in the context of original child",
+            (vec![
+                CreateProgram::Custom(
+                    vec![
+                        // 1 successful child init and handle (+2 dequeued, +1 dispatched)
+                        (child1_code_hash, b"salt1".to_vec(), 10_000),
+                        // init is not processed, reply generated (+2 dequeued, +1 dispatched),
+                        // handle message is processed and executed (+1 dequeued, +1 dispatched)
+                        (child1_code_hash, b"salt1".to_vec(), 10_000),
+                    ]
+                ),
+                CreateProgram::Custom(
+                    // Messages are sent in the next block
+                    vec![
+                        // init is not processed, reply generated (+2 dequeued, +1 dispatched),
+                        // handle message is processed and executed (+1 dequeued, +1 dispatched)
+                        (child1_code_hash, b"salt1".to_vec(), 10_000),
+                    ]
+                ),
+            ],
+            Some(Constructable(vec![child1_code_kind])),
+            (8, 5, 1)
+            )
+        ),
     ];
 
     let create_program_test = |test: TestData| {
@@ -1527,7 +1558,8 @@ fn test_create_program() {
                 // Such payloads generate `handle_reply` messages
                 let message_id = {
                     let nonce_before_reply_send = common::get_program(factory_id)
-                        .map(|prog| prog.nonce - 1)
+                        .and_then(|prog| prog.try_into().ok())
+                        .map(|active_prog: common::ActiveProgram| active_prog.nonce - 1)
                         .expect("program was initialized");
                     compute_program_message_id(factory_id.as_bytes(), nonce_before_reply_send)
                 };
@@ -1567,6 +1599,8 @@ fn test_create_program() {
         init_logger();
         log::debug!("New test: {:?}\n", description);
         new_test_ext().execute_with(|| {
+            // Should work without that
+            gear_ri::gear_ri::reset_lazy_pages_info();
             create_program_test(test);
         });
     }
@@ -1575,6 +1609,7 @@ fn test_create_program() {
 // todo [sab] test create child with wait in init
 // todo [sab] tests for a new logic with balance transfers
 // todo [sab] test when dispatch (handle/handle_reply) in queue before init
+// todo [sab] test case for this: If parent program ended with a trap, but child program creation messages were sent and successfully processed, we can face situations, when successfully created child send message to it's failed during initialization parent. Yeah, such messages will go to log (because there isn't such destination program id), but these messages weren't intended to be added to the log.
 
 #[test]
 fn messages_to_uninitialized_program_wait() {

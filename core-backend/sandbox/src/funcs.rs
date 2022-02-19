@@ -522,7 +522,7 @@ pub fn wake<E: Ext + Into<ExtInfo>>(ctx: &mut Runtime<E>, args: &[Value]) -> Sys
         })?
 }
 
-pub fn create_program<E: Ext>(
+pub fn create_program<E: Ext + Into<ExtInfo>>(
     ctx: &mut Runtime<E>,
     args: &[Value],
 ) -> Result<ReturnValue, HostError> {
@@ -551,12 +551,12 @@ pub fn create_program<E: Ext>(
                 gas_limit,
                 value,
             ))?;
-            ext.set_mem(program_id_ptr as isize as _, new_actor_id.as_slice());
+            ext.set_mem(program_id_ptr, new_actor_id.as_slice());
             Ok(())
         })
         .and_then(|res| res.map(|_| ReturnValue::Unit))
         .map_err(|_err| {
-            ctx.trap_reason = Some("Trapping: unable to create program");
+            ctx.trap = Some("Trapping: unable to create program");
             HostError
         });
     result

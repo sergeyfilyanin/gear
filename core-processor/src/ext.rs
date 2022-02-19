@@ -70,7 +70,7 @@ impl From<Ext> for ExtInfo {
 
         let mut accessed_pages = BTreeMap::new();
         for page in accessed_pages_numbers {
-            let mut buf = vec![0u8; PageNumber::size()];
+            let mut buf = alloc::vec![0u8; PageNumber::size()];
             ext.get_mem(page.offset(), &mut buf);
             accessed_pages.insert(page, buf);
         }
@@ -88,6 +88,8 @@ impl From<Ext> for ExtInfo {
 
         let trap_explanation = ext.error_explanation;
 
+        let program_candidates_data = ext.program_candidates_data;
+
         ExtInfo {
             gas_amount,
             pages: ext.memory_context.allocations().clone(),
@@ -99,6 +101,7 @@ impl From<Ext> for ExtInfo {
             nonce,
             trap_explanation,
             exit_argument: ext.exit_argument,
+            program_candidates_data,
         }
     }
 }
@@ -364,6 +367,6 @@ impl EnvExt for Ext {
             .or_insert(Vec::new());
         entry.push((new_prog_id, init_msg_id));
 
-        Ok(program_id)
+        Ok(new_prog_id)
     }
 }

@@ -50,11 +50,11 @@ mod wasm {
                 )
                 .into();
                 let new_program_id =
-                    msg::create_program(submitted_code, get().to_le_bytes(), [], 10_000, 0);
+                    msg::create_program(submitted_code, get().to_le_bytes(), [], 100_000, 0);
                 if is_handle {
-                    msg::send(new_program_id, b"", 10_001, 0);
+                    msg::send(new_program_id, b"", 100_001, 0);
                 } else {
-                    msg::reply(b"", 10_001, 0);
+                    msg::reply(b"", 100_001, 0);
                 }
 
                 increase();
@@ -64,7 +64,7 @@ mod wasm {
                     let submitted_code = code_hash.into();
                     let new_program_id =
                         msg::create_program(submitted_code, &salt, [], gas_limit, 0);
-                    let msg_id = msg::send(new_program_id, b"", 10_001, 0);
+                    let msg_id = msg::send(new_program_id, b"", 100_001, 0);
                 }
             }
         };

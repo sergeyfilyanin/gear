@@ -268,8 +268,6 @@ pub struct State {
     pub programs: BTreeMap<ProgramId, Program>,
     /// Is current state failed.
     pub current_failed: bool,
-    /// Program candidates, which are going to be processed (initialized)
-    pub program_candidates: BTreeMap<ProgramId, Vec<u8>>,
 }
 
 impl Debug for State {
@@ -294,7 +292,6 @@ impl Debug for State {
                     .collect::<BTreeMap<ProgramId, BTreeSet<PageNumber>>>(),
             )
             .field("current_failed", &self.current_failed)
-            .field("program_candidates", &self.program_candidates)
             .finish()
     }
 }

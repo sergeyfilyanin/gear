@@ -20,9 +20,11 @@ use crate::{
     pallet::Reason, Authorship, Config, DispatchOutcome, Event, ExecutionResult, MessageInfo,
     Pallet,
 };
-use codec::Decode;
 use codec::{Decode, Encode};
-use common::{DAGBasedLedger, GasPrice, Origin, Program, STORAGE_PROGRAM_CANDIDATE_PREFIX, STORAGE_PROGRAM_PREFIX};
+use common::{
+    DAGBasedLedger, GasPrice, Origin, Program, STORAGE_PROGRAM_CANDIDATE_PREFIX,
+    STORAGE_PROGRAM_PREFIX,
+};
 use core_processor::common::{
     CollectState, DispatchOutcome as CoreDispatchOutcome, JournalHandler, State,
 };
@@ -46,6 +48,8 @@ use sp_std::{
 
 pub struct ExtManager<T: Config> {
     _phantom: PhantomData<T>,
+    // Messages with these destinations will be forcibly pushed to the queue.
+    marked_destinations: BTreeSet<ProgramId>,
 }
 
 #[derive(Decode, Encode)]
@@ -78,26 +82,11 @@ where
         })
         .collect();
 
-        // todo [sab] to be removed
-        let program_candidates = PrefixIterator::<ProgramId>::new(
-            STORAGE_PROGRAM_CANDIDATE_PREFIX.to_vec(),
-            STORAGE_PROGRAM_CANDIDATE_PREFIX.to_vec(),
-            |mut key, _| ProgramId::decode(key.into_mut()),
-        )
-        .map(|candidate_id| {
-            (
-                candidate_id,
-                common::get_code_for_candidate(candidate_id).expect("no candidates without code"),
-            )
-        })
-        .collect();
-
         let dispatch_queue = common::dispatch_iter().map(Into::into).collect();
 
         State {
             dispatch_queue,
             programs,
-            program_candidates,
             ..Default::default()
         }
     }
@@ -110,6 +99,7 @@ where
     fn default() -> Self {
         ExtManager {
             _phantom: PhantomData,
+            marked_destinations: Default::default(),
         }
     }
 }
@@ -199,6 +189,7 @@ where
                 program_id,
             } => {
                 let program_id = program_id.into_origin();
+                let message_id = message_id.into_origin();
                 let event = Event::InitSuccess(MessageInfo {
                     message_id,
                     origin: origin.into_origin(),
@@ -337,21 +328,23 @@ where
             .is_err()
         {
             log::debug!(
-                "Message (from: {:?}) {:?} will not be executed",
+                "Dispatch {:?} generated from {:?} will not be executed",
+                dispatch,
                 message_id,
-                dispatch.message
             );
             return;
         }
 
-        log::debug!("Sending message {:?} from {:?}", message, message_id);
+        log::debug!(
+            "Sending dispatch {:?} from message id {:?}",
+            dispatch,
+            message_id
+        );
 
-        // Allow any init message to be processed
-        // If program doesn't exist for such message, which is when program tries 
-        // to create another one with non existing code hash, then it an error reply
-        // will be sent
         if common::program_exists(dispatch.message.dest)
-            || matches!(dispatch.kind, DispatchKind::Init) 
+            || self
+                .marked_destinations
+                .contains(&ProgramId::from_origin(dispatch.message.dest))
         {
             let _ =
                 T::GasHandler::split(message_id, dispatch.message.id, dispatch.message.gas_limit);
@@ -363,6 +356,7 @@ where
             if dispatch.message.gas_limit > 0 {
                 dispatch.message.gas_limit = 0;
             }
+            log::debug!("REACHED");
             Pallet::<T>::insert_to_mailbox(dispatch.message.dest, dispatch.message.clone());
             Pallet::<T>::deposit_event(Event::Log(dispatch.message));
         }
@@ -481,10 +475,10 @@ where
 
         if let Some(code) = common::get_code(code_hash) {
             for (candidate_id, init_message) in candidates {
-                if !common::program_exists(candidate_id) {
+                if !common::program_exists(candidate_id.into_origin()) {
                     // Code hash for invalid code isn't added to the storage from extrinsics.
-                    let new_program =
-                        NativeProgram::new(candidate_id, code).expect("guaranteed to be valid");
+                    let new_program = NativeProgram::new(candidate_id, code.clone())
+                        .expect("guaranteed to be valid");
                     self.set_program(new_program, init_message.into_origin());
                 } else {
                     log::debug!("Program with id {:?} already exists", candidate_id);
@@ -495,6 +489,9 @@ where
                 "No referencing code with code hash {:?} for candidate programs",
                 code_hash
             );
+            for (candidate, _) in candidates {
+                self.marked_destinations.insert(candidate);
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ use crate::{
 use alloc::{collections::BTreeMap, vec::Vec};
 use gear_backend_common::Environment;
 use gear_core::{
-    message::{Dispatch, DispatchKind, Message, ExitCode},
+    message::{Dispatch, DispatchKind, ExitCode, Message},
     program::{Program, ProgramId},
 };
 
@@ -35,7 +35,7 @@ pub fn process<E: Environment<Ext>>(
     dispatch: Dispatch,
     block_info: BlockInfo,
 ) -> Vec<JournalNote> {
-    if let Some(exit_code) = is_non_executable(&program, &dispatch) {
+    if let Some(exit_code) = is_non_executable(program.as_ref(), &dispatch) {
         process_non_executable(dispatch, exit_code)
     } else {
         let program = program.expect("message is not executed if program is none");
@@ -98,11 +98,10 @@ pub fn process_many<E: Environment<Ext>>(
     journal
 }
 
-fn is_non_executable(program: &Option<Program>, dispatch: &Dispatch) -> Option<ExitCode> {
-    match program.map(|p| p.has_pages()) {
+fn is_non_executable(program: Option<&Program>, dispatch: &Dispatch) -> Option<ExitCode> {
+    match program.map(|p| p.is_initialized()) {
         Some(true) if matches!(dispatch.kind, DispatchKind::Init) => Some(crate::RE_INIT_EXIT_CODE),
-        None if matches(dispatch.kind, DispatchKind::Init) => Some(crate::INIT_UNAVAILABLE_EXIT_CODE),
-        None => Some(crate::TERMINATED_DEST_EXIT_CODE),
+        None => Some(crate::UNAVAILABLE_DEST_EXIT_CODE),
         _ => None,
     }
 }

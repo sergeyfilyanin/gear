@@ -232,6 +232,7 @@ pub enum ProgramError {
 
 impl Program {
     pub fn try_into_native(self, id: H256) -> Result<NativeProgram, ProgramError> {
+        let is_initialized = self.is_initialized();
         let program: ActiveProgram = self.try_into()?;
         let code = crate::get_code(program.code_hash).ok_or(ProgramError::CodeHashNotFound)?;
         let native_program = NativeProgram::from_parts(
@@ -240,6 +241,7 @@ impl Program {
             program.static_pages,
             program.nonce,
             program.persistent_pages,
+            is_initialized,
         );
         Ok(native_program)
     }
