@@ -21,10 +21,7 @@ use crate::{
     Pallet,
 };
 use codec::{Decode, Encode};
-use common::{
-    DAGBasedLedger, GasPrice, Origin, Program, STORAGE_PROGRAM_CANDIDATE_PREFIX,
-    STORAGE_PROGRAM_PREFIX,
-};
+use common::{DAGBasedLedger, GasPrice, Origin, Program, STORAGE_PROGRAM_PREFIX};
 use core_processor::common::{
     CollectState, DispatchOutcome as CoreDispatchOutcome, JournalHandler, State,
 };
@@ -34,14 +31,13 @@ use frame_support::{
 };
 use gear_core::{
     memory::PageNumber,
-    message::{Dispatch, DispatchKind, ExitCode, MessageId},
+    message::{Dispatch, ExitCode, MessageId},
     program::{CodeHash, Program as NativeProgram, ProgramId},
 };
 use primitive_types::H256;
 use sp_runtime::traits::{UniqueSaturatedInto, Zero};
 use sp_std::{
     collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-    iter::FromIterator,
     marker::PhantomData,
     prelude::*,
 };

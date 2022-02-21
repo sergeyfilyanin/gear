@@ -68,16 +68,13 @@ pub mod pallet {
         Ext,
     };
     use frame_support::{
-        dispatch::{DispatchError, DispatchErrorWithPostInfo, DispatchResultWithPostInfo},
+        dispatch::{DispatchError, DispatchResultWithPostInfo},
         pallet_prelude::*,
         traits::{BalanceStatus, Currency, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
     use gear_backend_sandbox::SandboxEnvironment;
-    use gear_core::{
-        message::DispatchKind,
-        program::{Program as NativeProgram, ProgramId},
-    };
+    use gear_core::{message::DispatchKind, program::Program as NativeProgram};
     use manager::{ExtManager, HandleKind};
     use primitive_types::H256;
     use scale_info::TypeInfo;

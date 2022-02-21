@@ -203,6 +203,7 @@ pub enum JournalNote {
     StoreNewPrograms {
         /// Map of code hash to ids of program candidates and of their init messages
         code_hash: CodeHash,
+        /// Collection of program candidate ids and their respected message ids.
         candidates: Vec<(ProgramId, MessageId)>,
     },
 }

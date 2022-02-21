@@ -22,7 +22,6 @@ use crate::{
     lazy_pages,
 };
 use alloc::{collections::BTreeMap, vec::Vec};
-use codec::Encode;
 use gear_backend_common::ExtInfo;
 use gear_core::{
     env::Ext as EnvExt,

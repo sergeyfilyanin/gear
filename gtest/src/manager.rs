@@ -7,7 +7,7 @@ use gear_backend_wasmtime::WasmtimeEnvironment;
 use gear_core::{
     memory::PageNumber,
     message::{Dispatch, DispatchKind, Message, MessageId},
-    program::{Program as CoreProgram, ProgramId},
+    program::{CodeHash, Program as CoreProgram, ProgramId},
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -373,14 +373,12 @@ impl JournalHandler for ExtManager {
     fn send_value(&mut self, _from: ProgramId, _to: Option<ProgramId>, _value: u128) {
         // "TODO https://github.com/gear-tech/gear/issues/644")
     }
+
     fn store_new_programs(
         &mut self,
-        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+        _code_hash: CodeHash,
+        _candidates: Vec<(ProgramId, MessageId)>,
     ) {
-        for (code_hash, program_candidates_data) in program_candidates_data {
-            for (candidate, _) in program_candidates_data {
-                todo!("todo [sab]")
-            }
-        }
+        // todo [sab]
     }
 }

@@ -293,6 +293,7 @@ fn run_fixture(test: &'_ sample::Test, fixture: &sample::Fixture) -> ColoredStri
                             p.static_pages,
                             p.nonce,
                             p.persistent_pages.keys().cloned().collect(),
+                            true,
                         )
                     })
                     .collect();

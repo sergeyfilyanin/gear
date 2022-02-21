@@ -9,12 +9,12 @@ use codec::{Decode, Encode};
 use gstd::prelude::*;
 
 #[cfg(feature = "std")]
-mod native {
+mod code {
     include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 }
 
 #[cfg(feature = "std")]
-pub use native::{WASM_BINARY, WASM_BINARY_BLOATY};
+pub use code::WASM_BINARY_OPT as WASM_BINARY;
 
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq)]
 pub enum CreateProgram {

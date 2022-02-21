@@ -20,7 +20,7 @@ use core_processor::common::*;
 use gear_core::{
     memory::PageNumber,
     message::{Dispatch, DispatchKind, Message, MessageId},
-    program::{Program, ProgramId},
+    program::{CodeHash, Program, ProgramId},
 };
 use std::cell::RefCell;
 use std::collections::{BTreeMap, VecDeque};
@@ -178,5 +178,13 @@ impl JournalHandler for InMemoryExtManager {
     }
     fn send_value(&mut self, _from: ProgramId, _to: Option<ProgramId>, _value: u128) {
         // TODO https://github.com/gear-tech/gear/issues/644
+    }
+
+    fn store_new_programs(
+        &mut self,
+        _code_hash: CodeHash,
+        _candidates: Vec<(ProgramId, MessageId)>,
+    ) {
+        todo!()
     }
 }
