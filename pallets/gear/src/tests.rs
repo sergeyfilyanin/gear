@@ -963,10 +963,6 @@ fn send_reply_value_claiming_works() {
     })
 }
 
-// user 1 sends to prog msg
-// prog send to user 1 msg to mailbox
-// user 1 claims it from mailbox
-
 #[test]
 fn claim_value_from_mailbox_works() {
     init_logger();
