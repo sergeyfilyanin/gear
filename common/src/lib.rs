@@ -47,7 +47,6 @@ pub use storage_queue::StorageQueue;
 
 pub const STORAGE_PROGRAM_PREFIX: &[u8] = b"g::prog::";
 pub const STORAGE_PROGRAM_PAGES_PREFIX: &[u8] = b"g::pages::";
-pub const STORAGE_PROGRAM_CANDIDATE_PREFIX: &[u8] = b"g::prog_candidate";
 pub const STORAGE_PROGRAM_STATE_WAIT_PREFIX: &[u8] = b"g::prog_wait::";
 pub const STORAGE_MESSAGE_PREFIX: &[u8] = b"g::msg::";
 pub const STORAGE_MESSAGE_NONCE_KEY: &[u8] = b"g::msg::nonce";
@@ -603,23 +602,6 @@ pub fn waiting_init_take_messages(dest_prog_id: H256) -> Vec<H256> {
 
 pub fn code_exists(code_hash: H256) -> bool {
     sp_io::storage::exists(&code_key(code_hash, CodeKeyPrefixKind::RawCode))
-}
-
-// todo [sab] remove
-pub fn get_code_for_candidate(candidate: gear_core::program::ProgramId) -> Option<Vec<u8>> {
-    sp_io::storage::get(&program_candidate_key(candidate)).and_then(|code_hash| {
-        let mut v = [0u8; 32];
-        v.copy_from_slice(&code_hash);
-        get_code(v.into())
-    })
-}
-
-fn program_candidate_key(candidate: gear_core::program::ProgramId) -> Vec<u8> {
-    let mut key =
-        Vec::with_capacity(STORAGE_PROGRAM_CANDIDATE_PREFIX.len() + candidate.as_slice().len());
-    key.extend(STORAGE_PROGRAM_CANDIDATE_PREFIX);
-    candidate.encode_to(&mut key);
-    key
 }
 
 pub fn reset_storage() {

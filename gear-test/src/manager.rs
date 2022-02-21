@@ -23,12 +23,14 @@ use gear_core::{
     program::{CodeHash, Program, ProgramId},
 };
 use std::cell::RefCell;
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use crate::check::ExecutionContext;
 
 #[derive(Clone, Default)]
 pub struct InMemoryExtManager {
+    codes: RefCell<BTreeMap<CodeHash, Vec<u8>>>,
+    marked_destinations: BTreeSet<ProgramId>,
     dispatch_queue: VecDeque<Dispatch>,
     log: Vec<Message>,
     programs: RefCell<BTreeMap<ProgramId, Option<Program>>>,
@@ -51,6 +53,10 @@ impl InMemoryExtManager {
 impl ExecutionContext for InMemoryExtManager {
     fn store_program(&self, program: gear_core::program::Program, _init_message_id: MessageId) {
         self.waiting_init.borrow_mut().insert(program.id(), vec![]);
+        let code_hash = sp_io::hashing::blake2_256(program.code()).into();
+        if !self.codes.borrow().contains_key(&code_hash) {
+            self.codes.borrow_mut().insert(code_hash, program.code().to_vec());
+        }
         self.programs
             .borrow_mut()
             .insert(program.id(), Some(program));
@@ -96,6 +102,9 @@ impl JournalHandler for InMemoryExtManager {
             }
             DispatchOutcome::Success(_) | DispatchOutcome::NoExecution(_) => false,
             DispatchOutcome::InitSuccess { program_id, .. } => {
+                if let Some(Some(program)) = self.programs.borrow_mut().get_mut(&program_id) {
+                    program.set_initialized();
+                }
                 self.move_waiting_msgs_to_queue(program_id);
                 false
             }
@@ -118,7 +127,7 @@ impl JournalHandler for InMemoryExtManager {
     }
     fn send_dispatch(&mut self, _message_id: MessageId, dispatch: Dispatch) {
         let dest = dispatch.message.dest();
-        if self.programs.borrow().contains_key(&dest) {
+        if self.programs.borrow().contains_key(&dest) || self.marked_destinations.contains(&dest) {
             if let (DispatchKind::Handle, Some(list)) =
                 (dispatch.kind, self.waiting_init.borrow_mut().get_mut(&dest))
             {
@@ -182,9 +191,26 @@ impl JournalHandler for InMemoryExtManager {
 
     fn store_new_programs(
         &mut self,
-        _code_hash: CodeHash,
-        _candidates: Vec<(ProgramId, MessageId)>,
+        code_hash: CodeHash,
+        candidates: Vec<(ProgramId, MessageId)>,
     ) {
-        todo!()
+        if let Some(code) = self.codes.borrow().get(&code_hash) {
+            for (candidate_id, init_message_id) in candidates {
+                if !self.programs.borrow().contains_key(&candidate_id) {
+                    let program = Program::new(candidate_id, code.clone()).expect("guaranteed to have constructable code");
+                    self.store_program(program, init_message_id);
+                } else {
+                    log::debug!("Program with id {:?} already exists", candidate_id);
+                }
+            }
+        } else {
+            log::debug!(
+                "No referencing code with code hash {:?} for candidate programs",
+                code_hash
+            );
+            for (invalid_candidate, _) in candidates {
+                self.marked_destinations.insert(invalid_candidate);
+            }
+        }
     }
 }

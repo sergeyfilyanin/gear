@@ -1343,7 +1343,7 @@ fn test_create_program() {
         ),
         (
             "Trying to create a child and its duplicate. The first child creation message will fail \
-            in init due to lack of gas, the duplicate will be skipped, despite having \
+            in init due to lack of gas, the duplicate will not be executed, despite having \
             enough gas limit",
             (vec![
                 CreateProgram::Custom(
@@ -1598,11 +1598,6 @@ fn test_create_program() {
         });
     }
 }
-
-// todo [sab] test create child with wait in init
-// todo [sab] tests for a new logic with balance transfers
-// todo [sab] test when dispatch (handle/handle_reply) in queue before init
-// todo [sab] test case for this: If parent program ended with a trap, but child program creation messages were sent and successfully processed, we can face situations, when successfully created child send message to it's failed during initialization parent. Yeah, such messages will go to log (because there isn't such destination program id), but these messages weren't intended to be added to the log.
 
 #[test]
 fn messages_to_uninitialized_program_wait() {

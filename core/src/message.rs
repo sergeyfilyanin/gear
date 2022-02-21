@@ -252,7 +252,6 @@ impl IncomingMessage {
     }
 }
 
-// todo [sab] try enum or change name to OutgoingDispatchMessage
 /// Outgoing message.
 #[derive(Clone, Debug, Decode, Encode)]
 pub struct OutgoingMessage {
@@ -534,7 +533,6 @@ impl ProgramInitPacket {
     }
 }
 
-// todo [sab] try enum or change name to OutgoingDispatchPacket
 /// Outgoing message packet.
 #[derive(Clone, Debug, Decode, Encode)]
 pub struct OutgoingPacket {

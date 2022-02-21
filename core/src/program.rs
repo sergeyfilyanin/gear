@@ -185,6 +185,11 @@ impl Program {
         self.is_initialized
     }
 
+    /// Set program initialized
+    pub fn set_initialized(&mut self) {
+        self.is_initialized = true;
+    }
+
     /// Set the code of this program.
     pub fn set_code(&mut self, code: Vec<u8>) -> Result<()> {
         self.static_pages = {
