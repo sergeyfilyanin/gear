@@ -34,7 +34,7 @@ use gear_core::{
     env::Ext,
     gas::GasAmount,
     memory::{Memory, PageBuf, PageNumber},
-    message::{MessageId, OutgoingMessage, ProgramInitMessage, ReplyMessage},
+    message::{MessageId, OutgoingMessage, PayloadStore, ProgramInitMessage, ReplyMessage},
     program::{CodeHash, ProgramId},
 };
 
@@ -63,6 +63,7 @@ pub struct ExtInfo {
     pub awakening: Vec<MessageId>,
     pub nonce: u64,
     pub program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
+    pub payload_store: Option<PayloadStore>,
 
     pub trap_explanation: Option<&'static str>,
 

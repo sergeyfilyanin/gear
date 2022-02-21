@@ -177,6 +177,10 @@ impl Program {
         self.static_pages
     }
 
+    /// Get whether program is initialized
+    ///
+    /// By default the [`Program`] is not initialized. The initialized status
+    /// is set from the node.
     pub fn is_initialized(&self) -> bool {
         self.is_initialized
     }

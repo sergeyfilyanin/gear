@@ -104,6 +104,7 @@ impl WasmProject {
         release_profile.insert("opt-level".into(), "s".into());
 
         let mut profile = Table::new();
+        profile.insert("dev".into(), release_profile.clone().into());
         profile.insert("release".into(), release_profile.into());
 
         let mut crate_package = Table::new();
@@ -153,7 +154,7 @@ impl WasmProject {
             .expect("Run `WasmProject::create_project()` first");
         let from_path = self
             .out_dir
-            .join(&self.wasm_subdir)
+            .join("target/wasm32-unknown-unknown/release")
             .join(format!("{}.wasm", &file_base_name));
         let to_dir = self.original_dir.join(&self.wasm_subdir);
         fs::create_dir_all(&to_dir)?;
@@ -167,21 +168,27 @@ impl WasmProject {
         let to_meta_path = to_dir.join(format!("{}.meta.wasm", &file_base_name));
         Self::generate_meta(&from_path, &to_meta_path)?;
 
+        let wasm_binary_path = self.out_dir.join("wasm_binary_path.txt");
+        fs::write(&wasm_binary_path, format!("{}", to_opt_path.display()))
+            .context("unable to write `wasm_binary_path.txt`")?;
+
         let wasm_binary_rs = self.out_dir.join("wasm_binary.rs");
         fs::write(
             &wasm_binary_rs,
             format!(
-                r#"
-                    pub const WASM_BINARY: &[u8] = include_bytes!("{}");
-                    pub const WASM_BINARY_OPT: &[u8] = include_bytes!("{}");
-                    pub const WASM_BINARY_META: &[u8] = include_bytes!("{}");
-                "#,
+                r#"#[allow(unused)]
+pub const WASM_BINARY: &[u8] = include_bytes!("{}");
+#[allow(unused)]
+pub const WASM_BINARY_OPT: &[u8] = include_bytes!("{}");
+#[allow(unused)]
+pub const WASM_BINARY_META: &[u8] = include_bytes!("{}");
+"#,
                 to_path.display(),
                 to_opt_path.display(),
                 to_meta_path.display(),
             ),
         )
-        .context("unable to write `wasm_bimary.rs`")?;
+        .context("unable to write `wasm_binary.rs`")?;
 
         Ok(())
     }

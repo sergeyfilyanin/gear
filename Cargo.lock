@@ -1959,9 +1959,7 @@ dependencies = [
 name = "gear-backend-common"
 version = "0.1.0"
 dependencies = [
- "gear-common",
  "gear-core",
- "gear-runtime-interface",
  "log",
 ]
 
@@ -1974,7 +1972,6 @@ dependencies = [
  "gear-core",
  "log",
  "parity-wasm 0.42.2",
- "sp-io",
  "sp-sandbox",
 ]
 
@@ -2232,7 +2229,7 @@ dependencies = [
 
 [[package]]
 name = "gear-wasm-builder"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -7601,9 +7598,9 @@ dependencies = [
 name = "tests-btree"
 version = "0.1.0"
 dependencies = [
+ "gear-wasm-builder",
  "gstd",
  "parity-scale-codec",
- "substrate-wasm-builder",
  "tests-common",
 ]
 
@@ -7623,9 +7620,9 @@ name = "tests-distributor"
 version = "0.1.0"
 dependencies = [
  "env_logger",
+ "gear-wasm-builder",
  "gstd",
  "parity-scale-codec",
- "substrate-wasm-builder",
  "tests-common",
 ]
 
@@ -7633,33 +7630,33 @@ dependencies = [
 name = "tests-exit-handle"
 version = "0.1.0"
 dependencies = [
+ "gear-wasm-builder",
  "gstd",
- "substrate-wasm-builder",
 ]
 
 [[package]]
 name = "tests-exit-init"
 version = "0.1.0"
 dependencies = [
+ "gear-wasm-builder",
  "gstd",
- "substrate-wasm-builder",
 ]
 
 [[package]]
 name = "tests-init-wait"
 version = "0.1.0"
 dependencies = [
+ "gear-wasm-builder",
  "gstd",
- "substrate-wasm-builder",
 ]
 
 [[package]]
 name = "tests-messages"
 version = "0.1.0"
 dependencies = [
+ "gear-wasm-builder",
  "gstd",
  "parity-scale-codec",
- "substrate-wasm-builder",
  "tests-common",
 ]
 
@@ -7668,9 +7665,9 @@ name = "tests-node"
 version = "0.1.0"
 dependencies = [
  "env_logger",
+ "gear-wasm-builder",
  "gstd",
  "parity-scale-codec",
- "substrate-wasm-builder",
  "tests-common",
 ]
 
@@ -7691,9 +7688,9 @@ name = "tests-wait-wake"
 version = "0.1.0"
 dependencies = [
  "gear-core",
+ "gear-wasm-builder",
  "gstd",
  "parity-scale-codec",
- "substrate-wasm-builder",
  "tests-common",
 ]
 

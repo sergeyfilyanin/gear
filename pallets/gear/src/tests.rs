@@ -22,7 +22,7 @@ use frame_support::{assert_noop, assert_ok};
 use frame_system::Pallet as SystemPallet;
 use gear_runtime_interface as gear_ri;
 use pallet_balances::{self, Pallet as BalancesPallet};
-use tests_distributor::{Request, WASM_BINARY_BLOATY as DISTRIBUTOR_WASM_BINARY};
+use tests_distributor::{Request, WASM_BINARY as DISTRIBUTOR_WASM_BINARY};
 use tests_program_factory::{CreateProgram, WASM_BINARY_BLOATY as PROGRAM_FACTORY_WASM_BINARY};
 
 use super::{
@@ -1027,12 +1027,11 @@ fn distributor_initialize() {
     new_test_ext().execute_with(|| {
         let initial_balance = BalancesPallet::<Test>::free_balance(USER_1)
             + BalancesPallet::<Test>::free_balance(BLOCK_AUTHOR);
+        let code = DISTRIBUTOR_WASM_BINARY.to_vec();
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
-            DISTRIBUTOR_WASM_BINARY
-                .expect("Wasm binary missing!")
-                .to_vec(),
+            code,
             DEFAULT_SALT.to_vec(),
             EMPTY_PAYLOAD.to_vec(),
             10_000_000,
@@ -1057,14 +1056,14 @@ fn distributor_distribute() {
     new_test_ext().execute_with(|| {
         let initial_balance = BalancesPallet::<Test>::free_balance(USER_1)
             + BalancesPallet::<Test>::free_balance(BLOCK_AUTHOR);
-        let code = DISTRIBUTOR_WASM_BINARY
-            .expect("Wasm binary missing!")
-            .to_vec();
+        let code = DISTRIBUTOR_WASM_BINARY.to_vec();
 
         let program_id = generate_program_id(&code, DEFAULT_SALT);
 
         // Initial value in all gas trees is 0
         assert_eq!(<Test as Config>::GasHandler::total_supply(), 0);
+
+        let program_id = generate_program_id(WASM_BINARY, DEFAULT_SALT);
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
@@ -1609,7 +1608,7 @@ fn test_create_program() {
 
 #[test]
 fn messages_to_uninitialized_program_wait() {
-    use tests_init_wait::WASM_BINARY_BLOATY;
+    use tests_init_wait::WASM_BINARY;
 
     init_logger();
     new_test_ext().execute_with(|| {
@@ -1617,7 +1616,7 @@ fn messages_to_uninitialized_program_wait() {
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(1).into(),
-            WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec(),
+            WASM_BINARY.to_vec(),
             vec![],
             Vec::new(),
             50_000_000u64,
@@ -1661,7 +1660,7 @@ fn messages_to_uninitialized_program_wait() {
 
 #[test]
 fn uninitialized_program_should_accept_replies() {
-    use tests_init_wait::WASM_BINARY_BLOATY;
+    use tests_init_wait::WASM_BINARY;
 
     init_logger();
     new_test_ext().execute_with(|| {
@@ -1669,7 +1668,7 @@ fn uninitialized_program_should_accept_replies() {
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
-            WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec(),
+            WASM_BINARY.to_vec(),
             vec![],
             Vec::new(),
             99_000_000u64,
@@ -1723,7 +1722,7 @@ fn uninitialized_program_should_accept_replies() {
 
 #[test]
 fn defer_program_initialization() {
-    use tests_init_wait::WASM_BINARY_BLOATY;
+    use tests_init_wait::WASM_BINARY;
 
     init_logger();
     new_test_ext().execute_with(|| {
@@ -1731,7 +1730,7 @@ fn defer_program_initialization() {
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
-            WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec(),
+            WASM_BINARY.to_vec(),
             vec![],
             Vec::new(),
             99_000_000u64,
@@ -1798,7 +1797,7 @@ fn defer_program_initialization() {
 
 #[test]
 fn wake_messages_after_program_inited() {
-    use tests_init_wait::WASM_BINARY_BLOATY;
+    use tests_init_wait::WASM_BINARY;
 
     init_logger();
     new_test_ext().execute_with(|| {
@@ -1806,7 +1805,7 @@ fn wake_messages_after_program_inited() {
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
-            WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec(),
+            WASM_BINARY.to_vec(),
             vec![],
             Vec::new(),
             99_000_000u64,
@@ -1911,13 +1910,13 @@ fn test_message_processing_for_non_existing_destination() {
 
 #[test]
 fn exit_init() {
-    use tests_exit_init::WASM_BINARY_BLOATY;
+    use tests_exit_init::WASM_BINARY;
 
     init_logger();
     new_test_ext().execute_with(|| {
         System::reset_events();
 
-        let code = WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec();
+        let code = WASM_BINARY.to_vec();
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
             code.clone(),
@@ -1957,13 +1956,13 @@ fn exit_init() {
 
 #[test]
 fn exit_handle() {
-    use tests_exit_handle::WASM_BINARY_BLOATY;
+    use tests_exit_handle::WASM_BINARY;
 
     init_logger();
     new_test_ext().execute_with(|| {
         System::reset_events();
 
-        let code = WASM_BINARY_BLOATY.expect("Wasm binary missing!").to_vec();
+        let code = WASM_BINARY.to_vec();
         let code_hash = sp_io::hashing::blake2_256(&code).into();
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
