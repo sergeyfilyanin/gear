@@ -23,7 +23,7 @@ use frame_system::Pallet as SystemPallet;
 use gear_runtime_interface as gear_ri;
 use pallet_balances::{self, Pallet as BalancesPallet};
 use tests_distributor::{Request, WASM_BINARY as DISTRIBUTOR_WASM_BINARY};
-use tests_program_factory::{CreateProgram, WASM_BINARY_BLOATY as PROGRAM_FACTORY_WASM_BINARY};
+use tests_program_factory::{CreateProgram, WASM_BINARY as PROGRAM_FACTORY_WASM_BINARY};
 
 use super::{
     manager::HandleKind,
@@ -1058,12 +1058,10 @@ fn distributor_distribute() {
             + BalancesPallet::<Test>::free_balance(BLOCK_AUTHOR);
         let code = DISTRIBUTOR_WASM_BINARY.to_vec();
 
-        let program_id = generate_program_id(&code, DEFAULT_SALT);
-
         // Initial value in all gas trees is 0
         assert_eq!(<Test as Config>::GasHandler::total_supply(), 0);
 
-        let program_id = generate_program_id(WASM_BINARY, DEFAULT_SALT);
+        let program_id = generate_program_id(&code, DEFAULT_SALT);
 
         assert_ok!(GearPallet::<Test>::submit_program(
             Origin::signed(USER_1).into(),
@@ -1235,8 +1233,8 @@ fn test_create_program() {
     )
     "#;
 
-    let factory_code = PROGRAM_FACTORY_WASM_BINARY.expect("wasm binary missing!");
-    let factory_id = generate_program_id(factory_code, DEFAULT_SALT);
+    let factory_code = PROGRAM_FACTORY_WASM_BINARY;
+    let factory_id = generate_program_id(&factory_code, DEFAULT_SALT);
 
     let child1_code_kind = ProgramCodeKind::Default;
     let child2_code_kind = ProgramCodeKind::Custom(child2_wat);
