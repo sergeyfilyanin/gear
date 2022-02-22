@@ -128,8 +128,11 @@ impl JournalHandler for InMemoryExtManager {
     fn send_dispatch(&mut self, _message_id: MessageId, dispatch: Dispatch) {
         let dest = dispatch.message.dest();
         if self.programs.borrow().contains_key(&dest) || self.marked_destinations.contains(&dest) {
-            if let (DispatchKind::Handle, Some(list)) =
-                (dispatch.kind, self.waiting_init.borrow_mut().get_mut(&dest))
+            // Find in dispatch queue init message to the destination. By that we recognize
+            // messages to not yet initialized programs, whose init messages were executed.
+            let init_to_dest = self.dispatch_queue.iter().find(|d| d.message.dest() == dest && d.kind == DispatchKind::Init);
+            if let (DispatchKind::Handle, Some(list), None) =
+                (dispatch.kind, self.waiting_init.borrow_mut().get_mut(&dest), init_to_dest)
             {
                 let message_id = dispatch.message.id();
                 list.push(message_id);

@@ -147,17 +147,18 @@ fn run_fixture(test: &'_ sample::Test, fixture: &sample::Fixture) -> ColoredStri
     pallet_gear_debug::DebugMode::<Runtime>::put(true);
 
     // Find out future program ids
-    let programs: BTreeMap<ProgramId, H256> = test
+    let mut programs: BTreeMap<ProgramId, H256> = test
         .programs
         .iter()
         .map(|program| {
             let program_path = program.path.clone();
             let code = std::fs::read(&program_path).unwrap();
+            let code_hash: H256 = sp_io::hashing::blake2_256(&code).into();
 
             let salt = program.id.to_program_id().as_slice().to_vec();
             let mut data = Vec::new();
             // TODO #512
-            code.encode_to(&mut data);
+            code_hash.encode_to(&mut data);
             salt.encode_to(&mut data);
 
             let id: H256 = sp_io::hashing::blake2_256(&data[..]).into();
@@ -260,12 +261,22 @@ fn run_fixture(test: &'_ sample::Test, fixture: &sample::Fixture) -> ColoredStri
                         )
                     );
                 }
-
                 // After initialization the last snapshot is empty, so we get MQ after sending messages
                 snapshots.last_mut().unwrap().dispatch_queue = get_dispatch_queue();
             }
 
             process_queue(&mut snapshots, &mut mailbox);
+
+            // After processing queue some new programs could be created, so we
+            // search for them
+            for snapshot_program in &snapshots.last().unwrap().programs {
+                if let Some(_) = programs.iter().find(|(_, v)| v == &&snapshot_program.id) {
+                    continue;
+                } else {
+                    // A new program was created
+                    programs.insert(ProgramId::from_origin(snapshot_program.id), snapshot_program.id);
+                }
+            }
 
             for exp in &fixture.expected {
                 let snapshot: DebugData = if let Some(step) = exp.step {
@@ -282,7 +293,7 @@ fn run_fixture(test: &'_ sample::Test, fixture: &sample::Fixture) -> ColoredStri
                     .dispatch_queue
                     .iter()
                     .map(|dispatch| CoreMessage::from(dispatch.message.clone()))
-                    .collect();
+                    .collect();   
                 let mut progs = snapshot
                     .programs
                     .iter()

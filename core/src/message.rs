@@ -884,7 +884,7 @@ impl<IG: MessageIdGenerator + 'static> MessageContext<IG> {
 /// Dispatch.
 ///
 /// Message plus information of entry point.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Dispatch {
     /// Kind of dispatch.
     pub kind: DispatchKind,
@@ -933,7 +933,7 @@ impl Dispatch {
 }
 
 /// Type of wasm execution entry point.
-#[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, TypeInfo)]
+#[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, Eq, TypeInfo)]
 pub enum DispatchKind {
     /// Initialization.
     Init,

@@ -57,7 +57,29 @@ fixtures:
           value: duplicate    
 
     expected:
-      # step 0 and 1 generate init messages
+      - step: 1
+        messages:
+          - destination: 1
+            source:
+              kind: id
+              value: 100
+            payload:
+              kind: utf-8
+              value: duplicate
+          - destination: 
+              kind: ss58
+              value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
+            init: true
+            payload:
+              kind: utf-8
+              value: unique
+            gas_limit: 10000
+          - destination: 
+              kind: ss58
+              value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
+            init: false
+            gas_limit: 10001    
+
       - step: 2
         programs:
           - kind: id
@@ -79,13 +101,23 @@ fixtures:
           - destination: 
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
+            init: false
+            gas_limit: 10001
+          - destination: 
+              kind: ss58
+              value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
             init: true
             payload:
               kind: utf-8
               value: not_unique
             gas_limit: 10000
+          - destination: 
+              kind: ss58
+              value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
+            init: false
+            gas_limit: 10001  
 
-      - step: 3
+      - step: 4
         messages:
           - destination: 
               kind: ss58
@@ -100,18 +132,8 @@ fixtures:
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
             init: false
             gas_limit: 10001
-          - destination: 
-              kind: ss58
-              value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
-            init: false
-            gas_limit: 10001
-      - step: 4
+      - step: 5
         messages:
-          - destination: 
-              kind: ss58
-              value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
-            init: false
-            gas_limit: 10001
           - destination: 
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
@@ -119,4 +141,4 @@ fixtures:
             gas_limit: 10001
           - destination: 1
             init: false
-            exit_code: 3
+            exitCode: 3
