@@ -55,7 +55,9 @@ impl ExecutionContext for InMemoryExtManager {
         self.waiting_init.borrow_mut().insert(program.id(), vec![]);
         let code_hash = sp_io::hashing::blake2_256(program.code()).into();
         if !self.codes.borrow().contains_key(&code_hash) {
-            self.codes.borrow_mut().insert(code_hash, program.code().to_vec());
+            self.codes
+                .borrow_mut()
+                .insert(code_hash, program.code().to_vec());
         }
         self.programs
             .borrow_mut()
@@ -130,10 +132,15 @@ impl JournalHandler for InMemoryExtManager {
         if self.programs.borrow().contains_key(&dest) || self.marked_destinations.contains(&dest) {
             // Find in dispatch queue init message to the destination. By that we recognize
             // messages to not yet initialized programs, whose init messages were executed.
-            let init_to_dest = self.dispatch_queue.iter().find(|d| d.message.dest() == dest && d.kind == DispatchKind::Init);
-            if let (DispatchKind::Handle, Some(list), None) =
-                (dispatch.kind, self.waiting_init.borrow_mut().get_mut(&dest), init_to_dest)
-            {
+            let init_to_dest = self
+                .dispatch_queue
+                .iter()
+                .find(|d| d.message.dest() == dest && d.kind == DispatchKind::Init);
+            if let (DispatchKind::Handle, Some(list), None) = (
+                dispatch.kind,
+                self.waiting_init.borrow_mut().get_mut(&dest),
+                init_to_dest,
+            ) {
                 let message_id = dispatch.message.id();
                 list.push(message_id);
                 self.wait_list.insert((dest, message_id), dispatch);
@@ -192,15 +199,12 @@ impl JournalHandler for InMemoryExtManager {
         // TODO https://github.com/gear-tech/gear/issues/644
     }
 
-    fn store_new_programs(
-        &mut self,
-        code_hash: CodeHash,
-        candidates: Vec<(ProgramId, MessageId)>,
-    ) {
+    fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
         if let Some(code) = self.codes.borrow().get(&code_hash) {
             for (candidate_id, init_message_id) in candidates {
                 if !self.programs.borrow().contains_key(&candidate_id) {
-                    let program = Program::new(candidate_id, code.clone()).expect("guaranteed to have constructable code");
+                    let program = Program::new(candidate_id, code.clone())
+                        .expect("guaranteed to have constructable code");
                     self.store_program(program, init_message_id);
                 } else {
                     log::debug!("Program with id {:?} already exists", candidate_id);

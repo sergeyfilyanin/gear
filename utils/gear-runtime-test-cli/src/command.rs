@@ -270,11 +270,14 @@ fn run_fixture(test: &'_ sample::Test, fixture: &sample::Fixture) -> ColoredStri
             // After processing queue some new programs could be created, so we
             // search for them
             for snapshot_program in &snapshots.last().unwrap().programs {
-                if let Some(_) = programs.iter().find(|(_, v)| v == &&snapshot_program.id) {
+                if programs.iter().any(|(_, v)| v == &snapshot_program.id) {
                     continue;
                 } else {
                     // A new program was created
-                    programs.insert(ProgramId::from_origin(snapshot_program.id), snapshot_program.id);
+                    programs.insert(
+                        ProgramId::from_origin(snapshot_program.id),
+                        snapshot_program.id,
+                    );
                 }
             }
 
@@ -293,7 +296,7 @@ fn run_fixture(test: &'_ sample::Test, fixture: &sample::Fixture) -> ColoredStri
                     .dispatch_queue
                     .iter()
                     .map(|dispatch| CoreMessage::from(dispatch.message.clone()))
-                    .collect();   
+                    .collect();
                 let mut progs = snapshot
                     .programs
                     .iter()

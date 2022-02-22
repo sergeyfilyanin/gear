@@ -1,6 +1,6 @@
 #![no_std]
 
-use gstd::{String, debug, msg, CodeHash};
+use gstd::{debug, msg, CodeHash, String};
 
 static mut COUNTER: i32 = 0;
 
@@ -29,14 +29,15 @@ fn get() -> i32 {
 pub unsafe extern "C" fn handle() {
     let command = String::from_utf8(msg::load_bytes()).expect("Unable to decode string");
     let submitted_code: CodeHash =
-            hex_literal::hex!("abf3746e72a6e8740bd9e12b879fbdd59e052cb390f116454e9116c22021ae4a")
-                .into();
+        hex_literal::hex!("abf3746e72a6e8740bd9e12b879fbdd59e052cb390f116454e9116c22021ae4a")
+            .into();
 
     match command.as_ref() {
         "default" => {
             // Assume that the code of the deploying program was submitted by `submit_code`
             // extrinsic and we got its hash. For more details please read README file.
-            let new_program_id = msg::create_program(submitted_code, get().to_le_bytes(), b"unique", 10_000, 0);
+            let new_program_id =
+                msg::create_program(submitted_code, get().to_le_bytes(), b"unique", 10_000, 0);
             debug!("A new program is created {:?}", new_program_id);
 
             let msg_id = msg::send(new_program_id, b"", 10_001, 0);
@@ -45,7 +46,13 @@ pub unsafe extern "C" fn handle() {
             increase();
         }
         "duplicate" => {
-            let new_program_id = msg::create_program(submitted_code, (get() - 1).to_le_bytes(), b"not_unique", 10_000, 0);
+            let new_program_id = msg::create_program(
+                submitted_code,
+                (get() - 1).to_le_bytes(),
+                b"not_unique",
+                10_000,
+                0,
+            );
             debug!("A new program is created {:?}", new_program_id);
 
             let msg_id = msg::send(new_program_id, b"", 10_001, 0);
