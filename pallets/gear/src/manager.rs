@@ -210,7 +210,6 @@ where
                 program_id,
                 reason,
             } => {
-                // todo issue #567
                 let program_id = program_id.into_origin();
                 let origin = origin.into_origin();
 
@@ -309,7 +308,6 @@ where
         }
     }
 
-    //todo [sab] проверки для защиты в рамках/разных одного блока
     fn send_dispatch(&mut self, message_id: MessageId, dispatch: Dispatch) {
         let message_id = message_id.into_origin();
         let mut dispatch: common::Dispatch = dispatch.into();
@@ -468,7 +466,6 @@ where
         }
     }
 
-    // todo [sab] double bind possible? yes - when program was deleted, therefore delete values after initializing code
     fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
         let code_hash = code_hash.inner().into();
 

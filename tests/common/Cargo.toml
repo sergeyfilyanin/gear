@@ -11,3 +11,4 @@ gear-core = { path = "../../core" }
 codec = { package = "parity-scale-codec", version = "2", default-features = false }
 gear-backend-wasmtime = { path = "../../core-backend/wasmtime" }
 core-processor = { package = "gear-core-processor", path = "../../core-processor" }
+blake2-rfc = { version = "0.2.16", default-features = false }

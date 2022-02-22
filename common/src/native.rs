@@ -111,11 +111,10 @@ impl From<CoreDispatch> for Dispatch {
     }
 }
 
-// todo [sab] выпиливай
 pub fn set_program(program: CoreProgram) {
     let code_hash = sp_io::hashing::blake2_256(program.code()).into();
     // This code is only used in tests and is redundant for
-    // production. TODO to be fixed in #245
+    // production.
     if !crate::code_exists(code_hash) {
         crate::set_code(code_hash, program.code());
     }

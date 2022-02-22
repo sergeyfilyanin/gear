@@ -22,26 +22,25 @@ use gear_core::{
     message::{Dispatch, DispatchKind, Message, MessageId},
     program::{CodeHash, Program, ProgramId},
 };
-use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use crate::check::ExecutionContext;
 
 #[derive(Clone, Default)]
 pub struct InMemoryExtManager {
-    codes: RefCell<BTreeMap<CodeHash, Vec<u8>>>,
+    codes: BTreeMap<CodeHash, Vec<u8>>,
     marked_destinations: BTreeSet<ProgramId>,
     dispatch_queue: VecDeque<Dispatch>,
     log: Vec<Message>,
-    programs: RefCell<BTreeMap<ProgramId, Option<Program>>>,
-    waiting_init: RefCell<BTreeMap<ProgramId, Vec<MessageId>>>,
+    programs: BTreeMap<ProgramId, Option<Program>>,
+    waiting_init: BTreeMap<ProgramId, Vec<MessageId>>,
     wait_list: BTreeMap<(ProgramId, MessageId), Dispatch>,
     current_failed: bool,
 }
 
 impl InMemoryExtManager {
     fn move_waiting_msgs_to_queue(&mut self, program_id: ProgramId) {
-        let waiting_messages = self.waiting_init.borrow_mut().remove(&program_id);
+        let waiting_messages = self.waiting_init.remove(&program_id);
         for m_id in waiting_messages.iter().flatten() {
             if let Some(dispatch) = self.wait_list.remove(&(program_id, *m_id)) {
                 self.dispatch_queue.push_back(dispatch);
@@ -51,17 +50,11 @@ impl InMemoryExtManager {
 }
 
 impl ExecutionContext for InMemoryExtManager {
-    fn store_program(&self, program: gear_core::program::Program, _init_message_id: MessageId) {
-        self.waiting_init.borrow_mut().insert(program.id(), vec![]);
+    fn store_program(&mut self, program: gear_core::program::Program, _init_message_id: MessageId) {
+        self.waiting_init.insert(program.id(), vec![]);
         let code_hash = sp_io::hashing::blake2_256(program.code()).into();
-        if !self.codes.borrow().contains_key(&code_hash) {
-            self.codes
-                .borrow_mut()
-                .insert(code_hash, program.code().to_vec());
-        }
-        self.programs
-            .borrow_mut()
-            .insert(program.id(), Some(program));
+        self.codes.insert(code_hash, program.code().to_vec());
+        self.programs.insert(program.id(), Some(program));
     }
 }
 
@@ -76,7 +69,6 @@ impl CollectState for InMemoryExtManager {
         } = self.clone();
 
         let programs = programs
-            .into_inner()
             .into_iter()
             .filter_map(|(id, p_opt)| p_opt.map(|p| (id, p)))
             .collect();
@@ -96,7 +88,7 @@ impl JournalHandler for InMemoryExtManager {
             DispatchOutcome::MessageTrap { .. } => true,
             DispatchOutcome::InitFailure { program_id, .. } => {
                 self.move_waiting_msgs_to_queue(program_id);
-                if let Some(prog) = self.programs.borrow_mut().get_mut(&program_id) {
+                if let Some(prog) = self.programs.get_mut(&program_id) {
                     // Program is now considered terminated (in opposite to active). But not deleted from the state.
                     *prog = None;
                 }
@@ -104,7 +96,7 @@ impl JournalHandler for InMemoryExtManager {
             }
             DispatchOutcome::Success(_) | DispatchOutcome::NoExecution(_) => false,
             DispatchOutcome::InitSuccess { program_id, .. } => {
-                if let Some(Some(program)) = self.programs.borrow_mut().get_mut(&program_id) {
+                if let Some(Some(program)) = self.programs.get_mut(&program_id) {
                     program.set_initialized();
                 }
                 self.move_waiting_msgs_to_queue(program_id);
@@ -115,7 +107,7 @@ impl JournalHandler for InMemoryExtManager {
     fn gas_burned(&mut self, _message_id: MessageId, _origin: ProgramId, _amount: u64) {}
 
     fn exit_dispatch(&mut self, id_exited: ProgramId, _value_destination: ProgramId) {
-        self.programs.borrow_mut().remove(&id_exited);
+        self.programs.remove(&id_exited);
     }
 
     fn message_consumed(&mut self, message_id: MessageId) {
@@ -129,7 +121,7 @@ impl JournalHandler for InMemoryExtManager {
     }
     fn send_dispatch(&mut self, _message_id: MessageId, dispatch: Dispatch) {
         let dest = dispatch.message.dest();
-        if self.programs.borrow().contains_key(&dest) || self.marked_destinations.contains(&dest) {
+        if self.programs.contains_key(&dest) || self.marked_destinations.contains(&dest) {
             // Find in dispatch queue init message to the destination. By that we recognize
             // messages to not yet initialized programs, whose init messages were executed.
             let init_to_dest = self
@@ -138,7 +130,7 @@ impl JournalHandler for InMemoryExtManager {
                 .find(|d| d.message.dest() == dest && d.kind == DispatchKind::Init);
             if let (DispatchKind::Handle, Some(list), None) = (
                 dispatch.kind,
-                self.waiting_init.borrow_mut().get_mut(&dest),
+                self.waiting_init.get_mut(&dest),
                 init_to_dest,
             ) {
                 let message_id = dispatch.message.id();
@@ -167,8 +159,7 @@ impl JournalHandler for InMemoryExtManager {
         }
     }
     fn update_nonce(&mut self, program_id: ProgramId, nonce: u64) {
-        let mut programs = self.programs.borrow_mut();
-        if let Some(prog) = programs
+        if let Some(prog) = self.programs
             .get_mut(&program_id)
             .expect("Program not found in storage")
         {
@@ -181,8 +172,7 @@ impl JournalHandler for InMemoryExtManager {
         page_number: PageNumber,
         data: Option<Vec<u8>>,
     ) {
-        let mut programs = self.programs.borrow_mut();
-        if let Some(prog) = programs
+        if let Some(prog) = self.programs
             .get_mut(&program_id)
             .expect("Program not found in storage")
         {
@@ -200,9 +190,9 @@ impl JournalHandler for InMemoryExtManager {
     }
 
     fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
-        if let Some(code) = self.codes.borrow().get(&code_hash) {
+        if let Some(code) = self.codes.get(&code_hash).cloned() {
             for (candidate_id, init_message_id) in candidates {
-                if !self.programs.borrow().contains_key(&candidate_id) {
+                if !self.programs.contains_key(&candidate_id) {
                     let program = Program::new(candidate_id, code.clone())
                         .expect("guaranteed to have constructable code");
                     self.store_program(program, init_message_id);

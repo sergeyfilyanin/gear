@@ -317,6 +317,18 @@ impl CodeHash {
     pub fn inner(&self) -> [u8; 32] {
         self.0
     }
+
+    /// Create new `CodeHash` bytes.
+    ///
+    /// Will panic if slice is not 32 bytes length.
+    pub fn from_slice(s: &[u8]) -> Self {
+        if s.len() != 32 {
+            panic!("Slice is not 32 bytes length")
+        };
+        let mut id = CodeHash([0u8; 32]);
+        id.0[..].copy_from_slice(s);
+        id
+    }
 }
 
 impl From<[u8; 32]> for CodeHash {

@@ -48,7 +48,7 @@ use std::{
 const FILTER_ENV: &str = "RUST_LOG";
 
 pub trait ExecutionContext {
-    fn store_program(&self, program: gear_core::program::Program, init_message_id: MessageId);
+    fn store_program(&mut self, program: gear_core::program::Program, init_message_id: MessageId);
 }
 
 pub struct FixtureLogger {

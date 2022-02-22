@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use blake2_rfc::blake2b;
 use codec::{Decode, Encode, Error as CodecError};
 use core_processor::{
     common::{DispatchOutcome, JournalHandler},
@@ -23,13 +24,12 @@ use core_processor::{
     Ext,
 };
 use gear_backend_wasmtime::WasmtimeEnvironment;
-use gear_core::program::CodeHash;
 use gear_core::{
     memory::PageNumber,
     message::{Dispatch, DispatchKind, Message, MessageId},
-    program::{Program, ProgramId},
+    program::{CodeHash, Program, ProgramId},
 };
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 pub struct InitProgram {
     pub program_id: Option<ProgramId>,
@@ -243,6 +243,8 @@ pub enum Error {
 
 pub struct RunnerContext {
     // Existing key can have a None value, which declares that program is terminated (like being in limbo).
+    codes: BTreeMap<CodeHash, Vec<u8>>,
+    marked_destinations: BTreeSet<ProgramId>,
     programs: BTreeMap<ProgramId, Option<Program>>,
     wait_list: BTreeMap<MessageId, Dispatch>,
     program_id: u64,
@@ -368,8 +370,26 @@ impl<'a> JournalHandler for Journal<'a> {
         // "TODO https://github.com/gear-tech/gear/issues/644"
     }
 
-    fn store_new_programs(&mut self, _: CodeHash, _: Vec<(ProgramId, MessageId)>) {
-        todo!("todo [sab]")
+    fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
+        if let Some(code) = self.context.codes.get(&code_hash).cloned() {
+            for (candidate_id, _) in candidates {
+                if !self.context.programs.contains_key(&candidate_id) {
+                    let program = Program::new(candidate_id, code.clone())
+                        .expect("internal error: not constructable code was provided");
+                    self.context.store_new_program(program.id(), program);
+                } else {
+                    println!("Program with id {:?} already exists", candidate_id);
+                }
+            }
+        } else {
+            println!(
+                "No referencing code with code hash {:?} for candidate programs",
+                code_hash
+            );
+            for (invalid_candidate, _) in candidates {
+                self.context.marked_destinations.insert(invalid_candidate);
+            }
+        }
     }
 }
 
@@ -400,7 +420,7 @@ impl RunnerContext {
 
         // store program
         let program = Program::new(new_program_id, code).expect("Failed to create program");
-        self.programs.insert(new_program_id, Some(program.clone()));
+        self.store_new_program(new_program_id, program.clone());
 
         // generate disspatch
         let dispatch = Dispatch {
@@ -422,6 +442,15 @@ impl RunnerContext {
         core_processor::handle_journal(journal, &mut Journal { context: self });
 
         message_id
+    }
+
+    pub fn store_new_program(&mut self, program_id: ProgramId, program: Program) {
+        let code_hash = {
+            let h = blake2b::blake2b(32, &[], program.code());
+            CodeHash::from_slice(h.as_bytes())
+        };
+        self.codes.insert(code_hash, program.code().to_vec());
+        self.programs.insert(program_id, Some(program));
     }
 
     pub fn init_program_with_reply<P, D>(&mut self, init_data: P) -> D
@@ -606,6 +635,8 @@ impl Default for RunnerContext {
             log: Vec::new(),
             outcomes: BTreeMap::new(),
             gas_spent: BTreeMap::new(),
+            codes: BTreeMap::new(),
+            marked_destinations: BTreeSet::new(),
         }
     }
 }

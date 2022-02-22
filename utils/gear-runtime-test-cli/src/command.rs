@@ -157,7 +157,6 @@ fn run_fixture(test: &'_ sample::Test, fixture: &sample::Fixture) -> ColoredStri
 
             let salt = program.id.to_program_id().as_slice().to_vec();
             let mut data = Vec::new();
-            // TODO #512
             code_hash.encode_to(&mut data);
             salt.encode_to(&mut data);
 

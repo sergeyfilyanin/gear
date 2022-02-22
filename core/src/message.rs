@@ -124,6 +124,8 @@ pub enum Error {
     NoReplyFound,
     /// An attempt to interrupt execution with `wait(..)` while some messages weren't completed
     UncommittedPayloads,
+    /// Duplicate init message for the same destination
+    DuplicateInit,
 }
 
 /// Incoming message.
@@ -856,20 +858,15 @@ impl<IG: MessageIdGenerator + 'static> MessageContext<IG> {
         (state, store)
     }
 
-    // todo [sab] maybe introduce duplicate check here.
     /// Send a new init program message
     ///
     /// Generates a new program id from provided `packet` data and returns it
     /// along with init message id.
-    pub fn send_init_program(&mut self, packet: ProgramInitPacket) -> (ProgramId, MessageId) {
-        let new_program_id = {
-            let code_hash = packet.code_hash;
-            let mut data = Vec::with_capacity(code_hash.inner().len() + packet.salt.len());
-            code_hash.encode_to(&mut data);
-            packet.salt.encode_to(&mut data);
-            ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
-        };
-
+    pub fn send_init_program(
+        &mut self,
+        new_program_id: ProgramId,
+        packet: ProgramInitPacket,
+    ) -> (ProgramId, MessageId) {
         let msg = self
             .id_generator
             .borrow_mut()

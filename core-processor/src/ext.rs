@@ -22,6 +22,7 @@ use crate::{
     lazy_pages,
 };
 use alloc::{collections::BTreeMap, vec::Vec};
+use codec::Encode;
 use gear_backend_common::ExtInfo;
 use gear_core::{
     env::Ext as EnvExt,
@@ -350,8 +351,23 @@ impl EnvExt for Ext {
 
     fn create_program(&mut self, packet: ProgramInitPacket) -> Result<ProgramId, &'static str> {
         let code_hash = packet.code_hash;
+        let new_program_id = {
+            let mut data = Vec::with_capacity(code_hash.inner().len() + packet.salt.len());
+            code_hash.encode_to(&mut data);
+            packet.salt.encode_to(&mut data);
+            ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
+        };
+
+        if let Some(data) = self.program_candidates_data.get(&code_hash) {
+            if data.iter().any(|(id, _)| id == &new_program_id) {
+                return self.return_and_store_err(Err("Duplicate init message for the same id"));
+            }
+        }
+
         // Send a message for program creation
-        let (new_prog_id, init_msg_id) = self.message_context.send_init_program(packet);
+        let (new_prog_id, init_msg_id) = self
+            .message_context
+            .send_init_program(new_program_id, packet);
 
         // Save a program candidate for this run
         let entry = self
