@@ -60,7 +60,7 @@ impl From<LazyPagesExt> for ExtInfo {
 
         let (
             MessageState {
-                program_init,
+                init_messages,
                 outgoing,
                 reply,
                 awakening,
@@ -85,7 +85,7 @@ impl From<LazyPagesExt> for ExtInfo {
             payload_store: Some(store),
             trap_explanation,
             exit_argument: ext.inner.exit_argument,
-            program_init,
+            init_messages,
             program_candidates_data,
         }
     }

@@ -694,7 +694,7 @@ pub struct MessageState {
     /// Collection of outgoing messages generated.
     pub outgoing: Vec<OutgoingMessage>,
     /// Collection of a new program init messages generated.
-    pub program_init: Vec<ProgramInitMessage>,
+    pub init_messages: Vec<ProgramInitMessage>,
     /// Reply generated.
     pub reply: Option<ReplyMessage>,
     /// Messages to be waken.
@@ -877,7 +877,7 @@ impl<IG: MessageIdGenerator + 'static> MessageContext<IG> {
             .borrow_mut()
             .produce_init(new_program_id, packet);
         let msg_id = msg.id;
-        self.state.borrow_mut().program_init.push(msg);
+        self.state.borrow_mut().init_messages.push(msg);
 
         (new_program_id, msg_id)
     }

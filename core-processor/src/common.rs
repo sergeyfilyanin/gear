@@ -202,9 +202,9 @@ pub enum JournalNote {
     },
     /// Store programs requested by user to be initialized later
     StoreNewPrograms {
-        /// Map of code hash to ids of program candidates and of their init messages
+        /// Code hash used to create new programs with ids in `candidates` field
         code_hash: CodeHash,
-        /// Collection of program candidate ids and their respected message ids.
+        /// Collection of program candidate ids and their init message ids.
         candidates: Vec<(ProgramId, MessageId)>,
     },
 }
@@ -243,7 +243,7 @@ pub trait JournalHandler {
     );
     /// Send value
     fn send_value(&mut self, from: ProgramId, to: Option<ProgramId>, value: u128);
-    /// Bind code hash to program ids.
+    /// Store new programs in storage
     ///
     /// Program ids are ids of_potential_ (planned to be initialized) programs.
     fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>);

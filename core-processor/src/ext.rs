@@ -179,7 +179,7 @@ impl From<Ext> for ExtInfo {
 
         let (
             MessageState {
-                program_init,
+                init_messages,
                 outgoing,
                 reply,
                 awakening,
@@ -197,7 +197,7 @@ impl From<Ext> for ExtInfo {
             gas_amount,
             pages: ext.memory_context.allocations().clone(),
             accessed_pages,
-            program_init,
+            init_messages,
             outgoing,
             reply,
             awakening,

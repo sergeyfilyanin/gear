@@ -41,7 +41,7 @@ pub fn process<A: ProcessorExt + EnvExt + Into<ExtInfo> + 'static, E: Environmen
     if let Some(exit_code) = is_non_executable(actor.as_ref(), &dispatch) {
         process_non_executable(dispatch, exit_code)
     } else {
-        let actor = actor.expect("message is not executed if program is none");
+        let actor = actor.expect("message is not executed if actor is none");
         let execution_settings = ExecutionSettings::new(block_info, existential_deposit);
         let initial_nonce = actor.program.message_nonce();
 

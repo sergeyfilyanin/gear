@@ -300,7 +300,7 @@ pub mod pallet {
 
             if message.value > 0 {
                 // Assuming the programs has enough balance
-                // TODO #644 check existential deposit!
+                // TODO #644 check existential deposit as it is done in pallet's manager
                 T::Currency::repatriate_reserved(
                     &<T::AccountId as Origin>::from_origin(message.source),
                     user_id,

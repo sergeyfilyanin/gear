@@ -76,7 +76,7 @@ impl CollectState for InMemoryExtManager {
 
         let actors = actors
             .into_iter()
-            .filter_map(|(id, a_opt)| a_opt.map(|p| (id, p)))
+            .filter_map(|(id, a_opt)| a_opt.map(|a| (id, a)))
             .collect();
 
         State {

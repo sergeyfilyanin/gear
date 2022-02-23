@@ -211,9 +211,8 @@ where
                 program_id,
             } => {
                 let program_id = program_id.into_origin();
-                let message_id = message_id.into_origin();
                 let event = Event::InitSuccess(MessageInfo {
-                    message_id,
+                    message_id: message_id.into_origin(),
                     origin: origin.into_origin(),
                     program_id,
                 });
@@ -502,7 +501,7 @@ where
         if let Some(code) = common::get_code(code_hash) {
             for (candidate_id, init_message) in candidates {
                 if !common::program_exists(candidate_id.into_origin()) {
-                    // Code hash for invalid code isn't added to the storage from extrinsics.
+                    // Code hash for invalid code can't be added to the storage from extrinsics.
                     let new_program = NativeProgram::new(candidate_id, code.clone())
                         .expect("guaranteed to be valid");
                     self.set_program(new_program, init_message.into_origin());

@@ -1,9 +1,9 @@
 # `create_program` syscall example
 In order to define "factory" logic in your program
 you should do the following steps:
-1. Invoke `submit_code` extrinsic call to set your "child" program, which you will instantiate from the other ("parent") one.
+1. Invoke `submit_code` extrinsic call to set your "child" program, which you will instantiate from the other ("parent") program.
 2. Get the code hash wrapped in `CodeSaved` event generated after successful extrinsic call.
-3. Use the code hash as for a corresponding parameter in `create_program` sys-call.
+3. Use the code hash as a corresponding parameter in `create_program` sys-call.
 
 In this example we deploy the next code (in wat format):
 ```

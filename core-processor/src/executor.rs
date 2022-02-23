@@ -266,7 +266,7 @@ pub fn execute_wasm<A: ProcessorExt + EnvExt + Into<ExtInfo> + 'static, E: Envir
     // Storing outgoing dispatches
     let mut generated_dispatches = Vec::new();
 
-    for msg in info.program_init {
+    for msg in info.init_messages {
         generated_dispatches.push(Dispatch::new_init(msg.into_message(program_id)));
     }
 
@@ -282,7 +282,7 @@ pub fn execute_wasm<A: ProcessorExt + EnvExt + Into<ExtInfo> + 'static, E: Envir
         )));
     }
 
-    // Getting new programs that are scheduled to be initialized (respected messages are in `outgoing` collection)
+    // Getting new programs that are scheduled to be initialized (respected messages are in `generated_dispatches` collection)
     let program_candidates_data = info.program_candidates_data;
     let mut dispatch = dispatch;
     dispatch.payload_store = info.payload_store;

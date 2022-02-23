@@ -503,13 +503,14 @@ pub fn value() -> u128 {
 }
 
 /// Creates a new program and returns its address.
-///
-/// The deploying program code must be represented as blake2b hash (`code_hash`
-/// parameter). This function creates a program initialization message and as
-/// any message send in this crate, this one requires common additional data for
-/// message execution, such as: 1. `payload` that can be used in `init` function
-/// of the newly deployed "child" program; 2. `gas_limit`, provided for the
-/// program initialization; 3. `value`, sent with the message.
+/// 
+/// The function creates a program initialization message and, as
+/// any message send function in the crate, this one requires common additional data for
+/// message execution, such as: 
+/// 1. `payload` that can be used in `init` function of the newly deployed "child" program; 
+/// 2. `gas_limit`, provided for the program initialization; 
+/// 3. `value`, sent with the message. 
+/// Code of newly creating program must be represented as blake2b hash (`code_hash` parameter).
 ///
 /// # Examples
 ///

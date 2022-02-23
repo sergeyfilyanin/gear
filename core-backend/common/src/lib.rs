@@ -58,7 +58,7 @@ pub struct ExtInfo {
     pub pages: BTreeSet<PageNumber>,
     pub accessed_pages: BTreeMap<PageNumber, Vec<u8>>,
     pub outgoing: Vec<OutgoingMessage>,
-    pub program_init: Vec<ProgramInitMessage>,
+    pub init_messages: Vec<ProgramInitMessage>,
     pub reply: Option<ReplyMessage>,
     pub awakening: Vec<MessageId>,
     pub nonce: u64,
