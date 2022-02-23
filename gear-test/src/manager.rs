@@ -32,7 +32,7 @@ pub struct InMemoryExtManager {
     marked_destinations: BTreeSet<ProgramId>,
     dispatch_queue: VecDeque<Dispatch>,
     log: Vec<Message>,
-    programs: BTreeMap<ProgramId, Option<Program>>,
+    actors: BTreeMap<ProgramId, Option<ExecutableActor>>,
     waiting_init: BTreeMap<ProgramId, Vec<MessageId>>,
     wait_list: BTreeMap<(ProgramId, MessageId), Dispatch>,
     current_failed: bool,
@@ -54,7 +54,13 @@ impl ExecutionContext for InMemoryExtManager {
         self.waiting_init.insert(program.id(), vec![]);
         let code_hash = sp_io::hashing::blake2_256(program.code()).into();
         self.codes.insert(code_hash, program.code().to_vec());
-        self.programs.insert(program.id(), Some(program));
+        self.actors.insert(
+            program.id(), 
+            Some(ExecutableActor {
+                program,
+                balance: 0,
+            }),
+        );
     }
 }
 
@@ -63,20 +69,20 @@ impl CollectState for InMemoryExtManager {
         let InMemoryExtManager {
             dispatch_queue,
             log,
-            programs,
+            actors,
             current_failed,
             ..
         } = self.clone();
 
-        let programs = programs
+        let actors = actors
             .into_iter()
-            .filter_map(|(id, p_opt)| p_opt.map(|p| (id, p)))
+            .filter_map(|(id, a_opt)| a_opt.map(|p| (id, p)))
             .collect();
 
         State {
             dispatch_queue,
             log,
-            programs,
+            actors,
             current_failed,
         }
     }
@@ -88,15 +94,15 @@ impl JournalHandler for InMemoryExtManager {
             DispatchOutcome::MessageTrap { .. } => true,
             DispatchOutcome::InitFailure { program_id, .. } => {
                 self.move_waiting_msgs_to_queue(program_id);
-                if let Some(prog) = self.programs.get_mut(&program_id) {
+                if let Some(actor) = self.actors.get_mut(&program_id) {
                     // Program is now considered terminated (in opposite to active). But not deleted from the state.
-                    *prog = None;
+                    *actor = None;
                 }
                 true
             }
             DispatchOutcome::Success(_) | DispatchOutcome::NoExecution(_) => false,
             DispatchOutcome::InitSuccess { program_id, .. } => {
-                if let Some(Some(program)) = self.programs.get_mut(&program_id) {
+                if let Some(Some(program)) = self.actors.get_mut(&program_id) {
                     program.set_initialized();
                 }
                 self.move_waiting_msgs_to_queue(program_id);
@@ -107,7 +113,7 @@ impl JournalHandler for InMemoryExtManager {
     fn gas_burned(&mut self, _message_id: MessageId, _origin: ProgramId, _amount: u64) {}
 
     fn exit_dispatch(&mut self, id_exited: ProgramId, _value_destination: ProgramId) {
-        self.programs.remove(&id_exited);
+        self.actors.remove(&id_exited);
     }
 
     fn message_consumed(&mut self, message_id: MessageId) {
@@ -121,7 +127,7 @@ impl JournalHandler for InMemoryExtManager {
     }
     fn send_dispatch(&mut self, _message_id: MessageId, dispatch: Dispatch) {
         let dest = dispatch.message.dest();
-        if self.programs.contains_key(&dest) || self.marked_destinations.contains(&dest) {
+        if self.actors.contains_key(&dest) || self.marked_destinations.contains(&dest) {
             // Find in dispatch queue init message to the destination. By that we recognize
             // messages to not yet initialized programs, whose init messages were executed.
             let init_to_dest = self
@@ -159,12 +165,12 @@ impl JournalHandler for InMemoryExtManager {
         }
     }
     fn update_nonce(&mut self, program_id: ProgramId, nonce: u64) {
-        if let Some(prog) = self
-            .programs
+        if let Some(actor) = self
+            .actors
             .get_mut(&program_id)
             .expect("Program not found in storage")
         {
-            prog.set_message_nonce(nonce);
+            actor.program.set_message_nonce(nonce);
         }
     }
     fn update_page(
@@ -173,28 +179,42 @@ impl JournalHandler for InMemoryExtManager {
         page_number: PageNumber,
         data: Option<Vec<u8>>,
     ) {
-        if let Some(prog) = self
-            .programs
+        if let Some(actor) = self
+            .actors
             .get_mut(&program_id)
             .expect("Program not found in storage")
         {
             if let Some(data) = data {
-                let _ = prog.set_page(page_number, &data);
+                let _ = actor.program.set_page(page_number, &data);
             } else {
-                prog.remove_page(page_number);
+                actor.program.remove_page(page_number);
             }
         } else {
             unreachable!("Can't update page for terminated program");
         }
     }
-    fn send_value(&mut self, _from: ProgramId, _to: Option<ProgramId>, _value: u128) {
-        // TODO https://github.com/gear-tech/gear/issues/644
+    fn send_value(&mut self, from: ProgramId, to: Option<ProgramId>, value: u128) {
+        if let Some(to) = to {
+            let mut actors = self.actors.borrow_mut();
+
+            if let Some(Some(actor)) = actors.get_mut(&from) {
+                if actor.balance < value {
+                    panic!("Actor {:?} balance is less then sent value", from);
+                }
+
+                actor.balance -= value;
+            };
+
+            if let Some(Some(actor)) = actors.get_mut(&to) {
+                actor.balance += value;
+            };
+        };
     }
 
     fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
         if let Some(code) = self.codes.get(&code_hash).cloned() {
             for (candidate_id, init_message_id) in candidates {
-                if !self.programs.contains_key(&candidate_id) {
+                if !self.actors.contains_key(&candidate_id) {
                     let program = Program::new(candidate_id, code.clone())
                         .expect("guaranteed to have constructable code");
                     self.store_program(program, init_message_id);

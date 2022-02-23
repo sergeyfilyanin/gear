@@ -1,6 +1,6 @@
 // This file is part of Gear.
 
-// Copyright (C) 2021 Gear Technologies Inc.
+// Copyright (C) 2021-2022 Gear Technologies Inc.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 use blake2_rfc::blake2b;
 use codec::{Decode, Encode, Error as CodecError};
 use core_processor::{
-    common::{DispatchOutcome, JournalHandler},
+    common::{DispatchOutcome, ExecutableActor, JournalHandler},
     configs::BlockInfo,
     Ext,
 };
@@ -30,6 +30,8 @@ use gear_core::{
     program::{CodeHash, Program, ProgramId},
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+
+pub const EXISTENTIAL_DEPOSIT: u128 = 500;
 
 pub struct InitProgram {
     pub program_id: Option<ProgramId>,
@@ -245,7 +247,7 @@ pub struct RunnerContext {
     // Existing key can have a None value, which declares that program is terminated (like being in limbo).
     codes: BTreeMap<CodeHash, Vec<u8>>,
     marked_destinations: BTreeSet<ProgramId>,
-    programs: BTreeMap<ProgramId, Option<Program>>,
+    actors: BTreeMap<ProgramId, Option<ExecutableActor>>,
     wait_list: BTreeMap<MessageId, Dispatch>,
     program_id: u64,
     used_program_ids: HashSet<ProgramId>,
@@ -275,7 +277,7 @@ impl<'a> JournalHandler for Journal<'a> {
             }
             DispatchOutcome::InitSuccess { .. } => {}
             DispatchOutcome::InitFailure { program_id, .. } => {
-                if let Some(prog) = self.context.programs.get_mut(&program_id) {
+                if let Some(prog) = self.context.actors.get_mut(&program_id) {
                     *prog = None;
                 }
             }
@@ -287,7 +289,7 @@ impl<'a> JournalHandler for Journal<'a> {
     }
 
     fn exit_dispatch(&mut self, id_exited: ProgramId, _value_destination: ProgramId) {
-        self.context.programs.remove(&id_exited);
+        self.context.actors.remove(&id_exited);
     }
 
     fn message_consumed(&mut self, _message_id: MessageId) {}
@@ -305,7 +307,7 @@ impl<'a> JournalHandler for Journal<'a> {
             _ => {}
         }
 
-        if self.context.programs.contains_key(&dispatch.message.dest) {
+        if self.context.actors.contains_key(&dispatch.message.dest) {
             self.context.dispatch_queue.push(dispatch);
         } else {
             self.context.log.push(dispatch.message);
@@ -332,14 +334,14 @@ impl<'a> JournalHandler for Journal<'a> {
     }
 
     fn update_nonce(&mut self, program_id: ProgramId, nonce: u64) {
-        let maybe_program = self
+        let maybe_actor = self
             .context
-            .programs
+            .actors
             .get_mut(&program_id)
             .expect("program not found");
 
-        if let Some(prog) = maybe_program {
-            prog.set_message_nonce(nonce);
+        if let Some(actor) = maybe_actor {
+            actor.program.set_message_nonce(nonce);
         }
     }
 
@@ -349,34 +351,34 @@ impl<'a> JournalHandler for Journal<'a> {
         page_number: PageNumber,
         data: Option<Vec<u8>>,
     ) {
-        let program = self
+        let actor = self
             .context
-            .programs
+            .actors
             .get_mut(&program_id)
             .expect("program not found");
 
-        if let Some(program) = program {
+        if let Some(actor) = actor {
             if let Some(data) = data {
-                let _ = program.set_page(page_number, &data);
+                let _ = actor.program.set_page(page_number, &data);
             } else {
-                program.remove_page(page_number);
+                actor.program.remove_page(page_number);
             }
         } else {
             unreachable!("Update page can'be called for terminated program");
         }
     }
 
-    fn send_value(&mut self, _from: ProgramId, _to: Option<ProgramId>, _value: u128) {
-        // "TODO https://github.com/gear-tech/gear/issues/644"
-    }
-
     fn store_new_programs(&mut self, code_hash: CodeHash, candidates: Vec<(ProgramId, MessageId)>) {
         if let Some(code) = self.context.codes.get(&code_hash).cloned() {
             for (candidate_id, _) in candidates {
-                if !self.context.programs.contains_key(&candidate_id) {
+                if !self.context.actors.contains_key(&candidate_id) {
                     let program = Program::new(candidate_id, code.clone())
                         .expect("internal error: not constructable code was provided");
-                    self.context.store_new_program(program.id(), program);
+                    let actor = ExecutableActor {
+                        program,
+                        balance: 0,
+                    };    
+                    self.context.store_new_actor(program.id(), actor);
                 } else {
                     println!("Program with id {:?} already exists", candidate_id);
                 }
@@ -390,6 +392,22 @@ impl<'a> JournalHandler for Journal<'a> {
                 self.context.marked_destinations.insert(invalid_candidate);
             }
         }
+    }
+
+    fn send_value(&mut self, from: ProgramId, to: Option<ProgramId>, value: u128) {
+        if let Some(to) = to {
+            if let Some(Some(actor)) = self.context.actors.get_mut(&from) {
+                if actor.balance < value {
+                    panic!("Actor {:?} balance is less then sent value", from);
+                }
+
+                actor.balance -= value;
+            };
+
+            if let Some(Some(actor)) = self.context.actors.get_mut(&to) {
+                actor.balance += value;
+            };
+        };
     }
 }
 
@@ -420,7 +438,11 @@ impl RunnerContext {
 
         // store program
         let program = Program::new(new_program_id, code).expect("Failed to create program");
-        self.store_new_program(new_program_id, program.clone());
+        let actor = ExecutableActor {
+            program,
+            balance: 0,
+        };
+        self.store_new_actor(new_program_id, actor.clone());
 
         // generate disspatch
         let dispatch = Dispatch {
@@ -430,13 +452,14 @@ impl RunnerContext {
         };
         let message_id = dispatch.message.id;
 
-        let journal = core_processor::process::<WasmtimeEnvironment<Ext>>(
-            Some(program),
+        let journal = core_processor::process::<Ext, WasmtimeEnvironment<Ext>>(
+            Some(actor),
             dispatch,
             BlockInfo {
                 height: 1,
                 timestamp: 1,
             },
+            EXISTENTIAL_DEPOSIT,
         );
 
         core_processor::handle_journal(journal, &mut Journal { context: self });
@@ -444,13 +467,14 @@ impl RunnerContext {
         message_id
     }
 
-    pub fn store_new_program(&mut self, program_id: ProgramId, program: Program) {
+    pub fn store_new_actor(&mut self, program_id: ProgramId, actor: ExecutableActor) {
+        let code = actor.program.code();
         let code_hash = {
-            let h = blake2b::blake2b(32, &[], program.code());
+            let h = blake2b::blake2b(32, &[], code);
             CodeHash::from_slice(h.as_bytes())
         };
-        self.codes.insert(code_hash, program.code().to_vec());
-        self.programs.insert(program_id, Some(program));
+        self.codes.insert(code_hash, code.to_vec());
+        self.actors.insert(program_id, Some(actor));
     }
 
     pub fn init_program_with_reply<P, D>(&mut self, init_data: P) -> D
@@ -597,15 +621,16 @@ impl RunnerContext {
         while !self.dispatch_queue.is_empty() {
             let journal = {
                 let messages = std::mem::take(&mut self.dispatch_queue);
-                let programs = self.programs.clone();
+                let actors = self.actors.clone();
 
-                core_processor::process_many::<WasmtimeEnvironment<Ext>>(
-                    programs,
+                core_processor::process_many::<Ext, WasmtimeEnvironment<Ext>>(
+                    actors,
                     messages,
                     BlockInfo {
                         height: 1,
                         timestamp: 1,
                     },
+                    EXISTENTIAL_DEPOSIT,
                 )
             };
 
@@ -625,7 +650,7 @@ fn reply_or_panic<D: Decode>(response: Option<Result<D, Error>>) -> D {
 impl Default for RunnerContext {
     fn default() -> Self {
         Self {
-            programs: BTreeMap::new(),
+            actors: BTreeMap::new(),
             wait_list: BTreeMap::new(),
             program_id: 1,
             used_program_ids: HashSet::new(),
