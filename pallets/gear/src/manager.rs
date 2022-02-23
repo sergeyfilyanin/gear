@@ -353,7 +353,6 @@ where
             if dispatch.message.gas_limit > 0 {
                 dispatch.message.gas_limit = 0;
             }
-            log::debug!("REACHED");
             Pallet::<T>::insert_to_mailbox(dispatch.message.dest, dispatch.message.clone());
             Pallet::<T>::deposit_event(Event::Log(dispatch.message));
         }

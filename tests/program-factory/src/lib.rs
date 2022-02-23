@@ -18,7 +18,7 @@ pub use code::WASM_BINARY_OPT as WASM_BINARY;
 
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq)]
 pub enum CreateProgram {
-    Default(bool),
+    Default,
     // code hash, salt, gas limit
     Custom(Vec<([u8; 32], Vec<u8>, u64)>),
 }
@@ -44,18 +44,14 @@ mod wasm {
     #[no_mangle]
     pub unsafe extern "C" fn handle() {
         match msg::load().expect("provided invalid payload") {
-            CreateProgram::Default(is_handle) => {
+            CreateProgram::Default => {
                 let submitted_code = hex_literal::hex!(
                     "abf3746e72a6e8740bd9e12b879fbdd59e052cb390f116454e9116c22021ae4a"
                 )
                 .into();
                 let new_program_id =
                     msg::create_program(submitted_code, get().to_le_bytes(), [], 100_000, 0);
-                if is_handle {
-                    msg::send(new_program_id, b"", 100_001, 0);
-                } else {
-                    msg::reply(b"", 100_001, 0);
-                }
+                msg::send(new_program_id, b"", 100_001, 0);
 
                 increase();
             }

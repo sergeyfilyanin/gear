@@ -159,7 +159,8 @@ impl JournalHandler for InMemoryExtManager {
         }
     }
     fn update_nonce(&mut self, program_id: ProgramId, nonce: u64) {
-        if let Some(prog) = self.programs
+        if let Some(prog) = self
+            .programs
             .get_mut(&program_id)
             .expect("Program not found in storage")
         {
@@ -172,7 +173,8 @@ impl JournalHandler for InMemoryExtManager {
         page_number: PageNumber,
         data: Option<Vec<u8>>,
     ) {
-        if let Some(prog) = self.programs
+        if let Some(prog) = self
+            .programs
             .get_mut(&program_id)
             .expect("Program not found in storage")
         {

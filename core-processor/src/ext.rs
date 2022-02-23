@@ -358,6 +358,7 @@ impl EnvExt for Ext {
             ProgramId::from_slice(blake2_rfc::blake2b::blake2b(32, &[], &data).as_bytes())
         };
 
+        // todo [sab] try to refactor by checking duplicate from `entry` variable
         if let Some(data) = self.program_candidates_data.get(&code_hash) {
             if data.iter().any(|(id, _)| id == &new_program_id) {
                 return self.return_and_store_err(Err("Duplicate init message for the same id"));
