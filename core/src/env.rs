@@ -297,7 +297,7 @@ mod tests {
         fn wake(&mut self, _waker_id: MessageId) -> Result<(), &'static str> {
             Ok(())
         }
-        fn create_program(&mut self, packet: ProgramInitPacket) -> Result<ProgramId, &'static str> {
+        fn create_program(&mut self, _packet: ProgramInitPacket) -> Result<ProgramId, &'static str> {
             Ok(Default::default())
         }
     }

@@ -377,8 +377,8 @@ impl<'a> JournalHandler for Journal<'a> {
                     let actor = ExecutableActor {
                         program,
                         balance: 0,
-                    };    
-                    self.context.store_new_actor(program.id(), actor);
+                    };
+                    self.context.store_new_actor(actor.program.id(), actor);
                 } else {
                     println!("Program with id {:?} already exists", candidate_id);
                 }

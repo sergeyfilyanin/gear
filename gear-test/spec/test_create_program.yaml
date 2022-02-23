@@ -73,12 +73,10 @@ fixtures:
             payload:
               kind: utf-8
               value: unique
-            gas_limit: 10000
           - destination: 
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
             init: false
-            gas_limit: 10001    
 
       - step: 2
         programs:
@@ -97,12 +95,10 @@ fixtures:
             payload:
               kind: utf-8
               value: unique
-            gas_limit: 10000
           - destination: 
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
             init: false
-            gas_limit: 10001
           - destination: 
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
@@ -110,12 +106,10 @@ fixtures:
             payload:
               kind: utf-8
               value: not_unique
-            gas_limit: 10000
           - destination: 
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
             init: false
-            gas_limit: 10001  
 
       - step: 4
         messages:
@@ -126,19 +120,16 @@ fixtures:
             payload:
               kind: utf-8
               value: not_unique
-            gas_limit: 10000
           - destination:
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
             init: false
-            gas_limit: 10001
       - step: 5
         messages:
           - destination: 
               kind: ss58
               value: 5Fypuf8SCGzqtJy91VJqb17WgUbgVTC6k3Vb4yfj3VBj2at1
             init: false
-            gas_limit: 10001
           - destination: 1
             init: false
             exitCode: 3

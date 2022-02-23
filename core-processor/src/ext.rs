@@ -20,7 +20,7 @@ use crate::{
     configs::{AllocationsConfig, BlockInfo},
     id::BlakeMessageIdGenerator,
 };
-use alloc::{collections::BTreeMap, vec::Vec, boxed::Box};
+use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 use codec::Encode;
 use gear_backend_common::ExtInfo;
 use gear_core::{
@@ -119,7 +119,7 @@ impl ProcessorExt for Ext {
         existential_deposit: u128,
         error_explanation: Option<&'static str>,
         exit_argument: Option<ProgramId>,
-        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>, 
+        program_candidates_data: BTreeMap<CodeHash, Vec<(ProgramId, MessageId)>>,
     ) -> Self {
         Self {
             gas_counter,
@@ -470,7 +470,7 @@ impl EnvExt for Ext {
             .program_candidates_data
             .entry(code_hash)
             .or_insert(Vec::new());
-        
+
         if entry.iter().any(|(id, _)| id == &new_program_id) {
             return self.return_and_store_err(Err("Duplicate init message for the same id"));
         }

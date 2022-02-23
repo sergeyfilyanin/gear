@@ -55,7 +55,7 @@ impl ExecutionContext for InMemoryExtManager {
         let code_hash = sp_io::hashing::blake2_256(program.code()).into();
         self.codes.insert(code_hash, program.code().to_vec());
         self.actors.insert(
-            program.id(), 
+            program.id(),
             Some(ExecutableActor {
                 program,
                 balance: 0,
@@ -102,8 +102,8 @@ impl JournalHandler for InMemoryExtManager {
             }
             DispatchOutcome::Success(_) | DispatchOutcome::NoExecution(_) => false,
             DispatchOutcome::InitSuccess { program_id, .. } => {
-                if let Some(Some(program)) = self.actors.get_mut(&program_id) {
-                    program.set_initialized();
+                if let Some(Some(actor)) = self.actors.get_mut(&program_id) {
+                    actor.program.set_initialized();
                 }
                 self.move_waiting_msgs_to_queue(program_id);
                 false
@@ -195,9 +195,7 @@ impl JournalHandler for InMemoryExtManager {
     }
     fn send_value(&mut self, from: ProgramId, to: Option<ProgramId>, value: u128) {
         if let Some(to) = to {
-            let mut actors = self.actors.borrow_mut();
-
-            if let Some(Some(actor)) = actors.get_mut(&from) {
+            if let Some(Some(actor)) = self.actors.get_mut(&from) {
                 if actor.balance < value {
                     panic!("Actor {:?} balance is less then sent value", from);
                 }
@@ -205,7 +203,7 @@ impl JournalHandler for InMemoryExtManager {
                 actor.balance -= value;
             };
 
-            if let Some(Some(actor)) = actors.get_mut(&to) {
+            if let Some(Some(actor)) = self.actors.get_mut(&to) {
                 actor.balance += value;
             };
         };

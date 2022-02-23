@@ -28,7 +28,7 @@ use gear_backend_common::ExtInfo;
 use gear_core::{
     env::Ext as EnvExt,
     message::{Dispatch, DispatchKind, ExitCode, Message},
-    program::{Program, ProgramId},
+    program::ProgramId,
 };
 
 /// Process program & dispatch for it and return journal for updates.
@@ -43,7 +43,7 @@ pub fn process<A: ProcessorExt + EnvExt + Into<ExtInfo> + 'static, E: Environmen
     } else {
         let actor = actor.expect("message is not executed if program is none");
         let execution_settings = ExecutionSettings::new(block_info, existential_deposit);
-        let initial_nonce = program.message_nonce();
+        let initial_nonce = actor.program.message_nonce();
 
         match executor::execute_wasm::<A, E>(actor, dispatch.clone(), execution_settings) {
             Ok(res) => match res.kind {
