@@ -134,7 +134,6 @@ fn process_error(
 
     journal.push(JournalNote::GasBurned {
         message_id,
-        origin,
         amount: gas_burned,
     });
 
@@ -189,7 +188,6 @@ fn process_success(res: DispatchResult) -> Vec<JournalNote> {
 
     journal.push(JournalNote::GasBurned {
         message_id,
-        origin,
         amount: res.gas_amount.burned(),
     });
 
