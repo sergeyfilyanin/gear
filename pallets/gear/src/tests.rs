@@ -2250,7 +2250,7 @@ fn resume_program_works() {
             code.clone(),
             vec![],
             Vec::new(),
-            90_000_000u64,
+            100_000_000u64,
             0u128
         ));
 
