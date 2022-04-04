@@ -22,9 +22,11 @@ use demo_distributor::{Request, WASM_BINARY};
 use demo_program_factory::{CreateProgram, WASM_BINARY as PROGRAM_FACTORY_WASM_BINARY};
 use frame_support::{assert_noop, assert_ok};
 use frame_system::Pallet as SystemPallet;
-use gear_core::code::CheckedCode;
+use gear_core::{code::CheckedCode, ids::CodeId};
 use gear_runtime_interface as gear_ri;
 use pallet_balances::{self, Pallet as BalancesPallet};
+
+use crate::manager::AddedCode;
 
 use super::{
     manager::HandleKind,
@@ -1127,11 +1129,11 @@ fn test_code_submission_pass() {
             code.clone()
         ));
 
-        let saved_code = common::get_code(code_hash);
+        let saved_code = GearProgramPallet::<Test>::get_checked_code(CodeId::from_origin(code_hash));
         assert_eq!(saved_code, Some(CheckedCode::try_new(code).unwrap()));
 
         let expected_meta = Some(common::CodeMetadata::new(USER_1.into_origin(), 1));
-        let actual_meta = common::get_code_metadata(code_hash);
+        let actual_meta = GearProgramPallet::<Test>::get_metadata(CodeId::from_origin(code_hash));
         assert_eq!(expected_meta, actual_meta);
 
         SystemPallet::<Test>::assert_last_event(Event::CodeSaved(code_hash).into());
@@ -1178,7 +1180,7 @@ fn test_code_is_not_submitted_twice_after_program_submission() {
             0
         ));
         SystemPallet::<Test>::assert_has_event(Event::CodeSaved(code_hash).into());
-        assert!(common::code_exists(code_hash));
+        assert!(AddedCode::check::<Test>(code_hash).is_some());
 
         // Trying to set the same code twice.
         assert_noop!(
@@ -1201,7 +1203,7 @@ fn test_code_is_not_resetted_within_program_submission() {
             code.clone()
         ));
         let expected_code_saved_events = 1;
-        let expected_meta = common::get_code_metadata(code_hash);
+        let expected_meta = GearProgramPallet::<Test>::get_metadata(CodeId::from_origin(code_hash));
         assert!(expected_meta.is_some());
 
         // Submit program from another origin. Should not change meta or code.
@@ -1213,7 +1215,8 @@ fn test_code_is_not_resetted_within_program_submission() {
             DEFAULT_GAS_LIMIT,
             0
         ));
-        let actual_meta = common::get_code_metadata(code_hash);
+
+        let actual_meta = GearProgramPallet::<Test>::get_metadata(CodeId::from_origin(code_hash));
         let actual_code_saved_events = SystemPallet::<Test>::events()
             .iter()
             .filter(|e| matches!(e.event, MockEvent::Gear(Event::CodeSaved(_))))
@@ -1484,7 +1487,7 @@ fn test_message_processing_for_non_existing_destination() {
         );
 
         assert!(Gear::is_terminated(program_id));
-        assert!(common::code_exists(code_hash))
+        assert!(AddedCode::check::<Test>(code_hash).is_some());
     })
 }
 
@@ -2028,7 +2031,7 @@ fn exit_handle() {
         assert!(!Gear::is_initialized(program_id));
         assert!(Gear::is_terminated(program_id));
 
-        assert!(common::code_exists(code_hash));
+        assert!(AddedCode::check::<Test>(code_hash).is_some());
 
         // Program is not removed and can't be submitted again
         assert_noop!(

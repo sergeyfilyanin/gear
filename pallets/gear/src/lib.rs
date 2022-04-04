@@ -84,7 +84,7 @@ pub mod pallet {
     use sp_runtime::traits::UniqueSaturatedInto;
     use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
-    use crate::manager::{ExtManager, HandleKind};
+    use crate::manager::{ExtManager, HandleKind, AddedCode};
 
     #[pallet::config]
     pub trait Config:
@@ -359,12 +359,13 @@ pub mod pallet {
                         .map_err(|_| b"Program failed to load: {}".to_vec())?;
 
                     let checked_code_hash = CheckedCodeWithHash::new(code);
-
-                    let _ = Self::set_code_with_metadata(&checked_code_hash, source);
+                    let hash = checked_code_hash.hash();
+                    let added_code = Self::set_code_with_metadata(checked_code_hash, source).unwrap_or_else(|_| AddedCode::check::<T>(hash.into_origin()).unwrap());
 
                     ExtManager::<T>::default().set_program(
                         program_id,
-                        checked_code_hash,
+                        added_code,
+                        added_code.static_pages(),
                         root_message_id,
                     );
 
@@ -611,8 +612,7 @@ pub mod pallet {
                         }
                     }
 
-                    maybe_active_program
-                        .try_into_native(program_id.into_origin())
+                    manager::try_into_native::<T>(maybe_active_program, program_id.into_origin())
                         .ok()
                         .map(|program| {
                             let balance = <T as Config>::Currency::free_balance(
@@ -671,21 +671,16 @@ pub mod pallet {
         /// # Note
         /// Code existence in storage means that metadata is there too.
         fn set_code_with_metadata(
-            code_hash: &CheckedCodeWithHash,
+            code_hash: CheckedCodeWithHash,
             who: H256,
-        ) -> Result<H256, Error<T>> {
-            let hash: H256 = code_hash.hash().into_origin();
-            ensure!(!common::code_exists(hash), Error::<T>::CodeAlreadyExists);
-
+        ) -> Result<AddedCode, Error<T>> {
             let metadata = {
                 let block_number =
                     <frame_system::Pallet<T>>::block_number().unique_saturated_into();
                 CodeMetadata::new(who, block_number)
             };
-            common::set_code_metadata(hash, metadata);
-            common::set_code(hash, code_hash.code());
 
-            Ok(hash)
+            AddedCode::try_add::<T>(code_hash, metadata).ok_or(Error::<T>::CodeAlreadyExists)
         }
     }
 
@@ -723,9 +718,9 @@ pub mod pallet {
 
             let code_hash = CheckedCodeWithHash::new(code);
 
-            let code_hash = Self::set_code_with_metadata(&code_hash, who.into_origin())?;
+            let code_hash = Self::set_code_with_metadata(code_hash, who.into_origin())?;
 
-            Self::deposit_event(Event::CodeSaved(code_hash));
+            Self::deposit_event(Event::CodeSaved(code_hash.hash()));
 
             Ok(().into())
         }
@@ -793,9 +788,10 @@ pub mod pallet {
             })?;
 
             let checked_code_hash = CheckedCodeWithHash::new(code);
+            let hash = checked_code_hash.hash();
 
             let packet = InitPacket::new_with_gas(
-                checked_code_hash.hash(),
+                hash,
                 salt,
                 init_payload,
                 gas_limit,
@@ -821,12 +817,15 @@ pub mod pallet {
 
             // By that call we follow the guarantee that we have in `Self::submit_code` -
             // if there's code in storage, there's also metadata for it.
-            if let Ok(code_hash) = Self::set_code_with_metadata(&checked_code_hash, origin) {
-                Self::deposit_event(Event::CodeSaved(code_hash));
-            }
+            let added_code = Self::set_code_with_metadata(checked_code_hash, origin)
+                .map(|added_code| {
+                    Self::deposit_event(Event::CodeSaved(added_code.hash()));
+                    added_code
+                })
+                .unwrap_or_else(|_| AddedCode::check::<T>(hash.into_origin()).expect("Code already in storage; qed"));
 
             let message_id = Self::next_message_id(origin).into_origin();
-            ExtManager::<T>::default().set_program(program_id, checked_code_hash, message_id);
+            ExtManager::<T>::default().set_program(program_id, added_code, added_code.static_pages(), message_id);
 
             let _ =
                 T::GasHandler::create(origin, message_id, packet.gas_limit().expect("Can't fail"));

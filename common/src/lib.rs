@@ -44,7 +44,6 @@ use gear_core::{
     code::CheckedCode,
     ids::{CodeId, MessageId, ProgramId},
     message::StoredDispatch,
-    program::Program as NativeProgram,
 };
 
 pub use storage_queue::Iterator;
@@ -238,27 +237,7 @@ pub enum Program {
     Terminated,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum ProgramError {
-    CodeHashNotFound,
-    IsTerminated,
-    DoesNotExist,
-}
-
 impl Program {
-    pub fn try_into_native(self, id: H256) -> Result<NativeProgram, ProgramError> {
-        let is_initialized = self.is_initialized();
-        let program: ActiveProgram = self.try_into()?;
-        let code = crate::get_code(program.code_hash).ok_or(ProgramError::CodeHashNotFound)?;
-        let native_program = NativeProgram::from_parts(
-            ProgramId::from_origin(id),
-            code,
-            program.persistent_pages,
-            is_initialized,
-        );
-        Ok(native_program)
-    }
-
     pub fn is_active(&self) -> bool {
         matches!(self, Program::Active(_))
     }
@@ -288,13 +267,16 @@ impl Program {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct TryFromProgramTerminated;
+
 impl TryFrom<Program> for ActiveProgram {
-    type Error = ProgramError;
+    type Error = TryFromProgramTerminated;
 
     fn try_from(prog_with_status: Program) -> Result<ActiveProgram, Self::Error> {
         match prog_with_status {
             Program::Active(p) => Ok(p),
-            Program::Terminated => Err(ProgramError::IsTerminated),
+            Program::Terminated => Err(TryFromProgramTerminated),
         }
     }
 }
@@ -391,12 +373,14 @@ pub fn wait_key(prog_id: H256, msg_id: H256) -> Vec<u8> {
     key
 }
 
+#[deprecated]
 pub fn get_code(code_hash: H256) -> Option<CheckedCode> {
     sp_io::storage::get(&code_key(code_hash, CodeKeyPrefixKind::RawCode)).map(|bytes| {
         CheckedCode::decode(&mut &bytes[..]).expect("CheckedCode encoded correctly; qed")
     })
 }
 
+#[deprecated]
 pub fn set_code(code_hash: H256, code: &CheckedCode) {
     sp_io::storage::set(
         &code_key(code_hash, CodeKeyPrefixKind::RawCode),
@@ -404,6 +388,7 @@ pub fn set_code(code_hash: H256, code: &CheckedCode) {
     )
 }
 
+#[deprecated]
 pub fn set_code_metadata(code_hash: H256, metadata: CodeMetadata) {
     sp_io::storage::set(
         &code_key(code_hash, CodeKeyPrefixKind::CodeMetadata),
@@ -411,6 +396,7 @@ pub fn set_code_metadata(code_hash: H256, metadata: CodeMetadata) {
     )
 }
 
+#[deprecated]
 pub fn get_code_metadata(code_hash: H256) -> Option<CodeMetadata> {
     sp_io::storage::get(&code_key(code_hash, CodeKeyPrefixKind::CodeMetadata))
         .map(|data| CodeMetadata::decode(&mut &data[..]).expect("data encoded correctly"))
@@ -425,10 +411,16 @@ pub fn set_program_initialized(id: H256) {
     }
 }
 
-pub fn set_program_terminated_status(id: H256) -> Result<(), ProgramError> {
+#[derive(Clone, Copy, Debug)]
+pub enum TerminatedStatusError {
+    AlreadyTerminated,
+    ProgramNotFound,
+}
+
+pub fn set_program_terminated_status(id: H256) -> Result<(), TerminatedStatusError> {
     if let Some(program) = get_program(id) {
         if program.is_terminated() {
-            return Err(ProgramError::IsTerminated);
+            return Err(TerminatedStatusError::AlreadyTerminated);
         }
 
         sp_io::storage::clear_prefix(&pages_prefix(id), None);
@@ -436,7 +428,7 @@ pub fn set_program_terminated_status(id: H256) -> Result<(), ProgramError> {
 
         Ok(())
     } else {
-        Err(ProgramError::DoesNotExist)
+        Err(TerminatedStatusError::ProgramNotFound)
     }
 }
 
@@ -571,6 +563,7 @@ pub fn waiting_init_take_messages(dest_prog_id: H256) -> Vec<H256> {
     messages.unwrap_or_default()
 }
 
+#[deprecated]
 pub fn code_exists(code_hash: H256) -> bool {
     sp_io::storage::exists(&code_key(code_hash, CodeKeyPrefixKind::RawCode))
 }

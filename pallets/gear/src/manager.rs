@@ -21,7 +21,7 @@ use crate::{
     MessageInfo, Pallet,
 };
 use codec::{Decode, Encode};
-use common::{DAGBasedLedger, GasPrice, Origin, Program};
+use common::{DAGBasedLedger, GasPrice, Origin, Program, CodeMetadata};
 use core_processor::common::{
     DispatchOutcome as CoreDispatchOutcome, ExecutableActor, JournalHandler,
 };
@@ -67,6 +67,55 @@ where
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum ProgramError {
+    CodeHashNotFound,
+    IsTerminated,
+}
+
+pub fn try_into_native<T: Config>(program: common::Program, id: H256) -> Result<NativeProgram, ProgramError> {
+    let is_initialized = program.is_initialized();
+    let program: common::ActiveProgram = program.try_into().map_err(|_| ProgramError::IsTerminated)?;
+    let code = GearProgramPallet::<T>::get_checked_code(CodeId::from_origin(program.code_hash)).ok_or(ProgramError::CodeHashNotFound)?;
+    let native_program = NativeProgram::from_parts(
+        ProgramId::from_origin(id),
+        code,
+        program.persistent_pages,
+        is_initialized,
+    );
+
+    Ok(native_program)
+}
+
+#[derive(Clone, Copy)]
+pub struct AddedCode(H256, u32);
+
+impl AddedCode {
+    pub fn try_add<T: Config>(code: CheckedCodeWithHash, metadata: CodeMetadata) -> Option<Self> {
+        let hash: H256 = code.hash().into_origin();
+        let static_pages = code.code().static_pages();
+        GearProgramPallet::<T>::add_code(code, metadata).ok()?;
+
+        Some(Self(hash, static_pages))
+    }
+
+    pub fn check<T: Config>(hash: H256) -> Option<Self> {
+        if let Some(c) = GearProgramPallet::<T>::get_checked_code(CodeId::from_origin(hash)) {
+            Some(Self(hash, c.static_pages()))
+        } else {
+            None
+        }
+    }
+
+    pub fn hash(&self) -> H256 {
+        self.0
+    }
+
+    pub fn static_pages(&self) -> u32 {
+        self.1
+    }
+}
+
 impl<T: Config> ExtManager<T>
 where
     T::AccountId: Origin,
@@ -75,7 +124,7 @@ where
     /// program with `id` doesn't exist or it's terminated
     pub fn get_executable_actor(&self, id: H256) -> Option<ExecutableActor> {
         let program = common::get_program(id)
-            .and_then(|prog_with_status| prog_with_status.try_into_native(id).ok())?;
+            .and_then(|prog_with_status| try_into_native::<T>(prog_with_status, id).ok())?;
 
         let balance =
             <T as Config>::Currency::free_balance(&<T::AccountId as Origin>::from_origin(id))
@@ -87,23 +136,15 @@ where
     pub fn set_program(
         &self,
         program_id: ProgramId,
-        checked_code_hash: CheckedCodeWithHash,
+        added_code: AddedCode,
+        static_pages: u32,
         message_id: H256,
     ) {
-        let (checked_code, code_hash) = checked_code_hash.into_parts();
-        let code_hash: H256 = code_hash.into_origin();
-        assert!(
-            common::code_exists(code_hash),
-            "Program set must be called only when code exists",
-        );
-
-        let program = NativeProgram::new(program_id, checked_code);
-
-        // An empty program has been just constructed: it contains no persistent pages.
+        // An empty program contains no persistent pages.
         let program = common::ActiveProgram {
-            static_pages: program.static_pages(),
+            static_pages,
             persistent_pages: Default::default(),
-            code_hash,
+            code_hash: added_code.hash(),
             state: common::ProgramState::Uninitialized { message_id },
         };
 
@@ -492,11 +533,10 @@ where
     fn store_new_programs(&mut self, code_hash: CodeId, candidates: Vec<(ProgramId, MessageId)>) {
         let code_hash = <[u8; 32]>::from(code_hash).into();
 
-        if let Some(code) = common::get_code(code_hash) {
+        if let Some(added_code) = AddedCode::check::<T>(code_hash) {
             for (candidate_id, init_message) in candidates {
                 if !GearProgramPallet::<T>::program_exists(candidate_id.into_origin()) {
-                    let checked_code_hash = CheckedCodeWithHash::new(code.clone());
-                    self.set_program(candidate_id, checked_code_hash, init_message.into_origin());
+                    self.set_program(candidate_id, added_code, added_code.static_pages(), init_message.into_origin());
                 } else {
                     log::debug!("Program with id {:?} already exists", candidate_id);
                 }
