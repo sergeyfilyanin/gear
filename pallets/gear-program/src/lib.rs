@@ -22,11 +22,15 @@ pub use pallet::*;
 use primitive_types::H256;
 use sp_std::collections::btree_map::BTreeMap;
 use sp_std::prelude::*;
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 
 mod pause;
 pub use pause::PauseError;
 
 mod program;
+
+mod code;
 
 #[cfg(test)]
 mod mock;
@@ -49,6 +53,8 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use gear_core::ids::CodeId;
+    use gear_core::code::CheckedCode;
     use sp_runtime::traits::{UniqueSaturatedInto, Zero};
     use weights::WeightInfo;
 
@@ -88,6 +94,22 @@ pub mod pallet {
         ResumeProgramNotEnoughValue,
         WrongWaitList,
     }
+
+    #[derive(Clone, Debug, Decode, Encode, PartialEq, TypeInfo)]
+    pub struct Code {
+        pub(crate) code: CheckedCode,
+        pub(crate) metadata: common::CodeMetadata,
+    }
+
+    #[derive(Debug)]
+    pub struct FailedToAddCode;
+
+    #[derive(Debug)]
+    pub struct PrgoramCodeNotFound;
+
+    #[pallet::storage]
+    #[pallet::unbounded]
+    pub(crate) type ProgramCodes<T: Config> = StorageMap<_, Identity, CodeId, Code>;
 
     #[pallet::storage]
     #[pallet::unbounded]

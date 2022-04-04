@@ -25,5 +25,6 @@ impl<T: Config> pallet::Pallet<T> {
 
     pub fn reset_storage() {
         PausedPrograms::<T>::remove_all(None);
+        ProgramCodes::<T>::remove_all(None);
     }
 }

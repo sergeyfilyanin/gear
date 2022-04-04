@@ -22,11 +22,12 @@ use crate::ids::CodeId;
 use alloc::vec::Vec;
 use anyhow::Result;
 use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 
 /// Contains raw binary code of a program and initial memory size from memory import.
 ///
 /// This entity ensures the code has passed several checks.
-#[derive(Clone, Debug, Decode, Encode, PartialEq, Eq)]
+#[derive(Clone, Debug, Decode, Encode, PartialEq, Eq, TypeInfo)]
 pub struct CheckedCode {
     code: Vec<u8>,
     static_pages: u32,
