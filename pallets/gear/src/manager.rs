@@ -21,7 +21,7 @@ use crate::{
     MessageInfo, Pallet,
 };
 use codec::{Decode, Encode};
-use common::{DAGBasedLedger, GasPrice, Origin, Program, CodeMetadata};
+use common::{DAGBasedLedger, GasPrice, Origin, Program, CodeMetadata, ExistingCode, CodeStorageTrait, Either};
 use core_processor::common::{
     DispatchOutcome as CoreDispatchOutcome, ExecutableActor, JournalHandler,
 };
@@ -71,12 +71,14 @@ where
 pub enum ProgramError {
     CodeHashNotFound,
     IsTerminated,
+    FailedToAcquireCodeStorage,
 }
 
 pub fn try_into_native<T: Config>(program: common::Program, id: H256) -> Result<NativeProgram, ProgramError> {
     let is_initialized = program.is_initialized();
     let program: common::ActiveProgram = program.try_into().map_err(|_| ProgramError::IsTerminated)?;
-    let code = GearProgramPallet::<T>::get_checked_code(CodeId::from_origin(program.code_hash)).ok_or(ProgramError::CodeHashNotFound)?;
+    let code_storage = T::CodeStorage::try_new().ok_or(ProgramError::FailedToAcquireCodeStorage)?;
+    let code = code_storage.get_checked_code(CodeId::from_origin(program.code_hash)).ok_or(ProgramError::CodeHashNotFound)?;
     let native_program = NativeProgram::from_parts(
         ProgramId::from_origin(id),
         code,
@@ -92,19 +94,21 @@ pub struct AddedCode(H256, u32);
 
 impl AddedCode {
     pub fn try_add<T: Config>(code: CheckedCodeWithHash, metadata: CodeMetadata) -> Option<Self> {
-        let hash: H256 = code.hash().into_origin();
+        /* let hash: H256 = code.hash().into_origin();
         let static_pages = code.code().static_pages();
         GearProgramPallet::<T>::add_code(code, metadata).ok()?;
 
-        Some(Self(hash, static_pages))
+        Some(Self(hash, static_pages)) */
+        None
     }
 
     pub fn check<T: Config>(hash: H256) -> Option<Self> {
-        if let Some(c) = GearProgramPallet::<T>::get_checked_code(CodeId::from_origin(hash)) {
+        /* if let Some(c) = GearProgramPallet::<T>::get_checked_code(CodeId::from_origin(hash)) {
             Some(Self(hash, c.static_pages()))
         } else {
             None
-        }
+        } */
+        None
     }
 
     pub fn hash(&self) -> H256 {
@@ -136,7 +140,7 @@ where
     pub fn set_program(
         &self,
         program_id: ProgramId,
-        added_code: AddedCode,
+        added_code: &ExistingCode<T::CodeStorage>,
         static_pages: u32,
         message_id: H256,
     ) {
@@ -144,7 +148,7 @@ where
         let program = common::ActiveProgram {
             static_pages,
             persistent_pages: Default::default(),
-            code_hash: added_code.hash(),
+            code_hash: added_code.hash().into_origin(),
             state: common::ProgramState::Uninitialized { message_id },
         };
 
@@ -533,10 +537,12 @@ where
     fn store_new_programs(&mut self, code_hash: CodeId, candidates: Vec<(ProgramId, MessageId)>) {
         let code_hash = <[u8; 32]>::from(code_hash).into();
 
-        if let Some(added_code) = AddedCode::check::<T>(code_hash) {
+        let code_storage = T::CodeStorage::try_new().expect("store_new_programs: should not be called concurrently");
+        if let Either::Left(added_code) = code_storage.exists(code_hash) {
+            let static_pages = added_code.load_checked_code().static_pages();
             for (candidate_id, init_message) in candidates {
                 if !GearProgramPallet::<T>::program_exists(candidate_id.into_origin()) {
-                    self.set_program(candidate_id, added_code, added_code.static_pages(), init_message.into_origin());
+                    self.set_program(candidate_id, &added_code, static_pages, init_message.into_origin());
                 } else {
                     log::debug!("Program with id {:?} already exists", candidate_id);
                 }

@@ -62,7 +62,7 @@ pub mod pallet {
     use super::*;
 
     use alloc::format;
-    use common::{self, CodeMetadata, DAGBasedLedger, GasPrice, Origin, Program, ProgramState};
+    use common::{self, CodeMetadata, DAGBasedLedger, GasPrice, Origin, Program, ProgramState, CodeStorageTrait, ExistingCode};
     use core_processor::{
         common::{DispatchOutcome as CoreDispatchOutcome, ExecutableActor, JournalNote},
         configs::BlockInfo,
@@ -117,6 +117,8 @@ pub mod pallet {
         type WaitListFeePerBlock: Get<u64>;
 
         type DebugInfo: DebugInfo;
+
+        type CodeStorage: CodeStorageTrait;
     }
 
     type BalanceOf<T> =
@@ -194,6 +196,8 @@ pub mod pallet {
         FailedToConstructProgram,
         /// Value doesnt cover ExistenceDeposit
         ValueLessThanMinimal,
+        /// The instance of code storage cannot be acquired
+        FailedToAcquireCodeStorage,
     }
 
     #[derive(Debug, Encode, Decode, Clone, PartialEq, TypeInfo)]
@@ -360,12 +364,20 @@ pub mod pallet {
 
                     let checked_code_hash = CheckedCodeWithHash::new(code);
                     let hash = checked_code_hash.hash();
-                    let added_code = Self::set_code_with_metadata(checked_code_hash, source).unwrap_or_else(|_| AddedCode::check::<T>(hash.into_origin()).unwrap());
+                    let static_pages = checked_code_hash.code().static_pages();
+
+                    let code_storage = T::CodeStorage::try_new().ok_or(b"Failed to acquire CodeStorage".to_vec())?;
+
+                    let added_code = code_storage.exists(hash).map_right(|s| {
+                        let code_hash = s.add_code(checked_code_hash, Self::get_metadata(source));
+                        Self::deposit_event(Event::CodeSaved(code_hash.hash().into_origin()));
+                        code_hash
+                    }).into_inner();
 
                     ExtManager::<T>::default().set_program(
                         program_id,
-                        added_code,
-                        added_code.static_pages(),
+                        &added_code,
+                        static_pages,
                         root_message_id,
                     );
 
@@ -670,17 +682,28 @@ pub mod pallet {
         ///
         /// # Note
         /// Code existence in storage means that metadata is there too.
-        fn set_code_with_metadata(
+        /* fn set_code_with_metadata(
             code_hash: CheckedCodeWithHash,
             who: H256,
-        ) -> Result<AddedCode, Error<T>> {
+            code_storage: &mut T::CodeStorage,
+        ) -> Result<ExistingCode<T::CodeStorage>, Error<T>> {
+            if code_storage.exists(code_hash.hash()).is_some() {
+                return Err(Error::<T>::CodeAlreadyExists);
+            }
+
             let metadata = {
                 let block_number =
                     <frame_system::Pallet<T>>::block_number().unique_saturated_into();
                 CodeMetadata::new(who, block_number)
             };
 
-            AddedCode::try_add::<T>(code_hash, metadata).ok_or(Error::<T>::CodeAlreadyExists)
+            Ok(code_storage.add_code(code_hash))
+        } */
+
+        fn get_metadata(who: H256) -> CodeMetadata {
+            let block_number =
+                    <frame_system::Pallet<T>>::block_number().unique_saturated_into();
+            CodeMetadata::new(who, block_number)
         }
     }
 
@@ -716,13 +739,16 @@ pub mod pallet {
                 Error::<T>::FailedToConstructProgram
             })?;
 
+            let code_storage = T::CodeStorage::try_new().ok_or(Error::<T>::FailedToAcquireCodeStorage)?;
+
             let code_hash = CheckedCodeWithHash::new(code);
-
-            let code_hash = Self::set_code_with_metadata(code_hash, who.into_origin())?;
-
-            Self::deposit_event(Event::CodeSaved(code_hash.hash()));
-
-            Ok(().into())
+            code_storage.exists(code_hash.hash())
+                .map_left(|_| Err(Error::<T>::CodeAlreadyExists.into()))
+                .map_right(|s| {
+                    let code_hash = s.add_code(code_hash, Self::get_metadata(who.into_origin()));
+                    Self::deposit_event(Event::CodeSaved(code_hash.hash().into_origin()));
+                    Ok(().into())
+                }).into_inner()
         }
 
         /// Creates program initialization request (message), that is scheduled to be run in the same block.
@@ -787,6 +813,7 @@ pub mod pallet {
                 Error::<T>::FailedToConstructProgram
             })?;
 
+            let static_pages = code.static_pages();
             let checked_code_hash = CheckedCodeWithHash::new(code);
             let hash = checked_code_hash.hash();
 
@@ -813,19 +840,20 @@ pub mod pallet {
             <T as Config>::Currency::reserve(&who, reserve_fee + value)
                 .map_err(|_| Error::<T>::NotEnoughBalanceForReserve)?;
 
+            let code_storage = T::CodeStorage::try_new().ok_or(Error::<T>::FailedToAcquireCodeStorage)?;
+
             let origin = who.into_origin();
 
             // By that call we follow the guarantee that we have in `Self::submit_code` -
             // if there's code in storage, there's also metadata for it.
-            let added_code = Self::set_code_with_metadata(checked_code_hash, origin)
-                .map(|added_code| {
-                    Self::deposit_event(Event::CodeSaved(added_code.hash()));
-                    added_code
-                })
-                .unwrap_or_else(|_| AddedCode::check::<T>(hash.into_origin()).expect("Code already in storage; qed"));
+            let added_code = code_storage.exists(hash).map_right(|s| {
+                let code_hash = s.add_code(checked_code_hash, Self::get_metadata(origin));
+                Self::deposit_event(Event::CodeSaved(code_hash.hash().into_origin()));
+                code_hash
+            }).into_inner();
 
             let message_id = Self::next_message_id(origin).into_origin();
-            ExtManager::<T>::default().set_program(program_id, added_code, added_code.static_pages(), message_id);
+            ExtManager::<T>::default().set_program(program_id, &added_code, static_pages, message_id);
 
             let _ =
                 T::GasHandler::create(origin, message_id, packet.gas_limit().expect("Can't fail"));

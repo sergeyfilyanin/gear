@@ -41,10 +41,12 @@ use sp_std::{
 };
 
 use gear_core::{
-    code::CheckedCode,
+    code::{CheckedCode, CheckedCodeWithHash},
     ids::{CodeId, MessageId, ProgramId},
     message::StoredDispatch,
 };
+
+pub use either::Either;
 
 pub use storage_queue::Iterator;
 pub use storage_queue::StorageQueue;
@@ -61,6 +63,72 @@ pub const STORAGE_WAITLIST_PREFIX: &[u8] = b"g::wait::";
 pub const GAS_VALUE_PREFIX: &[u8] = b"g::gas_tree";
 
 pub type ExitCode = i32;
+
+//=======================================
+
+
+pub struct ExistingCode<T: CodeStorageTrait>(T, CodeId, Option<CheckedCode>);
+
+impl<T: CodeStorageTrait> ExistingCode<T> {
+    pub fn remove(mut self) -> T {
+        self.0.remove_code_impl(self.1).expect("the instance exists - code in storage; qed");
+        self.into_storage()
+    }
+
+    pub fn into_storage(self) -> T {
+        self.0
+    }
+
+    pub fn hash(&self) -> CodeId {
+        self.1
+    }
+
+    pub fn load_checked_code(&self) -> CheckedCode {
+        self.0.get_checked_code(self.1).expect("checked code in the storage; qed")
+    }
+
+    pub fn load_metadata(&self) -> CodeMetadata {
+        self.0.get_metadata(self.1).expect("metadata in the storage; qed")
+    }
+
+    pub fn new(mut storage: T, code_and_hash: CheckedCodeWithHash, metadata: CodeMetadata) -> Self {
+        let code_id = code_and_hash.hash();
+        if storage.add_code_impl(code_and_hash, metadata).is_ok() {
+            Self(storage, code_id, None)
+        } else {
+            Self::exists(storage, code_id).left().expect("code wasn't added to the storage: it is there; qed")
+        }
+    }
+
+    pub fn exists(storage: T, code_id: CodeId) -> Either<Self, T> {
+        match storage.exists_impl(code_id) {
+            Some(_) => Either::Left(Self(storage, code_id, None)),
+            None => Either::Right(storage),
+        }
+    }
+}
+
+pub struct CodeStorageErrorAlreadyExists;
+
+pub trait CodeStorageTrait: Sized {
+    fn try_new() -> Option<Self>;
+
+    fn add_code_impl(&mut self, code_and_hash: CheckedCodeWithHash, metadata: CodeMetadata) -> Result<(), CodeStorageErrorAlreadyExists>;
+    fn exists_impl(&self, code_id: CodeId) -> Option<()>;
+    fn remove_code_impl(&mut self, code_id: CodeId) -> Option<()>;
+    fn get_checked_code(&self, code_id: CodeId) -> Option<CheckedCode>;
+    fn get_metadata(&self, code_id: CodeId) -> Option<CodeMetadata>;
+
+    fn add_code(self, code_and_hash: CheckedCodeWithHash, metadata: CodeMetadata) -> ExistingCode<Self> {
+        ExistingCode::<Self>::new(self, code_and_hash, metadata)
+    }
+
+    fn exists(self, code_id: CodeId) -> Either<ExistingCode<Self>, Self> {
+        ExistingCode::<Self>::exists(self, code_id)
+    }
+}
+
+//=======================================
 
 pub trait Origin: Sized {
     fn into_origin(self) -> H256;

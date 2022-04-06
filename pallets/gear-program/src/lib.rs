@@ -78,6 +78,12 @@ pub mod pallet {
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
+    pub struct CodeStorage<T: Config>(pub(crate) sp_std::marker::PhantomData<T>);
+
+    #[pallet::storage]
+    #[pallet::getter(fn storage_exported)]
+    pub type StorageExport<T> = StorageValue<_, bool, ValueQuery>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {

@@ -130,6 +130,7 @@ impl pallet_gear::Config for Test {
     type BlockGasLimit = ();
     type DebugInfo = ();
     type WaitListFeePerBlock = WaitListFeePerBlock;
+    type CodeStorage = pallet_gear_program::CodeStorage<Test>;
 }
 
 impl pallet_gas::Config for Test {}

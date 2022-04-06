@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use codec::Encode;
-use common::{self, DAGBasedLedger, GasPrice as _, Origin as _};
+use common::{self, DAGBasedLedger, GasPrice as _, Origin as _, CodeStorageTrait};
 use demo_distributor::{Request, WASM_BINARY};
 use demo_program_factory::{CreateProgram, WASM_BINARY as PROGRAM_FACTORY_WASM_BINARY};
 use frame_support::{assert_noop, assert_ok};
@@ -1129,11 +1129,14 @@ fn test_code_submission_pass() {
             code.clone()
         ));
 
-        let saved_code = GearProgramPallet::<Test>::get_checked_code(CodeId::from_origin(code_hash));
-        assert_eq!(saved_code, Some(CheckedCode::try_new(code).unwrap()));
+        let code_id = CodeId::from_origin(code_hash);
+        let code_storage = <Test as pallet::Config>::CodeStorage::try_new().unwrap();
+        let existing_code = code_storage.exists(code_id).left().unwrap();
+        let saved_code = existing_code.load_checked_code();
+        assert_eq!(saved_code, CheckedCode::try_new(code).unwrap());
 
         let expected_meta = Some(common::CodeMetadata::new(USER_1.into_origin(), 1));
-        let actual_meta = GearProgramPallet::<Test>::get_metadata(CodeId::from_origin(code_hash));
+        let actual_meta = Some(existing_code.load_metadata());
         assert_eq!(expected_meta, actual_meta);
 
         SystemPallet::<Test>::assert_last_event(Event::CodeSaved(code_hash).into());
@@ -1180,7 +1183,7 @@ fn test_code_is_not_submitted_twice_after_program_submission() {
             0
         ));
         SystemPallet::<Test>::assert_has_event(Event::CodeSaved(code_hash).into());
-        assert!(AddedCode::check::<Test>(code_hash).is_some());
+        assert!(<Test as pallet::Config>::CodeStorage::try_new().unwrap().exists_impl(CodeId::from_origin(code_hash)).is_some());
 
         // Trying to set the same code twice.
         assert_noop!(
@@ -1196,6 +1199,7 @@ fn test_code_is_not_resetted_within_program_submission() {
     new_test_ext().execute_with(|| {
         let code = ProgramCodeKind::Default.to_bytes();
         let code_hash = generate_code_hash(&code).into();
+        let code_id = CodeId::from_origin(code_hash);
 
         // First submit code
         assert_ok!(GearPallet::<Test>::submit_code(
@@ -1203,8 +1207,13 @@ fn test_code_is_not_resetted_within_program_submission() {
             code.clone()
         ));
         let expected_code_saved_events = 1;
-        let expected_meta = GearProgramPallet::<Test>::get_metadata(CodeId::from_origin(code_hash));
-        assert!(expected_meta.is_some());
+        let expected_meta = {
+            let code_storage = <Test as pallet::Config>::CodeStorage::try_new().unwrap();
+            let metadata = code_storage.get_metadata(code_id);
+            assert!(metadata.is_some());
+
+            metadata
+        };
 
         // Submit program from another origin. Should not change meta or code.
         assert_ok!(GearPallet::<Test>::submit_program(
@@ -1216,7 +1225,7 @@ fn test_code_is_not_resetted_within_program_submission() {
             0
         ));
 
-        let actual_meta = GearProgramPallet::<Test>::get_metadata(CodeId::from_origin(code_hash));
+        let actual_meta = <Test as pallet::Config>::CodeStorage::try_new().unwrap().get_metadata(code_id);
         let actual_code_saved_events = SystemPallet::<Test>::events()
             .iter()
             .filter(|e| matches!(e.event, MockEvent::Gear(Event::CodeSaved(_))))
@@ -1487,7 +1496,8 @@ fn test_message_processing_for_non_existing_destination() {
         );
 
         assert!(Gear::is_terminated(program_id));
-        assert!(AddedCode::check::<Test>(code_hash).is_some());
+        assert!(<Test as pallet::Config>::CodeStorage::try_new().unwrap().exists_impl(code_hash).is_some());
+        // assert!(AddedCode::check::<Test>(code_hash).is_some());
     })
 }
 
@@ -2031,7 +2041,8 @@ fn exit_handle() {
         assert!(!Gear::is_initialized(program_id));
         assert!(Gear::is_terminated(program_id));
 
-        assert!(AddedCode::check::<Test>(code_hash).is_some());
+        // assert!(AddedCode::check::<Test>(code_hash).is_some());
+        assert!(<Test as pallet::Config>::CodeStorage::try_new().unwrap().exists_impl(code_hash).is_some());
 
         // Program is not removed and can't be submitted again
         assert_noop!(
