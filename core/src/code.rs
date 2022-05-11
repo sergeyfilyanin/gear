@@ -101,6 +101,10 @@ impl Code {
         let instrumented_module = wasm_instrument::gas_metering::inject(module, &gas_rules, "env")
             .map_err(|_| CodeError::GasInjection)?;
 
+        #[cfg(not(target_arch = "wasm32"))]
+        wasm_instrument::parity_wasm::serialize_to_file("/Users/gsobol/src/gear/instrumented_module.wasm", instrumented_module);
+        panic!("LOL");
+
         let instrumented = wasm_instrument::parity_wasm::elements::serialize(instrumented_module)
             .map_err(|_| CodeError::Encode)?;
 
