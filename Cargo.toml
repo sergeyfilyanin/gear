@@ -30,6 +30,7 @@ members = [
     "gear-test",
     "gstd",
     "gtest",
+    "gtest-ng",
     "node",
     "pallets/*",
     "runtime",

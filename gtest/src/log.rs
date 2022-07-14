@@ -103,8 +103,8 @@ where
     ID: Into<ProgramIdWrapper>,
     T: AsRef<[u8]>,
 {
-    fn from(other: (ID, T)) -> Self {
-        Self::builder().dest(other.0).payload_bytes(other.1)
+    fn from((id, payload): (ID, T)) -> Self {
+        Self::builder().dest(id).payload_bytes(payload)
     }
 }
 
