@@ -1028,10 +1028,11 @@ pub mod pallet {
                             GasHandlerOf::<T>::get_origin(current_message_id)
                                 .map(|v| (maybe_limit, v))
                         })
-                        .unwrap_or_else(|_e|
-                        // Error can only be due to invalid gas tree
-                        // TODO: handle appropriately
-                        unreachable!("Can never happen unless gas tree corrupted"));
+                        .unwrap_or_else(|_e| {
+                            // Error can only be due to invalid gas tree
+                            // TODO: handle appropriately
+                            unreachable!("Can never happen unless gas tree corrupted")
+                        });
 
                     if let (Some((limit, _)), Some(origin_data)) = msg_gas_artifacts {
                         gas_limit = limit;
