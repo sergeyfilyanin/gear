@@ -1019,59 +1019,60 @@ pub mod pallet {
                 if let Some(dispatch) = QueueOf::<T>::dequeue()
                     .unwrap_or_else(|e| unreachable!("Message queue corrupted! {:?}", e))
                 {
-                    let msg_id = dispatch.id();
+                    let current_message_id = dispatch.id();
                     let gas_limit: u64;
-                    match GasHandlerOf::<T>::get_limit(msg_id) {
-                        Ok(maybe_limit) => {
-                            if let Some((limit, _)) = maybe_limit {
-                                gas_limit = limit;
-                            } else {
-                                log::debug!(
-                                    target: "essential",
-                                    "No gas handler for message: {:?} to {:?}",
-                                    dispatch.id(),
-                                    dispatch.destination(),
-                                );
+                    let (origin_key, origin);
 
-                                QueueOf::<T>::queue(dispatch).unwrap_or_else(|e| {
-                                    unreachable!("Message queue corrupted! {:?}", e)
-                                });
+                    let msg_gas_artifacts = GasHandlerOf::<T>::get_limit(current_message_id)
+                        .and_then(|maybe_limit| {
+                            GasHandlerOf::<T>::get_origin(current_message_id)
+                                .map(|v| (maybe_limit, v))
+                        })
+                        .unwrap_or_else(|_e|
+                        // Error can only be due to invalid gas tree
+                        // TODO: handle appropriately
+                        unreachable!("Can never happen unless gas tree corrupted"));
 
-                                // Since we requeue the message without GasHandler we have to take
-                                // into account that there can left only such messages in the queue.
-                                // So stop processing when there is not enough gas/weight.
-                                let consumed =
-                                    T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1);
+                    if let (Some((limit, _)), Some(origin_data)) = msg_gas_artifacts {
+                        gas_limit = limit;
+                        (origin_key, origin) = origin_data;
+                    } else {
+                        log::debug!(
+                            target: "essential",
+                            "No gas handler for message: {:?} to {:?}",
+                            current_message_id,
+                            dispatch.destination(),
+                        );
 
-                                GasAllowanceOf::<T>::decrease(consumed);
+                        QueueOf::<T>::queue(dispatch)
+                            .unwrap_or_else(|e| unreachable!("Message queue corrupted! {:?}", e));
 
-                                if GasAllowanceOf::<T>::get() < consumed {
-                                    break;
-                                }
+                        // Since we requeue the message without GasHandler we have to take
+                        // into account that there can left only such messages in the queue.
+                        // So stop processing when there is not enough gas/weight.
+                        let consumed = T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1);
 
-                                continue;
-                            };
+                        GasAllowanceOf::<T>::decrease(consumed);
+
+                        if GasAllowanceOf::<T>::get() < consumed {
+                            break;
                         }
-                        Err(_err) => {
-                            // We only can get an error here if the gas tree is invalidated
-                            // TODO: handle appropriately
-                            unreachable!("Can never happen unless gas tree corrupted");
-                        }
+
+                        continue;
                     };
-
-                    log::debug!(
-                        "QueueProcessing message: {:?} to {:?} / gas_limit: {}, gas_allowance: {}",
-                        dispatch.id(),
-                        dispatch.destination(),
-                        gas_limit,
-                        GasAllowanceOf::<T>::get(),
-                    );
 
                     let lazy_pages_enabled =
                         cfg!(feature = "lazy-pages") && lazy_pages::try_to_enable_lazy_pages();
                     let program_id = dispatch.destination();
-                    let current_message_id = dispatch.id();
                     let maybe_message_reply = dispatch.reply();
+
+                    log::debug!(
+                        "QueueProcessing message: {:?} to {:?} / gas_limit: {}, gas_allowance: {}",
+                        current_message_id,
+                        program_id,
+                        gas_limit,
+                        GasAllowanceOf::<T>::get(),
+                    );
 
                     let active_actor_data = if let Some(maybe_active_program) =
                         common::get_program(program_id.into_origin())
@@ -1111,24 +1112,17 @@ pub mod pallet {
                             if maybe_message_reply.is_none()
                                 && matches!(prog.state, ProgramState::Uninitialized {message_id} if message_id != current_message_id)
                             {
-                                let origin = if let Some(origin) =
-                                    GasHandlerOf::<T>::get_origin_key(dispatch.id()).unwrap_or_else(
-                                        |e| unreachable!("ValueTree corrupted: {:?}!", e),
-                                    ) {
-                                    if origin == dispatch.id() {
-                                        None
-                                    } else {
-                                        Some(origin)
-                                    }
+                                let origin = if origin_key == current_message_id {
+                                    None
                                 } else {
-                                    unreachable!("ValueTree corrupted!")
+                                    Some(origin_key)
                                 };
 
                                 // TODO: replace this temporary (zero) value
                                 // for expiration block number with properly
                                 // calculated one (issues #646 and #969).
                                 Pallet::<T>::deposit_event(Event::MessageWaited {
-                                    id: dispatch.id(),
+                                    id: current_message_id,
                                     origin,
                                     reason: MessageWaitedSystemReason::ProgramIsNotInitialized
                                         .into_reason(),
@@ -1139,14 +1133,9 @@ pub mod pallet {
                                     current_message_id,
                                 );
 
-                                let message_id = dispatch.id();
-                                let program_id = dispatch.destination();
                                 WaitlistOf::<T>::insert(dispatch).unwrap_or_else(|e| {
                                     unreachable!("Waitlist corrupted! {:?}", e)
                                 });
-
-                                let current_bn = <frame_system::Pallet<T>>::block_number()
-                                    .saturated_into::<u32>();
 
                                 let can_cover =
                                     gas_limit.saturating_div(CostsPerBlockOf::<T>::waitlist());
@@ -1155,12 +1144,15 @@ pub mod pallet {
 
                                 let duration = (can_cover as u32).saturating_sub(reserve_for);
 
-                                let deadline = current_bn.saturating_add(duration);
+                                let deadline = block_info.height.saturating_add(duration);
                                 let deadline: T::BlockNumber = deadline.unique_saturated_into();
 
                                 TaskPoolOf::<T>::add(
                                     deadline,
-                                    ScheduledTask::RemoveFromWaitlist(program_id, message_id),
+                                    ScheduledTask::RemoveFromWaitlist(
+                                        program_id,
+                                        current_message_id,
+                                    ),
                                 )
                                 .unwrap_or_else(|e| {
                                     unreachable!("Scheduling logic invalidated! {:?}", e)
@@ -1217,21 +1209,6 @@ pub mod pallet {
                         &<T::AccountId as Origin>::from_origin(program_id.into_origin()),
                     )
                     .unique_saturated_into();
-
-                    let origin = match GasHandlerOf::<T>::get_external(msg_id) {
-                        Ok(maybe_origin) => {
-                            // NOTE: intentional expect.
-                            // Given gas tree is valid, a node with such id exists and has origin
-                            maybe_origin.expect(
-                                "Gas node is guaranteed to exist for the key due to earlier checks",
-                            )
-                        }
-                        Err(_err) => {
-                            // Error can only be due to invalid gas tree
-                            // TODO: handle appropriately
-                            unreachable!("Can never happen unless gas tree corrupted");
-                        }
-                    };
 
                     let message_execution_context = MessageExecutionContext {
                         actor: Actor {
