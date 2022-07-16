@@ -1016,235 +1016,235 @@ pub mod pallet {
             }
 
             while QueueProcessingOf::<T>::allowed() {
-                if let Some(dispatch) = QueueOf::<T>::dequeue()
+                let dispatch = match QueueOf::<T>::dequeue()
                     .unwrap_or_else(|e| unreachable!("Message queue corrupted! {:?}", e))
                 {
-                    let current_message_id = dispatch.id();
-                    let gas_limit: u64;
-                    let (origin_key, origin);
+                    Some(dispatch) => dispatch,
+                    None => break,
+                };
+                let current_message_id = dispatch.id();
+                let gas_limit: u64;
+                let (origin_key, origin);
 
-                    let msg_gas_artifacts = GasHandlerOf::<T>::get_limit(current_message_id)
-                        .and_then(|maybe_limit| {
-                            GasHandlerOf::<T>::get_origin(current_message_id)
-                                .map(|v| (maybe_limit, v))
-                        })
-                        .unwrap_or_else(|_e| {
-                            // Error can only be due to invalid gas tree
-                            // TODO: handle appropriately
-                            unreachable!("Can never happen unless gas tree corrupted")
-                        });
+                let msg_gas_artifacts = GasHandlerOf::<T>::get_limit(current_message_id)
+                    .and_then(|maybe_limit| {
+                        GasHandlerOf::<T>::get_origin(current_message_id)
+                            .map(|v| (maybe_limit, v))
+                    })
+                    .unwrap_or_else(|_e| {
+                        // Error can only be due to invalid gas tree
+                        // TODO: handle appropriately
+                        unreachable!("Can never happen unless gas tree corrupted")
+                    });
 
-                    if let (Some((limit, _)), Some(origin_data)) = msg_gas_artifacts {
-                        gas_limit = limit;
-                        (origin_key, origin) = origin_data;
-                    } else {
-                        log::debug!(
-                            target: "essential",
-                            "No gas handler for message: {:?} to {:?}",
-                            current_message_id,
-                            dispatch.destination(),
-                        );
-
-                        QueueOf::<T>::queue(dispatch)
-                            .unwrap_or_else(|e| unreachable!("Message queue corrupted! {:?}", e));
-
-                        // Since we requeue the message without GasHandler we have to take
-                        // into account that there can left only such messages in the queue.
-                        // So stop processing when there is not enough gas/weight.
-                        let consumed = T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1);
-
-                        GasAllowanceOf::<T>::decrease(consumed);
-
-                        if GasAllowanceOf::<T>::get() < consumed {
-                            break;
-                        }
-
-                        continue;
-                    };
-
-                    let lazy_pages_enabled =
-                        cfg!(feature = "lazy-pages") && lazy_pages::try_to_enable_lazy_pages();
-                    let program_id = dispatch.destination();
-                    let maybe_message_reply = dispatch.reply();
-
+                if let (Some((limit, _)), Some(origin_data)) = msg_gas_artifacts {
+                    gas_limit = limit;
+                    (origin_key, origin) = origin_data;
+                } else {
                     log::debug!(
-                        "QueueProcessing message: {:?} to {:?} / gas_limit: {}, gas_allowance: {}",
+                        target: "essential",
+                        "No gas handler for message: {:?} to {:?}",
                         current_message_id,
-                        program_id,
-                        gas_limit,
-                        GasAllowanceOf::<T>::get(),
+                        dispatch.destination(),
                     );
 
-                    let active_actor_data = if let Some(maybe_active_program) =
-                        common::get_program(program_id.into_origin())
-                    {
-                        // Check whether message should be added to the wait list
-                        if let Program::Active(prog) = maybe_active_program {
-                            let schedule = T::Schedule::get();
-                            let code_id = CodeId::from_origin(prog.code_hash);
-                            let code = if let Some(code) = T::CodeStorage::get_code(code_id) {
-                                if code.instruction_weights_version()
-                                    == schedule.instruction_weights.version
-                                {
-                                    code
-                                } else if let Ok(code) = Self::reinstrument_code(code_id, &schedule)
-                                {
-                                    // todo: charge for code instrumenting
-                                    code
-                                } else {
-                                    // todo: mark code as unable for instrument to skip next time
-                                    log::debug!(
-                                        "Can not instrument code '{:?}' for program '{:?}'",
-                                        code_id,
-                                        program_id
-                                    );
-                                    continue;
-                                }
+                    QueueOf::<T>::queue(dispatch)
+                        .unwrap_or_else(|e| unreachable!("Message queue corrupted! {:?}", e));
+
+                    // Since we requeue the message without GasHandler we have to take
+                    // into account that there can left only such messages in the queue.
+                    // So stop processing when there is not enough gas/weight.
+                    let consumed = T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1);
+
+                    GasAllowanceOf::<T>::decrease(consumed);
+
+                    if GasAllowanceOf::<T>::get() < consumed {
+                        break;
+                    }
+
+                    continue;
+                };
+
+                let lazy_pages_enabled =
+                    cfg!(feature = "lazy-pages") && lazy_pages::try_to_enable_lazy_pages();
+                let program_id = dispatch.destination();
+                let maybe_message_reply = dispatch.reply();
+
+                log::debug!(
+                    "QueueProcessing message: {:?} to {:?} / gas_limit: {}, gas_allowance: {}",
+                    current_message_id,
+                    program_id,
+                    gas_limit,
+                    GasAllowanceOf::<T>::get(),
+                );
+
+                let active_actor_data = if let Some(maybe_active_program) =
+                    common::get_program(program_id.into_origin())
+                {
+                    // Check whether message should be added to the wait list
+                    if let Program::Active(prog) = maybe_active_program {
+                        let schedule = T::Schedule::get();
+                        let code_id = CodeId::from_origin(prog.code_hash);
+                        let code = if let Some(code) = T::CodeStorage::get_code(code_id) {
+                            if code.instruction_weights_version()
+                                == schedule.instruction_weights.version
+                            {
+                                code
+                            } else if let Ok(code) = Self::reinstrument_code(code_id, &schedule)
+                            {
+                                // todo: charge for code instrumenting
+                                code
                             } else {
+                                // todo: mark code as unable for instrument to skip next time
                                 log::debug!(
-                                    "Code '{:?}' not found for program '{:?}'",
+                                    "Can not instrument code '{:?}' for program '{:?}'",
                                     code_id,
                                     program_id
                                 );
-
-                                continue;
-                            };
-
-                            if maybe_message_reply.is_none()
-                                && matches!(prog.state, ProgramState::Uninitialized {message_id} if message_id != current_message_id)
-                            {
-                                let origin = if origin_key == current_message_id {
-                                    None
-                                } else {
-                                    Some(origin_key)
-                                };
-
-                                // TODO: replace this temporary (zero) value
-                                // for expiration block number with properly
-                                // calculated one (issues #646 and #969).
-                                Pallet::<T>::deposit_event(Event::MessageWaited {
-                                    id: current_message_id,
-                                    origin,
-                                    reason: MessageWaitedSystemReason::ProgramIsNotInitialized
-                                        .into_reason(),
-                                    expiration: T::BlockNumber::zero(),
-                                });
-                                common::waiting_init_append_message_id(
-                                    program_id,
-                                    current_message_id,
-                                );
-
-                                WaitlistOf::<T>::insert(dispatch).unwrap_or_else(|e| {
-                                    unreachable!("Waitlist corrupted! {:?}", e)
-                                });
-
-                                let can_cover =
-                                    gas_limit.saturating_div(CostsPerBlockOf::<T>::waitlist());
-                                let reserve_for =
-                                    CostsPerBlockOf::<T>::reserve_for().saturated_into::<u32>();
-
-                                let duration = (can_cover as u32).saturating_sub(reserve_for);
-
-                                let deadline = block_info.height.saturating_add(duration);
-                                let deadline: T::BlockNumber = deadline.unique_saturated_into();
-
-                                TaskPoolOf::<T>::add(
-                                    deadline,
-                                    ScheduledTask::RemoveFromWaitlist(
-                                        program_id,
-                                        current_message_id,
-                                    ),
-                                )
-                                .unwrap_or_else(|e| {
-                                    unreachable!("Scheduling logic invalidated! {:?}", e)
-                                });
                                 continue;
                             }
-
-                            let program = NativeProgram::from_parts(
-                                program_id,
-                                code,
-                                prog.allocations,
-                                matches!(prog.state, ProgramState::Initialized),
+                        } else {
+                            log::debug!(
+                                "Code '{:?}' not found for program '{:?}'",
+                                code_id,
+                                program_id
                             );
 
-                            let pages_data = if lazy_pages_enabled {
-                                Default::default()
+                            continue;
+                        };
+
+                        if maybe_message_reply.is_none()
+                            && matches!(prog.state, ProgramState::Uninitialized {message_id} if message_id != current_message_id)
+                        {
+                            let origin = if origin_key == current_message_id {
+                                None
                             } else {
-                                match common::get_program_data_for_pages(
-                                    program_id.into_origin(),
-                                    prog.pages_with_data.iter(),
-                                ) {
-                                    Ok(data) => data,
-                                    Err(err) => {
-                                        log::error!(
-                                            "Page data in storage is in invalid state: {}",
-                                            err
-                                        );
-                                        continue;
-                                    }
-                                }
+                                Some(origin_key)
                             };
 
-                            Some(ExecutableActorData {
-                                program,
-                                pages_data,
-                            })
-                        } else {
-                            // Reaching this branch is possible when init message was processed with failure, while other kind of messages
-                            // were already in the queue/were added to the queue (for example. moved from wait list in case of async init)
-                            log::debug!("Program '{:?}' is not active", program_id,);
-                            None
+                            // TODO: replace this temporary (zero) value
+                            // for expiration block number with properly
+                            // calculated one (issues #646 and #969).
+                            Pallet::<T>::deposit_event(Event::MessageWaited {
+                                id: current_message_id,
+                                origin,
+                                reason: MessageWaitedSystemReason::ProgramIsNotInitialized
+                                    .into_reason(),
+                                expiration: T::BlockNumber::zero(),
+                            });
+                            common::waiting_init_append_message_id(
+                                program_id,
+                                current_message_id,
+                            );
+
+                            WaitlistOf::<T>::insert(dispatch).unwrap_or_else(|e| {
+                                unreachable!("Waitlist corrupted! {:?}", e)
+                            });
+
+                            let can_cover =
+                                gas_limit.saturating_div(CostsPerBlockOf::<T>::waitlist());
+                            let reserve_for =
+                                CostsPerBlockOf::<T>::reserve_for().saturated_into::<u32>();
+
+                            let duration = (can_cover as u32).saturating_sub(reserve_for);
+
+                            let deadline = block_info.height.saturating_add(duration);
+                            let deadline: T::BlockNumber = deadline.unique_saturated_into();
+
+                            TaskPoolOf::<T>::add(
+                                deadline,
+                                ScheduledTask::RemoveFromWaitlist(
+                                    program_id,
+                                    current_message_id,
+                                ),
+                            )
+                            .unwrap_or_else(|e| {
+                                unreachable!("Scheduling logic invalidated! {:?}", e)
+                            });
+                            continue;
                         }
+
+                        let program = NativeProgram::from_parts(
+                            program_id,
+                            code,
+                            prog.allocations,
+                            matches!(prog.state, ProgramState::Initialized),
+                        );
+
+                        let pages_data = if lazy_pages_enabled {
+                            Default::default()
+                        } else {
+                            match common::get_program_data_for_pages(
+                                program_id.into_origin(),
+                                prog.pages_with_data.iter(),
+                            ) {
+                                Ok(data) => data,
+                                Err(err) => {
+                                    log::error!(
+                                        "Page data in storage is in invalid state: {}",
+                                        err
+                                    );
+                                    continue;
+                                }
+                            }
+                        };
+
+                        Some(ExecutableActorData {
+                            program,
+                            pages_data,
+                        })
                     } else {
-                        // When an actor sends messages, which is intended to be added to the queue
-                        // it's destination existence is always checked. The only case this doesn't
-                        // happen is when program tries to submit another program with non-existing
-                        // code hash. That's the only known case for reaching that branch.
-                        //
-                        // However there is another case with pausing program, but this API is unstable currently.
+                        // Reaching this branch is possible when init message was processed with failure, while other kind of messages
+                        // were already in the queue/were added to the queue (for example. moved from wait list in case of async init)
+                        log::debug!("Program '{:?}' is not active", program_id,);
                         None
-                    };
-
-                    let balance = <T as Config>::Currency::free_balance(
-                        &<T::AccountId as Origin>::from_origin(program_id.into_origin()),
-                    )
-                    .unique_saturated_into();
-
-                    let message_execution_context = MessageExecutionContext {
-                        actor: Actor {
-                            balance,
-                            destination_program: program_id,
-                            executable_data: active_actor_data,
-                        },
-                        dispatch: dispatch.into_incoming(gas_limit),
-                        origin: ProgramId::from_origin(origin.into_origin()),
-                        gas_allowance: GasAllowanceOf::<T>::get(),
-                    };
-
-                    let journal = if lazy_pages_enabled {
-                        core_processor::process::<LazyPagesExt, SandboxEnvironment<_>>(
-                            &block_config,
-                            message_execution_context,
-                        )
-                    } else {
-                        core_processor::process::<Ext, SandboxEnvironment<_>>(
-                            &block_config,
-                            message_execution_context,
-                        )
-                    };
-
-                    core_processor::handle_journal(journal, &mut ext_manager);
-
-                    if T::DebugInfo::is_enabled() {
-                        T::DebugInfo::do_snapshot();
-                    }
-
-                    if T::DebugInfo::is_remap_id_enabled() {
-                        T::DebugInfo::remap_id();
                     }
                 } else {
-                    break;
+                    // When an actor sends messages, which is intended to be added to the queue
+                    // it's destination existence is always checked. The only case this doesn't
+                    // happen is when program tries to submit another program with non-existing
+                    // code hash. That's the only known case for reaching that branch.
+                    //
+                    // However there is another case with pausing program, but this API is unstable currently.
+                    None
+                };
+
+                let balance = <T as Config>::Currency::free_balance(
+                    &<T::AccountId as Origin>::from_origin(program_id.into_origin()),
+                )
+                .unique_saturated_into();
+
+                let message_execution_context = MessageExecutionContext {
+                    actor: Actor {
+                        balance,
+                        destination_program: program_id,
+                        executable_data: active_actor_data,
+                    },
+                    dispatch: dispatch.into_incoming(gas_limit),
+                    origin: ProgramId::from_origin(origin.into_origin()),
+                    gas_allowance: GasAllowanceOf::<T>::get(),
+                };
+
+                let journal = if lazy_pages_enabled {
+                    core_processor::process::<LazyPagesExt, SandboxEnvironment<_>>(
+                        &block_config,
+                        message_execution_context,
+                    )
+                } else {
+                    core_processor::process::<Ext, SandboxEnvironment<_>>(
+                        &block_config,
+                        message_execution_context,
+                    )
+                };
+
+                core_processor::handle_journal(journal, &mut ext_manager);
+
+                if T::DebugInfo::is_enabled() {
+                    T::DebugInfo::do_snapshot();
+                }
+
+                if T::DebugInfo::is_remap_id_enabled() {
+                    T::DebugInfo::remap_id();
                 }
             }
 
