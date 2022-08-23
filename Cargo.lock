@@ -5026,6 +5026,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-faucet"
+version = "2.0.0"
+dependencies = [
+ "env_logger",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "gear-common",
+ "gear-core",
+ "gear-runtime-primitives",
+ "log",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "parity-wasm 0.45.0",
+ "primitive-types",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "wabt",
+]
+
+[[package]]
 name = "pallet-gear"
 version = "2.0.0"
 dependencies = [
