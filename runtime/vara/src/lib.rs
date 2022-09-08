@@ -116,10 +116,14 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
 <<<<<<< HEAD
+<<<<<<< HEAD
     spec_version: 420,
 =======
     spec_version: 120,
 >>>>>>> ce2bb4dd (Vara: Update stage 1  (#1424))
+=======
+    spec_version: 121,
+>>>>>>> 0b3b3920 (Vara: SelectedFraction 100% (#1452))
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -383,6 +387,16 @@ impl_opaque_keys! {
         pub grandpa: Grandpa,
     }
 }
+<<<<<<< HEAD
+=======
+parameter_types! {
+    pub const SelectedFraction: Percent = Percent::from_percent(100);
+}
+
+impl pallet_shift_session_manager::Config for Runtime {
+    type SelectedFraction = SelectedFraction;
+}
+>>>>>>> 0b3b3920 (Vara: SelectedFraction 100% (#1452))
 
 impl pallet_session::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
