@@ -28,10 +28,14 @@ services:
         loki-url: "{{ loki_url }}"
         loki-tls-insecure-skip-verify: "true"
 <<<<<<< HEAD
+<<<<<<< HEAD
         loki-external-labels: job=docker_node,gear_network=testnet
 =======
         loki-external-labels: job=docker_node,gear_network=vara
 >>>>>>> 02ffad45 (add network selector for logs)
+=======
+        loki-external-labels: job=docker_node,gear_network=testnet
+>>>>>>> f844b85f (Update docker-compose.yaml.j2)
         loki-pipeline-stages: |
           - regex:
               expression: '(?P<error>ERROR.*)'
