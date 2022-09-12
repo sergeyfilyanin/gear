@@ -229,9 +229,12 @@ pub trait Tree {
         amount: Self::Balance,
     ) -> Result<(), Self::Error>;
 
+<<<<<<< HEAD
     /// Return bool, defining does node exist.
     fn exists(key: Self::Key) -> bool;
 
+=======
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     /// Removes all values.
     fn clear();
 }

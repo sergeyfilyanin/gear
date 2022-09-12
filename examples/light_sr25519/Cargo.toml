@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Gear Technologies"]
 edition = "2018"
 
+<<<<<<< HEAD
 [dependencies.schnorrkel]
 version = "0.10.2"
 features = [
@@ -11,3 +12,10 @@ features = [
     "u64_backend",
 ]
 default-features = false
+=======
+[dependencies]
+schnorrkel = { version = "0.9.1", features = [
+	"preaudit_deprecated",
+	"u64_backend",
+], default-features = false }
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))

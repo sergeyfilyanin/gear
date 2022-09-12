@@ -4,7 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+<<<<<<< HEAD
     "upgrade": "node processingMessageWithRuntimeUpgrade.js"
+=======
+    "upgrade": "node processingMessageWithRuntimeUpgrade.js",
+    "weights": "node infiniteLoop.js",
+    "uploads": "node harmlessUploadDemos.js"
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
   },
   "author": "",
   "license": "ISC",

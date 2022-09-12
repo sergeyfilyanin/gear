@@ -58,7 +58,11 @@ then
 fi
 
 # The executable to use.
+<<<<<<< HEAD
 GEAR=./target/production/gear
+=======
+GEAR=./target/production/gear-node
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -162,4 +166,8 @@ if [ -f "$ERR_FILE" ]; then
 else
   echo "[+] All benchmarks passed."
   exit 0
+<<<<<<< HEAD
 fi
+=======
+fi
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))

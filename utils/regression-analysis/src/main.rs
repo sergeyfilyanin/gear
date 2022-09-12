@@ -17,7 +17,11 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use clap::{Parser, Subcommand};
+<<<<<<< HEAD
 use frame_support::dispatch::GetCallName;
+=======
+use frame_support::{dispatch::GetCallName, weights::Weight};
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 use junit_common::TestSuites;
 use pallet_gear::{HostFnWeights, InstructionWeights};
 use quick_xml::de::from_str;
@@ -110,10 +114,17 @@ struct GithubActionBenchmark {
 
 #[derive(Deserialize)]
 #[serde(transparent)]
+<<<<<<< HEAD
 struct WeightBenchmark(Vec<u64>);
 
 impl WeightBenchmark {
     fn calc_weight(&self) -> u64 {
+=======
+struct WeightBenchmark(Vec<Weight>);
+
+impl WeightBenchmark {
+    fn calc_weight(&self) -> Weight {
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
         self.0.iter().sum()
     }
 }
@@ -309,7 +320,11 @@ fn weights(kind: WeightsKind, input_file: PathBuf, output_file: PathBuf) {
                     _phantom,
                     alloc,
                     gr_gas_available,
+<<<<<<< HEAD
                     gr_message_id,
+=======
+                    gr_msg_id,
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
                     gr_origin,
                     gr_program_id,
                     gr_source,
@@ -336,7 +351,11 @@ fn weights(kind: WeightsKind, input_file: PathBuf, output_file: PathBuf) {
                     gr_leave,
                     gr_wait,
                     gr_wait_for,
+<<<<<<< HEAD
                     gr_wait_up_to,
+=======
+                    gr_wait_no_more,
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
                     gr_wake,
                     gr_create_program_wgas,
                     gr_create_program_wgas_per_byte,

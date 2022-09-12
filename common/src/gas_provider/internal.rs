@@ -844,10 +844,13 @@ where
         Self::create_from_with_value(key, NodeCreationKey::Reserved(new_key), amount)
     }
 
+<<<<<<< HEAD
     fn exists(key: Self::Key) -> bool {
         Self::get_node(key).is_some()
     }
 
+=======
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     fn clear() {
         TotalValue::kill();
         StorageMap::clear();

@@ -20,7 +20,10 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION {{version}}
 //! DATE: {{date}}, STEPS: `{{cmd.steps}}`, REPEAT: {{cmd.repeat}}, LOW RANGE: `{{cmd.lowest_range_values}}`, HIGH RANGE: `{{cmd.highest_range_values}}`
+<<<<<<< HEAD
 //! HOSTNAME: `{{hostname}}`, CPU: `{{cpuname}}`
+=======
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 //! EXECUTION: {{cmd.execution}}, WASM-EXECUTION: {{cmd.wasm_execution}}, CHAIN: {{cmd.chain}}, DB CACHE: {{cmd.db_cache}}
 
 // Executed Command:
@@ -47,6 +50,7 @@ pub trait WeightInfo {
 
 /// Weights for {{pallet}} using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
+<<<<<<< HEAD
 {{#if (eq pallet "frame_system")}}
 impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
 {{else}}
@@ -56,11 +60,16 @@ impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
     {{#each benchmark.component_ranges as |range|}}
     /// The range of component `{{range.name}}` is `[{{range.min}}, {{range.max}}]`.
     {{/each}}
+=======
+impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
+    {{#each benchmarks as |benchmark|}}
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     fn {{benchmark.name~}}
     (
         {{~#each benchmark.components as |c| ~}}
         {{~#if (not c.is_used)}}_{{/if}}{{c.name}}: u32, {{/each~}}
     ) -> Weight {
+<<<<<<< HEAD
         Weight::from_ref_time({{underscore benchmark.base_weight}} as u64)
             {{#each benchmark.component_weight as |cw|}}
             // Standard Error: {{underscore cw.error}}
@@ -77,6 +86,24 @@ impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
             {{/if}}
             {{#each benchmark.component_writes as |cw|}}
             .saturating_add(T::DbWeight::get().writes(({{cw.slope}} as u64).saturating_mul({{cw.name}} as u64)))
+=======
+        ({{underscore benchmark.base_weight}} as Weight)
+            {{#each benchmark.component_weight as |cw|}}
+            // Standard Error: {{underscore cw.error}}
+            .saturating_add(({{underscore cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight))
+            {{/each}}
+            {{#if (ne benchmark.base_reads "0")}}
+            .saturating_add(T::DbWeight::get().reads({{benchmark.base_reads}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_reads as |cr|}}
+            .saturating_add(T::DbWeight::get().reads(({{cr.slope}} as Weight).saturating_mul({{cr.name}} as Weight)))
+            {{/each}}
+            {{#if (ne benchmark.base_writes "0")}}
+            .saturating_add(T::DbWeight::get().writes({{benchmark.base_writes}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_writes as |cw|}}
+            .saturating_add(T::DbWeight::get().writes(({{cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight)))
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
             {{/each}}
     }
     {{/each}}
@@ -85,14 +112,18 @@ impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
     {{#each benchmarks as |benchmark|}}
+<<<<<<< HEAD
     {{#each benchmark.component_ranges as |range|}}
     /// The range of component `{{range.name}}` is `[{{range.min}}, {{range.max}}]`.
     {{/each}}
+=======
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     fn {{benchmark.name~}}
     (
         {{~#each benchmark.components as |c| ~}}
         {{~#if (not c.is_used)}}_{{/if}}{{c.name}}: u32, {{/each~}}
     ) -> Weight {
+<<<<<<< HEAD
         Weight::from_ref_time({{underscore benchmark.base_weight}} as u64)
             {{#each benchmark.component_weight as |cw|}}
             // Standard Error: {{underscore cw.error}}
@@ -113,3 +144,25 @@ impl WeightInfo for () {
     }
     {{/each}}
 }
+=======
+        ({{underscore benchmark.base_weight}} as Weight)
+            {{#each benchmark.component_weight as |cw|}}
+            // Standard Error: {{underscore cw.error}}
+            .saturating_add(({{underscore cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight))
+            {{/each}}
+            {{#if (ne benchmark.base_reads "0")}}
+            .saturating_add(RocksDbWeight::get().reads({{benchmark.base_reads}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_reads as |cr|}}
+            .saturating_add(RocksDbWeight::get().reads(({{cr.slope}} as Weight).saturating_mul({{cr.name}} as Weight)))
+            {{/each}}
+            {{#if (ne benchmark.base_writes "0")}}
+            .saturating_add(RocksDbWeight::get().writes({{benchmark.base_writes}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_writes as |cw|}}
+            .saturating_add(RocksDbWeight::get().writes(({{cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight)))
+            {{/each}}
+    }
+    {{/each}}
+}
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))

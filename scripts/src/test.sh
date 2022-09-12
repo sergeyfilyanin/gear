@@ -22,7 +22,12 @@ test_usage() {
     rtest          run node runtime testing tool
     pallet         run pallet-gear tests
     runtime-upgrade run runtime-upgrade test for queue processing
+<<<<<<< HEAD
     client         run client tests via gclient
+=======
+    client-weights run client weight test for infinite loop demo execution
+    uploads        run client upload code test
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     fuzz           run fuzzer with a fuzz target
 
 EOF
@@ -110,15 +115,41 @@ runtime_upgrade_test() {
 client_tests() {
   ROOT_DIR="$1"
 
+<<<<<<< HEAD
   if [ "$2" = "--run-node" ]; then
     # Run node
     RUST_LOG="pallet_gear=debug,runtime::gear=debug" $ROOT_DIR/target/release/gear \
       --dev --tmp --unsafe-ws-external --unsafe-rpc-external --rpc-methods Unsafe --rpc-cors all & sleep 3
+=======
+  # Run node
+  RUST_LOG="gear=debug,gwasm=debug" $ROOT_DIR/target/release/gear-node \
+  --dev --tmp --unsafe-ws-external --unsafe-rpc-external --rpc-methods Unsafe --rpc-cors all & sleep 3
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 
     cargo test -p gclient || pkill -f 'gear |gear$' -9 | pkill -f 'gear |gear$' -9
   else
     cargo test -p gclient
   fi
+}
+
+# $1 - ROOT DIR
+uploads_test() {
+  ROOT_DIR="$1"
+  shift
+
+  TEST_SCRIPT_PATH="$ROOT_DIR/scripts/test-utils"
+
+  # Run node
+  RUST_LOG="gear=debug,gwasm=debug" $ROOT_DIR/target/release/gear-node \
+  --dev --tmp --unsafe-ws-external --unsafe-rpc-external --rpc-methods Unsafe --rpc-cors all & sleep 3
+
+  # Change dir to the js script dir
+  cd "$TEST_SCRIPT_PATH"
+
+  # Run test
+  npm run uploads "$@"
+
+  # Killing node process added in js script
 }
 
 run_fuzzer() {

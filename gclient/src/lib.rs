@@ -20,6 +20,27 @@ mod api;
 mod node;
 mod utils;
 
+<<<<<<< HEAD:gclient/src/lib.rs
 pub use api::{calls::*, error::*, listener::*, storage::*, GearApi};
 pub use node::ws::*;
 pub use utils::*;
+=======
+mod pallet_gear_program;
+pub use pallet_gear_program::SubstrateWeight;
+
+/// Weight functions for pallet_gear_program.
+pub trait WeightInfo {
+    fn resume_program(q: u32) -> Weight;
+}
+
+// For backwards compatibility and tests
+const SUBMIT_WEIGHT_PER_BYTE: u64 = 1_000_000;
+
+impl WeightInfo for () {
+    fn resume_program(q: u32) -> Weight {
+        (0u64)
+            .saturating_add(RocksDbWeight::get().writes(4u64))
+            .saturating_add(SUBMIT_WEIGHT_PER_BYTE.saturating_mul(q as Weight))
+    }
+}
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464)):pallets/gear-program/src/weights/mod.rs

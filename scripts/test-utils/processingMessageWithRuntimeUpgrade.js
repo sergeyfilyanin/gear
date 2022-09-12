@@ -79,7 +79,11 @@ main(pathToRuntimeCode, pathToDemoPing)
     exitCode = 1;
   })
   .finally(() => {
+<<<<<<< HEAD
     exec('pkill -f \'gear |gear$\' -9', (err, stdout, stderr) => {
+=======
+    exec('pgrep -f "gear-node" | xargs kill -9', (err, stdout, stderr) => {
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
       if (err) {
         console.log(`JS_TEST: Unable to execute kill command (${err})`);
       }

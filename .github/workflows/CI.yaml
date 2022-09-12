@@ -226,7 +226,13 @@ jobs:
           cargo test -p pallet-gear-payment --features=lazy-pages --release --locked
 
       - name: "Test: Gear workspace"
+<<<<<<< HEAD
         run: ./scripts/gear.sh test gear --exclude gclient --exclude gprogram --features pallet-gear-debug/lazy-pages --release --locked
+=======
+        run: ./scripts/gear.sh test gear --release --locked
+        env:
+          RUSTFLAGS: -Cinstrument-coverage
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 
       - name: "Test: JS metadata"
         run: ./scripts/gear.sh test js
@@ -270,6 +276,7 @@ jobs:
       #   run: |
       #     cargo build -p gear-node --release --features runtime-benchmarks
       #     ./target/release/gear-node benchmark pallet --chain=dev --steps=1 --repeat=1 --pallet=pallet_gear --extrinsic="*" --execution=wasm --wasm-execution=compiled --heap-pages=4096
+<<<<<<< HEAD
 
       - name: Find comment (performance)
         uses: peter-evans/find-comment@v2
@@ -318,6 +325,10 @@ jobs:
             </details>
             </details>
 >>>>>>> ce2bb4dd (Vara: Update stage 1  (#1424))
+=======
+      - name: "Test: Upload programs"
+        run: ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/wrong_load.wasm"
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 
       - name: "Coverage: Aggregate"
         if: github.ref == 'refs/heads/master'
@@ -587,6 +598,60 @@ jobs:
         with:
           command: build
           args: -p gear-cli --features=lazy-pages
+
+      - name: "Test: Lazy pages"
+        uses: actions-rs/cargo@v1
+        with:
+          command: nextest
+          args: >-
+            run
+            -p pallet-gear
+            -p pallet-gear-debug
+            -p pallet-gear-payment
+            -p gear-lazy-pages
+            -p gear-runtime-interface
+            --features=lazy-pages
+
+  build-macos-x86:
+    if: github.ref == 'refs/heads/master'
+    runs-on: macos-latest
+    steps:
+      - name: Cancel Previous Runs
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: "ACTIONS: Checkout"
+        uses: actions/checkout@v2
+
+      - name: "ACTIONS: Setup caching"
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: "Install: Nightly toolchain"
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: wasm32-unknown-unknown
+
+      - name: "Install: cargo-nextest"
+        run: curl -LsSf https://get.nexte.st/latest/mac | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+
+      - name: "Build: Node"
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: -p gear-node --features=lazy-pages
 
       - name: "Test: Lazy pages"
         uses: actions-rs/cargo@v1

@@ -18,10 +18,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+<<<<<<< HEAD
 use crate::{
     sys::{ExceptionInfo, UserSignalHandler},
     Error,
 };
+=======
+use crate::sys::{ExceptionInfo, UserSignalHandler};
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 use std::io;
 use winapi::{
     shared::ntdef::LONG,
@@ -57,7 +61,11 @@ where
         // (e.g. it reads and writes, but doesn't execute as native code)
         // that's why the case is impossible
         8 /* DEP */ => unreachable!("data execution prevention"),
+<<<<<<< HEAD
         // existence of other values is undocumented and I expect they should be treated as reserved
+=======
+        // existence of other values is undocumented and I expect they should be treated as reserved 
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
         _ => None,
     };
     let info = ExceptionInfo {
@@ -65,6 +73,7 @@ where
         is_write,
     };
 
+<<<<<<< HEAD
     if let Err(err) = H::handle(info) {
         if let Error::SignalFromUnknownMemory { .. } | Error::WasmMemAddrIsNotSet = err {
             return EXCEPTION_CONTINUE_SEARCH;
@@ -72,11 +81,24 @@ where
             panic!("Signal handler failed: {}", err);
         }
     }
+=======
+    H::handle(info)
+        .map_err(|err| err.to_string())
+        .expect("Memory exception handler failed");
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 
     EXCEPTION_CONTINUE_EXECUTION
 }
 
+<<<<<<< HEAD
 pub(crate) unsafe fn init_for_thread() -> Result<(), String> {
+=======
+pub unsafe fn setup_signal_handler<H>() -> io::Result<()>
+where
+    H: UserSignalHandler,
+{
+    SetUnhandledExceptionFilter(Some(exception_handler::<H>));
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     Ok(())
 }
 

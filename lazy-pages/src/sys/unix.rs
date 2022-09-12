@@ -65,7 +65,11 @@ cfg_if! {
     } else if #[cfg(all(target_os = "macos", target_arch = "aarch64"))] {
         unsafe fn ucontext_get_write(ucontext: *mut nix::libc::ucontext_t) -> Option<bool> {
             // See https://developer.arm.com/documentation/ddi0595/2021-03/AArch64-Registers/ESR-EL1--Exception-Syndrome-Register--EL1-
+<<<<<<< HEAD
             const WNR_BIT_MASK: u32 = 0b100_0000; // Write not Read bit
+=======
+            const WNR_BIT_MASK: u32 = 0b0100_0000; // Write not Read bit
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
             const EXCEPTION_CLASS_SHIFT: u32 = u32::BITS - 6;
             const EXCEPTION_CLASS: u32 = 0b10_0100; // Data Abort from a lower Exception Level
 
@@ -79,7 +83,11 @@ cfg_if! {
             Some(esr & WNR_BIT_MASK == WNR_BIT_MASK)
         }
     } else {
+<<<<<<< HEAD
         compile_error!("lazy-pages are not supported on your system. Disable `lazy-pages` feature");
+=======
+        compile_error!("lazy pages are not supported on your system. Disable `lazy-pages` feature");
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     }
 }
 
@@ -96,11 +104,18 @@ where
         };
 
         if let Err(err) = H::handle(exc_info) {
+<<<<<<< HEAD
             let old_sig_handler_works = match err {
                 Error::SignalFromUnknownMemory { .. } | Error::WasmMemAddrIsNotSet => {
                     old_sig_handler(sig, info, ucontext)
                 }
                 _ => false,
+=======
+            let old_sig_handler_works = if let Error::SignalFromUnknownMemory { .. } = err {
+                old_sig_handler(sig, info, ucontext)
+            } else {
+                false
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
             };
             if !old_sig_handler_works {
                 panic!("Signal handler failed: {}", err);
@@ -109,6 +124,7 @@ where
     }
 }
 
+<<<<<<< HEAD
 use errno::Errno;
 
 #[derive(Debug, Clone, Copy, derive_more::Display)]
@@ -205,10 +221,14 @@ pub(crate) unsafe fn init_for_thread() -> Result<(), String> {
 }
 
 pub(crate) unsafe fn setup_signal_handler<H>() -> io::Result<()>
+=======
+pub unsafe fn setup_signal_handler<H>() -> io::Result<()>
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 where
     H: UserSignalHandler,
 {
     let handler = signal::SigHandler::SigAction(handle_sigsegv::<H>);
+<<<<<<< HEAD
     // Set additional SA_ONSTACK and SA_NODEFER to avoid problems with wasmer executor.
     // See comment from shorturl.at/KMO68 :
     // ```
@@ -220,6 +240,8 @@ where
     //  crash while handling the signal, and fall through to the
     //  Breakpad handler by testing handlingSegFault.
     // ```
+=======
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     let sig_action = signal::SigAction::new(
         handler,
         signal::SaFlags::SA_SIGINFO | signal::SaFlags::SA_ONSTACK | signal::SaFlags::SA_NODEFER,

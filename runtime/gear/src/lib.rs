@@ -98,7 +98,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_name: create_runtime_str!("gear"),
     apis: RUNTIME_API_VERSIONS,
     authoring_version: 1,
-    spec_version: 120,
+    spec_version: 130,
     impl_version: 1,
     transaction_version: 1,
     state_version: 1,
@@ -283,12 +283,15 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
     type AccountStore = System;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
+<<<<<<< HEAD
 }
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 1;
     pub const QueueLengthStep: u128 = 10;
     pub const OperationalFeeMultiplier: u8 = 5;
+=======
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -325,14 +328,23 @@ impl pallet_sudo::Config for Runtime {
 }
 
 impl pallet_utility::Config for Runtime {
+<<<<<<< HEAD
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+=======
+    type Event = Event;
+    type Call = Call;
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
     type PalletsOrigin = OriginCaller;
 }
 
 impl pallet_gear_program::Config for Runtime {
+<<<<<<< HEAD
     type RuntimeEvent = RuntimeEvent;
+=======
+    type Event = Event;
+>>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     type WeightInfo = weights::pallet_gear_program::SubstrateWeight<Runtime>;
     type Currency = Balances;
     type Messenger = GearMessenger;
