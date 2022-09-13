@@ -30,7 +30,11 @@ use nix::{
 use once_cell::sync::OnceCell;
 use std::io;
 
+<<<<<<< HEAD
 /// Signal handler which has been set before lazy-pages initialization.
+=======
+/// Signal handler which has been set before lazy pages initialization.
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
 /// Currently use to support wasmer signal handler.
 /// Wasmer protects memory around wasm memory and for stack limits.
 /// It makes it only in `store` initialization when executor is created,
@@ -66,10 +70,14 @@ cfg_if! {
         unsafe fn ucontext_get_write(ucontext: *mut nix::libc::ucontext_t) -> Option<bool> {
             // See https://developer.arm.com/documentation/ddi0595/2021-03/AArch64-Registers/ESR-EL1--Exception-Syndrome-Register--EL1-
 <<<<<<< HEAD
+<<<<<<< HEAD
             const WNR_BIT_MASK: u32 = 0b100_0000; // Write not Read bit
 =======
             const WNR_BIT_MASK: u32 = 0b0100_0000; // Write not Read bit
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+            const WNR_BIT_MASK: u32 = 0b100_0000; // Write not Read bit
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
             const EXCEPTION_CLASS_SHIFT: u32 = u32::BITS - 6;
             const EXCEPTION_CLASS: u32 = 0b10_0100; // Data Abort from a lower Exception Level
 
@@ -105,17 +113,23 @@ where
 
         if let Err(err) = H::handle(exc_info) {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
             let old_sig_handler_works = match err {
                 Error::SignalFromUnknownMemory { .. } | Error::WasmMemAddrIsNotSet => {
                     old_sig_handler(sig, info, ucontext)
                 }
                 _ => false,
+<<<<<<< HEAD
 =======
             let old_sig_handler_works = if let Error::SignalFromUnknownMemory { .. } = err {
                 old_sig_handler(sig, info, ucontext)
             } else {
                 false
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
             };
             if !old_sig_handler_works {
                 panic!("Signal handler failed: {}", err);
@@ -229,6 +243,9 @@ where
 {
     let handler = signal::SigHandler::SigAction(handle_sigsegv::<H>);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
     // Set additional SA_ONSTACK and SA_NODEFER to avoid problems with wasmer executor.
     // See comment from shorturl.at/KMO68 :
     // ```
@@ -240,8 +257,11 @@ where
     //  crash while handling the signal, and fall through to the
     //  Breakpad handler by testing handlingSegFault.
     // ```
+<<<<<<< HEAD
 =======
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
     let sig_action = signal::SigAction::new(
         handler,
         signal::SaFlags::SA_SIGINFO | signal::SaFlags::SA_ONSTACK | signal::SaFlags::SA_NODEFER,

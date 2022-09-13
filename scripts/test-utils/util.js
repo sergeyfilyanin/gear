@@ -32,9 +32,13 @@ function checkProcessed(api) {
   let processedMessages = new Map();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // TODO: does not update processedMessages after first message (issue #1462)
 =======
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+  // TODO: does not update processedMessages after first message (issue #1462)
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
   const unsubPromise = api.query.system.events((events) => {
     events.forEach(({ event: { method, data } }) => {
       if (method === 'MessagesDispatched') {

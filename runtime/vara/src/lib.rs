@@ -84,7 +84,7 @@ use sp_runtime::{
     transaction_validity::{
         InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, Perbill, Percent,
+    ApplyExtrinsicResult, Perbill,
 };
 use sp_std::{
     convert::{TryFrom, TryInto},
@@ -409,6 +409,7 @@ impl_opaque_keys! {
     }
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 parameter_types! {
     pub const SelectedFraction: Percent = Percent::from_percent(100);
@@ -418,6 +419,8 @@ impl pallet_shift_session_manager::Config for Runtime {
     type SelectedFraction = SelectedFraction;
 }
 >>>>>>> 0b3b3920 (Vara: SelectedFraction 100% (#1452))
+=======
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
 
 impl pallet_session::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -721,7 +724,10 @@ construct_runtime!(
         GearGas: pallet_gear_gas,
         Gear: pallet_gear,
         GearPayment: pallet_gear_payment,
+<<<<<<< HEAD
         ShiftSessionManager: pallet_shift_session_manager,
+=======
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
         // TODO: remove from production version
         Airdrop: pallet_airdrop,
     }

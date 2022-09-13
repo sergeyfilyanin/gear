@@ -327,8 +327,14 @@ jobs:
 >>>>>>> ce2bb4dd (Vara: Update stage 1  (#1424))
 =======
       - name: "Test: Upload programs"
+<<<<<<< HEAD
         run: ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/wrong_load.wasm"
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+        run: |
+          ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/wrong_load.wasm"
+          ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/inf_recursion.wasm"
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
 
       - name: "Coverage: Aggregate"
         if: github.ref == 'refs/heads/master'
@@ -624,7 +630,6 @@ jobs:
 
       - name: "ACTIONS: Checkout"
         uses: actions/checkout@v2
-
       - name: "ACTIONS: Setup caching"
         uses: actions/cache@v3
         with:

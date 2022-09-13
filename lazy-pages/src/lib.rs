@@ -186,7 +186,11 @@ pub fn initialize_for_program(
 
         ctx.program_storage_prefix = Some(program_prefix);
 
+<<<<<<< HEAD
         log::trace!("Initialize lazy-pages for current program: {:?}", ctx);
+=======
+        log::trace!("Initialize lazy pages for current program: {:?}", ctx);
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
 
         Ok(())
     })

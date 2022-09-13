@@ -73,8 +73,11 @@ pallet-gear-payment = { version = "0.1.0", default-features = false, path = "../
 pallet-gear-rpc-runtime-api = { version = "2.0.0", default-features = false, path = "../../pallets/gear/rpc/runtime-api" }
 runtime-primitives = { package = "gear-runtime-primitives", version = "0.1.0", default-features = false, path = "../primitives" }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 pallet-shift-session-manager = { version = "0.1.0", default-features = false, path = "../../pallets/shift-session-manager" }
+=======
+>>>>>>> e9a8cde0 (merge master to vara (#1473))
 pallet-airdrop = { version = "1.0.0", default-features = false, path = "../../pallets/airdrop" }
 >>>>>>> ce2bb4dd (Vara: Update stage 1  (#1424))
 
@@ -132,7 +135,6 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
-	"pallet-shift-session-manager/std",
 	"pallet-airdrop/std",
 ]
 runtime-benchmarks = [
