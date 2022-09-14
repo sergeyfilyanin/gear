@@ -129,6 +129,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     spec_version: 420,
 =======
     spec_version: 120,
@@ -142,6 +143,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 =======
     spec_version: 130,
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    spec_version: 170,
+>>>>>>> e1884759 (Vara: Add ChainSpec extensions (#1424) (#1480))
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
