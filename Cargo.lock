@@ -2836,6 +2836,7 @@ name = "gear-node-loader"
 version = "0.1.0"
 dependencies = [
  "arbitrary",
+ "async-trait",
  "color-eyre",
  "futures",
  "gear-program",
