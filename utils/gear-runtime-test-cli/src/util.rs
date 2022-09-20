@@ -17,10 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use codec::Encode;
-use frame_support::{
-    traits::{Currency, GenesisBuild, OnFinalize, OnIdle, OnInitialize},
-    weights::Weight,
-};
+use frame_support::traits::{Currency, GenesisBuild, OnFinalize, OnInitialize};
 use frame_system as system;
 use gear_common::{storage::*, Origin};
 use gear_core::message::{StoredDispatch, StoredMessage};
@@ -208,10 +205,8 @@ pub fn run_to_block(n: u32, remaining_weight: Option<u64>, skip_process_queue: b
         if skip_process_queue {
             GasAllowanceOf::<Runtime>::put(remaining_weight);
         } else {
-            Gear::on_idle(
-                System::block_number(),
-                Weight::from_ref_time(remaining_weight),
-            );
+            GasAllowanceOf::<Runtime>::put(remaining_weight);
+            Gear::run_process_queue(frame_support::dispatch::RawOrigin::None.into()).unwrap();
         }
     }
 }

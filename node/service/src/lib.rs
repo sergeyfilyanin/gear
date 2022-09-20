@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use codec::{Decode, Encode};
+use common::CallFactory;
 use sc_client_api::{Backend as BackendT, BlockBackend, UsageProvider};
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
 use sc_finality_grandpa::SharedVoterState;
@@ -25,7 +27,10 @@ use sc_service::{
 };
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_api::ConstructRuntimeApi;
-use sp_runtime::{traits::BlakeTwo256, OpaqueExtrinsic};
+use sp_runtime::{
+    traits::{BlakeTwo256, Dispatchable},
+    OpaqueExtrinsic,
+};
 use sp_trie::PrefixedMemoryDB;
 use std::{sync::Arc, time::Duration};
 
@@ -44,6 +49,8 @@ pub mod chain_spec;
 mod client;
 
 pub mod rpc;
+
+pub mod authorship;
 
 pub trait IdentifyVariant {
     /// Returns `true` if this is a configuration for gear network.
@@ -285,19 +292,25 @@ fn remote_keystore(_url: &str) -> Result<Arc<LocalKeystore>, &'static str> {
 pub fn build_full(config: Configuration) -> Result<TaskManager, ServiceError> {
     match &config.chain_spec {
         #[cfg(feature = "gear-native")]
-        spec if spec.is_gear() => {
-            new_full::<gear_runtime::RuntimeApi, GearExecutorDispatch>(config)
-        }
+        spec if spec.is_gear() => new_full::<
+            gear_runtime::RuntimeApi,
+            GearExecutorDispatch,
+            gear_runtime::RuntimeCall,
+            gear_runtime::ProcessQueueCallCreator,
+        >(config),
         #[cfg(feature = "vara-native")]
-        spec if spec.is_vara() => {
-            new_full::<vara_runtime::RuntimeApi, VaraExecutorDispatch>(config)
-        }
+        spec if spec.is_vara() => new_full::<
+            vara_runtime::RuntimeApi,
+            VaraExecutorDispatch,
+            vara_runtime::RuntimeCall,
+            vara_runtime::ProcessQueueCallCreator,
+        >(config),
         _ => Err(ServiceError::Other("Invalid chain spec".into())),
     }
 }
 
 /// Builds a new service for a full client.
-pub fn new_full<RuntimeApi, ExecutorDispatch>(
+pub fn new_full<RuntimeApi, ExecutorDispatch, RuntimeCall, CallCreator>(
     mut config: Configuration,
 ) -> Result<TaskManager, ServiceError>
 where
@@ -308,6 +321,8 @@ where
     RuntimeApi::RuntimeApi:
         RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
     ExecutorDispatch: NativeExecutionDispatch + 'static,
+    RuntimeCall: Dispatchable + Clone + Decode + Encode + Send + Sync + 'static,
+    CallCreator: CallFactory<RuntimeCall> + Send + Sync + 'static,
 {
     let PartialComponents {
         client,
@@ -409,13 +424,14 @@ where
     })?;
 
     if role.is_authority() {
-        let proposer_factory = sc_basic_authorship::ProposerFactory::new(
-            task_manager.spawn_handle(),
-            client.clone(),
-            transaction_pool,
-            prometheus_registry.as_ref(),
-            telemetry.as_ref().map(|x| x.handle()),
-        );
+        let proposer_factory =
+            authorship::ProposerFactory::<_, _, _, _, RuntimeCall, CallCreator>::new(
+                task_manager.spawn_handle(),
+                client.clone(),
+                transaction_pool,
+                prometheus_registry.as_ref(),
+                telemetry.as_ref().map(|x| x.handle()),
+            );
 
         {
             let slot_duration = babe_link.config().slot_duration();

@@ -377,6 +377,13 @@ where
     type OverarchingCall = RuntimeCall;
 }
 
+pub struct ProcessQueueCallCreator;
+impl gear_common::CallFactory<RuntimeCall> for ProcessQueueCallCreator {
+    fn call() -> RuntimeCall {
+        RuntimeCall::Gear(pallet_gear::Call::run_process_queue {})
+    }
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[cfg(feature = "debug-mode")]
 construct_runtime!(

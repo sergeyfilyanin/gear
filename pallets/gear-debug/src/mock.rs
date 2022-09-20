@@ -17,12 +17,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use crate as pallet_gear_debug;
+use common::storage::Limiter;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{FindAuthor, OnFinalize, OnIdle, OnInitialize},
+    traits::{FindAuthor, OnFinalize, OnInitialize},
 };
 use frame_system as system;
-use pallet_gear_messenger::Weight;
 use primitive_types::H256;
 use sp_runtime::{
     testing::Header,
@@ -213,9 +213,9 @@ pub fn run_to_block(n: u64, remaining_weight: Option<u64>) {
         Gear::on_initialize(System::block_number());
         let remaining_weight =
             remaining_weight.unwrap_or(pallet_gear::BlockGasLimitOf::<Test>::get());
-        Gear::on_idle(
-            System::block_number(),
-            Weight::from_ref_time(remaining_weight),
-        );
+        pallet_gear::GasAllowanceOf::<Test>::put(remaining_weight);
+
+        Gear::run_process_queue(frame_support::dispatch::RawOrigin::None.into()).unwrap();
+        Gear::on_finalize(System::block_number());
     }
 }

@@ -21,24 +21,51 @@
 mod apis;
 
 pub use frame_support::{
+    dispatch::DispatchClass,
     parameter_types,
     traits::{Currency, OnUnbalanced},
-    weights::constants::WEIGHT_PER_SECOND,
+    weights::{
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
+        Weight,
+    },
 };
+use frame_system::limits::{BlockLength as SysBlockLength, BlockWeights as SysBlockWeights};
 use runtime_primitives::{AccountId, Balance, BlockNumber};
 use sp_runtime::{Perbill, Percent};
 
-// Extrinsics with DispatchClass::Normal only account for user messages
-// TODO: consider making the normal extrinsics share adjustable in runtime
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+/// We allow `Normal` extrinsics to fill up the block up to 25%.
+/// Such extrinsics only account for user messages. The rest of the block time can be used
+/// for message queue processing and/or `Operatoinal` extrinsics.
+// TODO: consider making the normal extrinsics share adjustable
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(25);
+/// We allocate one third of the average block time for compute.
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(3);
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
-    /// We allow for 1/3 of a second of compute with a 2 second average block time.
-    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(WEIGHT_PER_SECOND / 3, NORMAL_DISPATCH_RATIO);
-    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub BlockWeights: SysBlockWeights = SysBlockWeights::builder()
+        .base_block(BlockExecutionWeight::get())
+        .for_class(DispatchClass::all(), |weights| {
+            weights.base_extrinsic = ExtrinsicBaseWeight::get();
+        })
+        .for_class(DispatchClass::Normal, |weights| {
+            weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+        })
+        .for_class(DispatchClass::Operational, |weights| {
+            weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+            // Operational transactions have some extra reserved space, so that they
+            // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+            weights.reserved = Some(
+                MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+            );
+        })
+        .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+        .build_or_panic();
+    pub BlockLength: SysBlockLength =
+        SysBlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 }
 
 pub struct GasConverter;
@@ -48,7 +75,8 @@ impl gear_common::GasPrice for GasConverter {
 
 parameter_types! {
     pub const GasLimitMaxPercentage: Percent = Percent::from_percent(75);
-    pub BlockGasLimit: u64 = GasLimitMaxPercentage::get() * BlockWeights::get().max_block.ref_time();
+    pub BlockGasLimit: u64 = GasLimitMaxPercentage::get() * BlockWeights::get()
+        .max_block.ref_time();
 
     pub const TransactionByteFee: Balance = 1;
     pub const QueueLengthStep: u128 = 10;

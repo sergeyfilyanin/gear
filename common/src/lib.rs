@@ -48,6 +48,10 @@ use primitive_types::H256;
 use scale_info::TypeInfo;
 use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
 use sp_core::crypto::UncheckedFrom;
+use sp_runtime::{
+    generic::{CheckedExtrinsic, UncheckedExtrinsic},
+    traits::{Dispatchable, SignedExtension},
+};
 use sp_std::{
     collections::{btree_map::BTreeMap, btree_set::BTreeSet},
     prelude::*,
@@ -477,4 +481,36 @@ pub fn reset_storage() {
 
     // TODO: Remove this legacy after next runtime upgrade.
     sp_io::storage::clear_prefix(b"g::wait::", None);
+}
+
+/// A trait whose purpose is to extract the `Call` variant of an extrinsic
+pub trait ExtractCall<Call> {
+    fn extract_call(&self) -> Call;
+}
+
+/// Implementation for unchecked extrinsic.
+impl<Address, Call, Signature, Extra> ExtractCall<Call>
+    for UncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+    Call: Dispatchable + Clone,
+    Extra: SignedExtension,
+{
+    fn extract_call(&self) -> Call {
+        self.function.clone()
+    }
+}
+
+/// Implementation for checked extrinsic.
+impl<Address, Call, Extra> ExtractCall<Call> for CheckedExtrinsic<Address, Call, Extra>
+where
+    Call: Dispatchable + Clone,
+{
+    fn extract_call(&self) -> Call {
+        self.function.clone()
+    }
+}
+
+/// Trait whose implementors can generate some custom call.
+pub trait CallFactory<Call> {
+    fn call() -> Call;
 }
