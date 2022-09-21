@@ -22,7 +22,12 @@ use common::{
     GasTree,
 };
 use frame_support::{
+<<<<<<< HEAD
     traits::{GenesisBuild, OnFinalize, OnInitialize},
+=======
+    traits::{GenesisBuild, OnFinalize, OnIdle, OnInitialize},
+    weights::Weight,
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     BasicExternalities,
 };
 use frame_system as system;
@@ -259,8 +264,15 @@ pub(crate) fn run_to_block(n: u32, remaining_weight: Option<u64>) {
     while System::block_number() < n {
         // Process message queue
         let remaining_weight = remaining_weight.unwrap_or_else(BlockGasLimitOf::<Runtime>::get);
+<<<<<<< HEAD
         GasAllowanceOf::<Runtime>::put(remaining_weight);
         Gear::run(frame_support::dispatch::RawOrigin::None.into()).unwrap();
+=======
+        Gear::on_idle(
+            System::block_number(),
+            Weight::from_ref_time(remaining_weight),
+        );
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
         let current_blk = System::block_number();
         on_finalize(current_blk);
@@ -284,8 +296,12 @@ pub(crate) fn run_to_block_with_ocw(
         let remaining_weight = remaining_weight.unwrap_or_else(BlockGasLimitOf::<Runtime>::get);
 
         // Processing message queue
+<<<<<<< HEAD
         GasAllowanceOf::<Runtime>::put(remaining_weight);
         Gear::run(frame_support::dispatch::RawOrigin::None.into()).unwrap();
+=======
+        Gear::on_idle(i, Weight::from_ref_time(remaining_weight));
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
         on_finalize(i);
 

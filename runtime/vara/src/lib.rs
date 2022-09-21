@@ -130,6 +130,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     spec_version: 420,
 =======
     spec_version: 120,
@@ -146,6 +147,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 =======
     spec_version: 170,
 >>>>>>> e1884759 (Vara: Add ChainSpec extensions (#1424) (#1480))
+=======
+    spec_version: 220,
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -186,7 +190,7 @@ pub struct DisableValueTransfers;
 impl SignedExtension for DisableValueTransfers {
     const IDENTIFIER: &'static str = "DisableValueTransfers";
     type AccountId = AccountId;
-    type Call = Call;
+    type Call = RuntimeCall;
     type AdditionalSigned = ();
     type Pre = ();
     fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
@@ -200,11 +204,13 @@ impl SignedExtension for DisableValueTransfers {
         _: usize,
     ) -> TransactionValidity {
         match call {
-            Call::Balances(_) => Err(TransactionValidityError::Invalid(InvalidTransaction::Call)),
-            Call::Gear(pallet_gear::Call::create_program { value, .. })
-            | Call::Gear(pallet_gear::Call::upload_program { value, .. })
-            | Call::Gear(pallet_gear::Call::send_message { value, .. })
-            | Call::Gear(pallet_gear::Call::send_reply { value, .. }) => {
+            RuntimeCall::Balances(_) => {
+                Err(TransactionValidityError::Invalid(InvalidTransaction::Call))
+            }
+            RuntimeCall::Gear(pallet_gear::Call::create_program { value, .. })
+            | RuntimeCall::Gear(pallet_gear::Call::upload_program { value, .. })
+            | RuntimeCall::Gear(pallet_gear::Call::send_message { value, .. })
+            | RuntimeCall::Gear(pallet_gear::Call::send_reply { value, .. }) => {
                 if value.is_zero() {
                     Ok(Default::default())
                 } else {
@@ -526,7 +532,7 @@ impl pallet_staking::Config for Runtime {
     type ElectionProvider = ElectNone<Staking>;
     type GenesisElectionProvider = ElectAll<Staking>;
     type RewardRemainder = (); // No rewards in stage 1 => can just burn
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Slash = ();
     type Reward = ();
     type SessionsPerEra = SessionsPerEra;
@@ -554,7 +560,7 @@ parameter_types! {
 }
 
 impl pallet_bags_list::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ScoreProvider = Staking;
     type WeightInfo = pallet_bags_list::weights::SubstrateWeight<Runtime>;
     type BagThresholds = BagThresholds;
@@ -568,22 +574,31 @@ impl pallet_sudo::Config for Runtime {
 
 impl pallet_utility::Config for Runtime {
 <<<<<<< HEAD
+<<<<<<< HEAD
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
 =======
     type Event = Event;
     type Call = Call;
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
     type PalletsOrigin = OriginCaller;
 }
 
 impl pallet_gear_program::Config for Runtime {
 <<<<<<< HEAD
+<<<<<<< HEAD
     type RuntimeEvent = RuntimeEvent;
 =======
     type Event = Event;
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type WeightInfo = weights::pallet_gear_program::SubstrateWeight<Runtime>;
     type Currency = Balances;
     type Messenger = GearMessenger;
@@ -647,7 +662,7 @@ impl pallet_gear_messenger::Config for Runtime {
 }
 
 impl pallet_airdrop::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_airdrop::weights::AirdropWeight<Runtime>;
 }
 
@@ -676,6 +691,7 @@ where
 {
     type Extrinsic = UncheckedExtrinsic;
     type OverarchingCall = RuntimeCall;
+<<<<<<< HEAD
 }
 
 impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
@@ -684,6 +700,8 @@ impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
             pallet_gear::Call::run {},
         )))
     }
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -704,7 +722,7 @@ construct_runtime!(
         BagsList: pallet_bags_list,
         Staking: pallet_staking,
         Session: pallet_session,
-        Historical: pallet_session_historical::{Pallet},
+        Historical: pallet_session_historical,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
         GearProgram: pallet_gear_program,
@@ -739,7 +757,7 @@ construct_runtime!(
         BagsList: pallet_bags_list,
         Staking: pallet_staking,
         Session: pallet_session,
-        Historical: pallet_session_historical::{Pallet},
+        Historical: pallet_session_historical,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
         GearProgram: pallet_gear_program,
@@ -875,7 +893,11 @@ impl_runtime_apis_plus_common! {
             // have a backtrace here. If any of the pre/post migration checks fail, we shall stop
             // right here and right now.
             let weight = Executive::try_runtime_upgrade().unwrap();
+<<<<<<< HEAD
             (weight, RuntimeBlockWeights::get().max_block)
+=======
+            (weight, BlockWeights::get().max_block)
+>>>>>>> 1a441afd (Vara: merge master (#1529))
         }
 
         fn execute_block(

@@ -46,6 +46,25 @@ impl gear_common::GasPrice for GasConverter {
     type Balance = Balance;
 }
 
+<<<<<<< HEAD
+=======
+parameter_types! {
+    pub const GasLimitMaxPercentage: Percent = Percent::from_percent(75);
+    pub BlockGasLimit: u64 = GasLimitMaxPercentage::get() * BlockWeights::get().max_block.ref_time();
+
+    pub const TransactionByteFee: Balance = 1;
+    pub const QueueLengthStep: u128 = 10;
+    pub const OperationalFeeMultiplier: u8 = 5;
+
+    pub const ReserveThreshold: u32 = 1;
+    pub const WaitlistCost: u64 = 100;
+    pub const MailboxCost: u64 = 100;
+
+    pub const OutgoingLimit: u32 = 1024;
+    pub const MailboxThreshold: u64 = 3000;
+}
+
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
     <T as frame_system::Config>::AccountId,
 >>::NegativeImbalance;

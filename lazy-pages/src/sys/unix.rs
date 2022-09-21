@@ -31,10 +31,14 @@ use once_cell::sync::OnceCell;
 use std::io;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 /// Signal handler which has been set before lazy-pages initialization.
 =======
 /// Signal handler which has been set before lazy pages initialization.
 >>>>>>> e9a8cde0 (merge master to vara (#1473))
+=======
+/// Signal handler which has been set before lazy-pages initialization.
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 /// Currently use to support wasmer signal handler.
 /// Wasmer protects memory around wasm memory and for stack limits.
 /// It makes it only in `store` initialization when executor is created,
@@ -92,10 +96,14 @@ cfg_if! {
         }
     } else {
 <<<<<<< HEAD
+<<<<<<< HEAD
         compile_error!("lazy-pages are not supported on your system. Disable `lazy-pages` feature");
 =======
         compile_error!("lazy pages are not supported on your system. Disable `lazy-pages` feature");
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+        compile_error!("lazy-pages are not supported on your system. Disable `lazy-pages` feature");
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     }
 }
 
@@ -139,6 +147,9 @@ where
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 use errno::Errno;
 
 #[derive(Debug, Clone, Copy, derive_more::Display)]
@@ -235,9 +246,12 @@ pub(crate) unsafe fn init_for_thread() -> Result<(), String> {
 }
 
 pub(crate) unsafe fn setup_signal_handler<H>() -> io::Result<()>
+<<<<<<< HEAD
 =======
 pub unsafe fn setup_signal_handler<H>() -> io::Result<()>
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 where
     H: UserSignalHandler,
 {

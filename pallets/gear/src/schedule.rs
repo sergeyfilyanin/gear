@@ -264,8 +264,13 @@ pub struct HostFnWeights<T: Config> {
     /// Weight of calling `gr_gas_available`.
     pub gr_gas_available: u64,
 
+<<<<<<< HEAD
     /// Weight of calling `gr_message_id`.
     pub gr_message_id: u64,
+=======
+    /// Weight of calling `gr_msg_id`.
+    pub gr_msg_id: u64,
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
     /// Weight of calling `gr_origin`.
     pub gr_origin: u64,
@@ -345,8 +350,13 @@ pub struct HostFnWeights<T: Config> {
     /// Weight of calling `gr_wait_for`.
     pub gr_wait_for: u64,
 
+<<<<<<< HEAD
     /// Weight of calling `gr_wait_up_to`.
     pub gr_wait_up_to: u64,
+=======
+    /// Weight of calling `gr_wait_no_more`.
+    pub gr_wait_no_more: u64,
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
     /// Weight of calling `gr_wake`.
     pub gr_wake: u64,

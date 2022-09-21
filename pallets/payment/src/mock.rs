@@ -20,7 +20,11 @@ use crate as pallet_gear_payment;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU8, Contains, Currency, FindAuthor, OnFinalize, OnInitialize, OnUnbalanced},
+<<<<<<< HEAD
     weights::{constants::WEIGHT_PER_SECOND, IdentityFee},
+=======
+    weights::{IdentityFee, Weight},
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 };
 use frame_system as system;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -106,9 +110,14 @@ parameter_types! {
     pub const BlockHashCount: u64 = 2400;
     pub const SS58Prefix: u8 = 42;
     pub const ExistentialDeposit: u64 = 1;
+<<<<<<< HEAD
     pub RuntimeBlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::simple_max(
         (WEIGHT_PER_SECOND/2).set_proof_size(u64::MAX)
     );
+=======
+    pub BlockWeights: frame_system::limits::BlockWeights =
+        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_000_000_000));
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 }
 
 impl system::Config for Test {
@@ -116,7 +125,11 @@ impl system::Config for Test {
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = ();
     type DbWeight = ();
+<<<<<<< HEAD
     type RuntimeOrigin = RuntimeOrigin;
+=======
+    type Origin = Origin;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
@@ -266,7 +279,11 @@ pub fn run_to_block(n: u64) {
     }
 }
 
+<<<<<<< HEAD
 impl common::ExtractCall<RuntimeCall> for TestXt<RuntimeCall, ()> {
+=======
+impl crate::ExtractCall<RuntimeCall> for TestXt<RuntimeCall, ()> {
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     fn extract_call(&self) -> RuntimeCall {
         self.call.clone()
     }

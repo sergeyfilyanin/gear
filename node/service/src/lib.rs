@@ -16,7 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+<<<<<<< HEAD
 use common::TerminalExtrinsicProvider;
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 use sc_client_api::{Backend as BackendT, BlockBackend, UsageProvider};
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
 use sc_network::NetworkService;
@@ -26,18 +29,27 @@ use sc_service::{
 };
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_api::ConstructRuntimeApi;
+<<<<<<< HEAD
 use sp_runtime::{
     traits::{BlakeTwo256, Block as BlockT},
     OpaqueExtrinsic,
 };
+=======
+use sp_runtime::{traits::BlakeTwo256, OpaqueExtrinsic};
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
 
 pub use client::*;
 
 pub use sc_client_api::AuxStore;
+<<<<<<< HEAD
 use sc_consensus_babe::{self, SlotProportion};
 pub use sp_blockchain::{HeaderBackend, HeaderMetadata};
+=======
+pub use sp_blockchain::{HeaderBackend, HeaderMetadata};
+pub use sp_consensus_babe::BabeApi;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
 #[cfg(feature = "gear-native")]
 pub use gear_runtime;
@@ -232,11 +244,31 @@ where
     )?;
     let justification_import = grandpa_block_import.clone();
 
+<<<<<<< HEAD
     let (block_import, babe_link) = sc_consensus_babe::block_import(
         sc_consensus_babe::configuration(&*client)?,
         grandpa_block_import,
         client.clone(),
     )?;
+=======
+    let (import_queue, babe_block_import_setup) = {
+        let babe_config = sc_consensus_babe::configuration(&*client)?;
+        let (babe_block_import, babe_link) = sc_consensus_babe::block_import(
+            babe_config,
+            grandpa_block_import.clone(),
+            client.clone(),
+        )?;
+        let slot_duration = babe_link.config().slot_duration();
+        (
+            sc_consensus_babe::import_queue(
+                babe_link.clone(),
+                babe_block_import.clone(),
+                Some(Box::new(grandpa_block_import.clone())),
+                client.clone(),
+                select_chain.clone(),
+                move |_, ()| async move {
+                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
     let slot_duration = babe_link.config().slot_duration();
     let import_queue = sc_consensus_babe::import_queue(
@@ -301,6 +333,7 @@ where
                     shared_epoch_changes: shared_epoch_changes.clone(),
                     keystore: keystore.clone(),
                 },
+<<<<<<< HEAD
                 grandpa: crate::rpc::GrandpaDeps {
                     shared_voter_state: shared_voter_state.clone(),
                     shared_authority_set: shared_authority_set.clone(),
@@ -314,6 +347,14 @@ where
         };
 
         (rpc_extensions_builder, shared_voter_state2)
+=======
+                &task_manager.spawn_essential_handle(),
+                config.prometheus_registry(),
+                telemetry.as_ref().map(|x| x.handle()),
+            )?,
+            (babe_block_import, babe_link),
+        )
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     };
 
     let partial = PartialComponents {
@@ -487,6 +528,7 @@ where
             telemetry.as_ref().map(|x| x.handle()),
         );
 
+<<<<<<< HEAD
         let slot_duration = babe_link.config().slot_duration();
         let babe_config = sc_consensus_babe::BabeParams {
             keystore: keystore_container.sync_keystore(),
@@ -504,6 +546,10 @@ where
                             *timestamp,
                             slot_duration,
                         );
+=======
+        {
+            let slot_duration = babe_link.config().slot_duration();
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
                 Ok((slot, timestamp))
             },
@@ -515,12 +561,38 @@ where
             telemetry: telemetry.as_ref().map(|x| x.handle()),
         };
 
+<<<<<<< HEAD
         let babe = sc_consensus_babe::start_babe(babe_config)?;
         task_manager.spawn_essential_handle().spawn_blocking(
             "babe-proposer",
             Some("block-authoring"),
             babe,
         );
+=======
+                    let slot =
+                            sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                                *timestamp,
+                                slot_duration,
+                            );
+
+                    Ok((timestamp, slot))
+                },
+                force_authoring,
+                backoff_authoring_blocks,
+                babe_link,
+                block_proposal_slot_portion: sc_consensus_babe::SlotProportion::new(2f32 / 3f32), // Substrate suggests 0.5
+                max_block_proposal_slot_portion: None,
+                telemetry: telemetry.as_ref().map(|x| x.handle()),
+            };
+
+            let babe = sc_consensus_babe::start_babe(babe_config)?;
+            task_manager.spawn_essential_handle().spawn_blocking(
+                "babe",
+                Some("block-authoring"),
+                babe,
+            );
+        }
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     }
 
     // if the node isn't actively participating in consensus then it doesn't
@@ -642,6 +714,58 @@ pub fn new_full(
         >(config, disable_hardware_benchmarks, |_, _| ())
         .map(|NewFullBase { task_manager, .. }| task_manager),
         _ => Err(ServiceError::Other("Invalid chain spec".into())),
+    }
+}
+
+/// Reverts the node state down to at most the last finalized block.
+///
+/// In particular this reverts:
+/// - Low level Babe and Grandpa consensus data.
+pub fn revert_backend(
+    client: Arc<Client>,
+    backend: Arc<FullBackend>,
+    blocks: BlockNumber,
+    _config: Configuration,
+) -> Result<(), ServiceError> {
+    client.execute_with(RevertConsensus { blocks, backend })?;
+
+    Ok(())
+}
+
+struct RevertConsensus {
+    blocks: BlockNumber,
+    backend: Arc<FullBackend>,
+}
+
+impl ExecuteWithClient for RevertConsensus {
+    type Output = sp_blockchain::Result<()>;
+
+    fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
+    where
+        <Api as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+        Backend: BackendT<Block> + 'static,
+        Backend::State: sp_api::StateBackend<BlakeTwo256>,
+        Api: RuntimeApiCollection<StateBackend = Backend::State>,
+        Client: AbstractClient<Block, Backend, Api = Api>
+            + 'static
+            + HeaderMetadata<
+                sp_runtime::generic::Block<
+                    sp_runtime::generic::Header<u32, BlakeTwo256>,
+                    OpaqueExtrinsic,
+                >,
+                Error = sp_blockchain::Error,
+            >
+            + AuxStore
+            + UsageProvider<
+                sp_runtime::generic::Block<
+                    sp_runtime::generic::Header<u32, BlakeTwo256>,
+                    OpaqueExtrinsic,
+                >,
+            >,
+    {
+        sc_consensus_babe::revert(client.clone(), self.backend, self.blocks)?;
+        sc_finality_grandpa::revert(client, self.blocks)?;
+        Ok(())
     }
 }
 

@@ -7,10 +7,14 @@ license = "GPL-3.0"
 
 [dependencies]
 <<<<<<< HEAD
+<<<<<<< HEAD
 anyhow = "1.0.65"
 =======
 anyhow = "1.0.64"
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+anyhow = "1.0.65"
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive"] }
 colored = "2.0.0"
 clap = { version = "3.2", features = ["derive"] }

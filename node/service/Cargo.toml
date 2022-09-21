@@ -17,11 +17,15 @@ futures = "0.3.21"
 futures-timer = "3.0.1"
 hex-literal = "0.3.4"
 <<<<<<< HEAD
+<<<<<<< HEAD
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 log = "0.4.17"
 =======
 jsonrpsee = { version = "0.14.0", features = ["server"] }
 >>>>>>> e1884759 (Vara: Add ChainSpec extensions (#1424) (#1480))
+=======
+jsonrpsee = { version = "0.15.1", features = ["server"] }
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 serde = { version = "1.0.136", features = ["derive"] }
 
 # Gear

@@ -39,6 +39,9 @@ static LAZY_PAGES_INITIALIZED: OnceCell<Result<(), InitError>> = OnceCell::new()
 =======
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 
+/// Initialize lazy-pages once for process.
+static LAZY_PAGES_INITIALIZED: OnceCell<Result<(), InitError>> = OnceCell::new();
+
 #[derive(Debug, derive_more::Display, derive_more::From)]
 pub enum Error {
     #[display(fmt = "WASM memory begin address is not set")]
@@ -187,10 +190,14 @@ pub fn initialize_for_program(
         ctx.program_storage_prefix = Some(program_prefix);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         log::trace!("Initialize lazy-pages for current program: {:?}", ctx);
 =======
         log::trace!("Initialize lazy pages for current program: {:?}", ctx);
 >>>>>>> e9a8cde0 (merge master to vara (#1473))
+=======
+        log::trace!("Initialize lazy-pages for current program: {:?}", ctx);
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
         Ok(())
     })
@@ -266,6 +273,7 @@ pub enum InitError {
 /// # Safety
 /// See [`sys::setup_signal_handler`]
 <<<<<<< HEAD
+<<<<<<< HEAD
 unsafe fn init_for_process<H: UserSignalHandler>() -> Result<(), InitError> {
 =======
 unsafe fn init_internal<H: UserSignalHandler>(version: LazyPagesVersion) -> Result<(), InitError> {
@@ -312,6 +320,11 @@ unsafe fn init_internal<H: UserSignalHandler>(version: LazyPagesVersion) -> Resu
         );
     }
 
+=======
+unsafe fn init_for_process<H: UserSignalHandler>() -> Result<(), InitError> {
+    use InitError::*;
+
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     LAZY_PAGES_INITIALIZED
         .get_or_init(|| {
             let ps = region::page::size();
@@ -322,6 +335,7 @@ unsafe fn init_internal<H: UserSignalHandler>(version: LazyPagesVersion) -> Resu
             {
                 return Err(NativePageSizeIsNotSuitable(ps));
             }
+<<<<<<< HEAD
 
             if let Err(err) = sys::setup_signal_handler::<H>() {
                 return Err(CanNotSetUpSignalHandler(err.to_string()));
@@ -430,10 +444,23 @@ mod tests {
     LAZY_PAGES_ENABLED.with(|x| *x.borrow_mut() = true);
 
     Ok(())
+=======
+
+            if let Err(err) = sys::setup_signal_handler::<H>() {
+                return Err(CanNotSetUpSignalHandler(err.to_string()));
+            }
+
+            log::trace!("Successfully initialize lazy-pages for process");
+
+            Ok(())
+        })
+        .clone()
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 }
 
-/// Initialize lazy pages for current thread.
+/// Initialize lazy-pages for current thread.
 pub fn init<H: UserSignalHandler>(version: LazyPagesVersion) -> bool {
+<<<<<<< HEAD
     if let Err(err) = unsafe { init_internal::<H>(version) } {
         log::debug!("Cannot initialize lazy pages: {}", err);
         false
@@ -441,7 +468,22 @@ pub fn init<H: UserSignalHandler>(version: LazyPagesVersion) -> bool {
         log::debug!("Successfully enables lazy pages for current thread");
         true
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    // Set version even if it has been already set, because it can be changed after runtime upgrade.
+    LAZY_PAGES_VERSION.with(|v| *v.borrow_mut() = version);
+
+    if let Err(err) = unsafe { init_for_process::<H>() } {
+        log::debug!("Cannot initialize lazy-pages for process: {}", err);
+        return false;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     }
+
+    if let Err(err) = unsafe { sys::init_for_thread() } {
+        log::debug!("Cannot initialize lazy-pages for thread: {}", err);
+        return false;
+    }
+
+    true
 }
 
 #[cfg(test)]
@@ -450,8 +492,6 @@ mod tests {
     use region::Protection;
     use std::ptr;
 
-    // FIXME: issue #1444
-    #[cfg_attr(all(target_os = "linux", target_arch = "x86_64"), ignore)]
     #[test]
     fn read_write_flag_works() {
         unsafe fn protect(access: bool) {
@@ -466,12 +506,12 @@ mod tests {
         }
 
         unsafe fn invalid_write() {
-            ptr::write(MEM_ADDR as *mut _, 123);
+            ptr::write_volatile(MEM_ADDR as *mut _, 123);
             protect(false);
         }
 
         unsafe fn invalid_read() {
-            let _: u8 = ptr::read(MEM_ADDR);
+            let _: u8 = ptr::read_volatile(MEM_ADDR);
             protect(false);
         }
 

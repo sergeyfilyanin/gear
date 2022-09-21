@@ -98,7 +98,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_name: create_runtime_str!("gear"),
     apis: RUNTIME_API_VERSIONS,
     authoring_version: 1,
-    spec_version: 170,
+    spec_version: 220,
     impl_version: 1,
     transaction_version: 1,
     state_version: 1,
@@ -329,22 +329,31 @@ impl pallet_sudo::Config for Runtime {
 
 impl pallet_utility::Config for Runtime {
 <<<<<<< HEAD
+<<<<<<< HEAD
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
 =======
     type Event = Event;
     type Call = Call;
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
     type PalletsOrigin = OriginCaller;
 }
 
 impl pallet_gear_program::Config for Runtime {
 <<<<<<< HEAD
+<<<<<<< HEAD
     type RuntimeEvent = RuntimeEvent;
 =======
     type Event = Event;
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type WeightInfo = weights::pallet_gear_program::SubstrateWeight<Runtime>;
     type Currency = Balances;
     type Messenger = GearMessenger;
@@ -432,6 +441,7 @@ where
 {
     type Extrinsic = UncheckedExtrinsic;
     type OverarchingCall = RuntimeCall;
+<<<<<<< HEAD
 }
 
 impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
@@ -440,6 +450,8 @@ impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
             pallet_gear::Call::run {},
         )))
     }
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -609,7 +621,11 @@ impl_runtime_apis_plus_common! {
             // have a backtrace here. If any of the pre/post migration checks fail, we shall stop
             // right here and right now.
             let weight = Executive::try_runtime_upgrade().unwrap();
+<<<<<<< HEAD
             (weight, RuntimeBlockWeights::get().max_block)
+=======
+            (weight, BlockWeights::get().max_block)
+>>>>>>> 1a441afd (Vara: merge master (#1529))
         }
 
         fn execute_block(

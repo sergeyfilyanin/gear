@@ -15,10 +15,14 @@ codec = { package = "parity-scale-codec", version = "3.1.2", features = ["derive
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.17", default-features = false }
 <<<<<<< HEAD
+<<<<<<< HEAD
 anyhow = { version = "1.0.65", default-features = false }
 =======
 anyhow = { version = "1.0.64", default-features = false }
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+anyhow = { version = "1.0.65", default-features = false }
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 derive_more = "0.99.17"
 
 [dev-dependencies]

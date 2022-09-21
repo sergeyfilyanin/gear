@@ -63,9 +63,12 @@ pub mod pallet {
     use sp_runtime::{traits::Zero, DispatchError};
     use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     pub use weights::WeightInfo;
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
     const LOCK_ID: LockIdentifier = *b"resume_p";
 

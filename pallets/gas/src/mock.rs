@@ -69,7 +69,11 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
+<<<<<<< HEAD
     type RuntimeOrigin = RuntimeOrigin;
+=======
+    type Origin = Origin;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;

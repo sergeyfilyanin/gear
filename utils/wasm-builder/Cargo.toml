@@ -10,6 +10,7 @@ readme = "README.md"
 
 [dependencies]
 <<<<<<< HEAD
+<<<<<<< HEAD
 anyhow = "1.0.65"
 cargo_metadata = "0.15.0"
 pwasm-utils = "0.19.0"
@@ -22,6 +23,13 @@ pwasm-utils = "0.19.0"
 toml = "0.5.9"
 thiserror = "1.0.34"
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+anyhow = "1.0.65"
+cargo_metadata = "0.15.0"
+pwasm-utils = "0.19.0"
+toml = "0.5.9"
+thiserror = "1.0.35"
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 log = "0.4.17"
 pathdiff = { version = "0.2.1", default-features = false }
 which = "4.3.0"

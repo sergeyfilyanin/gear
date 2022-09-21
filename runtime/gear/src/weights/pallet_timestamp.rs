@@ -20,6 +20,7 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 <<<<<<< HEAD
+<<<<<<< HEAD
 //! DATE: 2022-09-17, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! HOSTNAME: `epyc-runners-node.hetzner`, CPU: `AMD EPYC 7502P 32-Core Processor`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("gear-dev"), DB CACHE: 1024
@@ -28,6 +29,10 @@
 // ./target/production/gear benchmark pallet --chain=gear-dev --steps=50 --repeat=20 --pallet=pallet_timestamp --extrinsic=* --execution=wasm --wasm-execution=compiled --heap-pages=4096 --output=./scripts/benchmarking/weights-output/pallet_timestamp.rs --template=.maintain/frame-weight-template.hbs
 =======
 //! DATE: 2022-09-07, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
+=======
+//! DATE: 2022-09-17, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! HOSTNAME: `epyc-runners-node.hetzner`, CPU: `AMD EPYC 7502P 32-Core Processor`
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("gear-dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -53,6 +58,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_timestamp::WeightInfo for SubstrateWeight<T> {
     fn set() -> Weight {
 <<<<<<< HEAD
+<<<<<<< HEAD
         Weight::from_ref_time(12_465_000 as u64)
             .saturating_add(T::DbWeight::get().reads(2 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -67,12 +73,21 @@ impl<T: frame_system::Config> pallet_timestamp::WeightInfo for SubstrateWeight<T
     fn on_finalize() -> Weight {
         (4_550_000 as Weight)
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+        Weight::from_ref_time(12_465_000 as u64)
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
+    }
+    fn on_finalize() -> Weight {
+        Weight::from_ref_time(5_200_000 as u64)
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn set() -> Weight {
+<<<<<<< HEAD
 <<<<<<< HEAD
         Weight::from_ref_time(12_465_000 as u64)
             .saturating_add(RocksDbWeight::get().reads(2 as u64))
@@ -86,9 +101,17 @@ impl WeightInfo for () {
         (23_688_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(2 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+=======
+        Weight::from_ref_time(12_465_000 as u64)
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     }
     fn on_finalize() -> Weight {
-        (4_550_000 as Weight)
+        Weight::from_ref_time(5_200_000 as u64)
     }
 }
+<<<<<<< HEAD
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))

@@ -480,6 +480,7 @@ pub mod pallet {
         fn on_initialize(bn: BlockNumberFor<T>) -> Weight {
             log::debug!(target: "runtime::gear", "⚙️  Initialization of block #{:?}", bn);
 
+<<<<<<< HEAD
             // Decide whether queue processing should be scheduled or skipped for current block
 
             // If some forcing mode is on
@@ -502,6 +503,9 @@ pub mod pallet {
                 }
                 _ => T::DbWeight::get().reads(1),
             }
+=======
+            Weight::zero()
+>>>>>>> 1a441afd (Vara: merge master (#1529))
         }
 
         /// Finalization
@@ -532,10 +536,42 @@ pub mod pallet {
         pub force_queue: Forcing,
     }
 
+<<<<<<< HEAD
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig {
         fn build(&self) {
             ForceQueue::<T>::put(self.force_queue);
+=======
+            // Adjust the block gas allowance based on actual remaining weight.
+            //
+            // This field already was affected by gas pallet within the block,
+            // so we don't need to include that db write.
+            GasAllowanceOf::<T>::put(remaining_weight.ref_time());
+
+            // Ext manager creation.
+            // It will be processing messages execution results following its `JournalHandler` trait implementation.
+            // It also will handle delayed tasks following `TasksHandler`.
+            let mut ext_manager = Default::default();
+
+            // Processing regular and delayed tasks.
+            Self::process_tasks(&mut ext_manager);
+
+            // Processing message queue.
+            Self::process_queue(ext_manager);
+
+            // Calculating weight burned within the block.
+            let weight =
+                remaining_weight.saturating_sub(Weight::from_ref_time(GasAllowanceOf::<T>::get()));
+
+            log::debug!(
+                target: "runtime::gear",
+                "⚙️ Weight '{:?}' burned in block #{:?}",
+                weight,
+                bn,
+            );
+
+            weight
+>>>>>>> 1a441afd (Vara: merge master (#1529))
         }
     }
 

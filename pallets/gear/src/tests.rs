@@ -20,9 +20,15 @@ use crate::{
     internal::HoldBound,
     manager::HandleKind,
     mock::{
+<<<<<<< HEAD
         self, new_test_ext, run_to_block, run_to_next_block, Balances, Gear, GearProgram,
         RuntimeEvent as MockRuntimeEvent, RuntimeOrigin, System, Test, BLOCK_AUTHOR,
         LOW_BALANCE_USER, USER_1, USER_2, USER_3,
+=======
+        self, new_test_ext, run_to_block, run_to_next_block, Balances, Gear, GearProgram, Origin,
+        RuntimeEvent as MockRuntimeEvent, System, Test, BLOCK_AUTHOR, LOW_BALANCE_USER, USER_1,
+        USER_2, USER_3,
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     },
     pallet, BlockGasLimitOf, Config, CostsPerBlockOf, Error, Event, GasAllowanceOf, GasHandlerOf,
     GasInfo, MailboxOf, WaitlistOf,
@@ -5566,7 +5572,11 @@ fn invalid_memory_page_count_rejected() {
     new_test_ext().execute_with(|| {
         assert_noop!(
             Gear::upload_code(
+<<<<<<< HEAD
                 RuntimeOrigin::signed(USER_1),
+=======
+                Origin::signed(USER_1),
+>>>>>>> 1a441afd (Vara: merge master (#1529))
                 ProgramCodeKind::Custom(&wat).to_bytes(),
             ),
             Error::<Test>::FailedToConstructProgram
@@ -5574,7 +5584,11 @@ fn invalid_memory_page_count_rejected() {
 
         assert_noop!(
             Gear::upload_program(
+<<<<<<< HEAD
                 RuntimeOrigin::signed(USER_1),
+=======
+                Origin::signed(USER_1),
+>>>>>>> 1a441afd (Vara: merge master (#1529))
                 ProgramCodeKind::Custom(&wat).to_bytes(),
                 vec![],
                 EMPTY_PAYLOAD.to_vec(),
@@ -5608,8 +5622,13 @@ mod utils {
     #![allow(unused)]
 
     use super::{
+<<<<<<< HEAD
         assert_ok, pallet, run_to_block, Event, MailboxOf, MockRuntimeEvent, RuntimeOrigin,
         SystemPallet, Test,
+=======
+        assert_ok, pallet, run_to_block, Event, MailboxOf, MockRuntimeEvent, Origin, SystemPallet,
+        Test,
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     };
     use crate::{
         mock::{Balances, Gear, System},

@@ -19,10 +19,25 @@
 #![allow(unused)]
 
 use codec::Encode;
+<<<<<<< HEAD
 use frame_support::traits::{Currency, GenesisBuild, OnFinalize, OnInitialize};
+=======
+use frame_support::{
+    traits::{Currency, GenesisBuild, OnFinalize, OnIdle, OnInitialize},
+    weights::Weight,
+};
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 use frame_system as system;
 use gear_common::{storage::*, Origin, QueueRunner};
 use gear_core::message::{StoredDispatch, StoredMessage};
+<<<<<<< HEAD
+=======
+#[cfg(feature = "gear-native")]
+use gear_runtime::{
+    Authorship, Gear, GearGas, GearMessenger, Runtime, RuntimeEvent, SessionConfig, SessionKeys,
+    System,
+};
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 use pallet_gear::{BlockGasLimitOf, Config, GasAllowanceOf};
 use pallet_gear_debug::DebugData;
 use runtime_primitives::AccountPublic;
@@ -55,6 +70,7 @@ macro_rules! utils {
                 .collect()
         }
 
+<<<<<<< HEAD
         pub fn process_queue(snapshots: &mut Vec<DebugData>, mailbox: &mut Vec<StoredMessage>) {
             while !QueueOf::<Runtime>::is_empty() {
                 run_to_block(System::block_number() + 1, None, false);
@@ -75,6 +91,23 @@ macro_rules! utils {
                     }
                 }
                 System::reset_events();
+=======
+pub fn process_queue(snapshots: &mut Vec<DebugData>, mailbox: &mut Vec<StoredMessage>) {
+    while !QueueOf::<Runtime>::is_empty() {
+        run_to_block(System::block_number() + 1, None, false);
+        // Parse data from events
+        for event in System::events() {
+            if let RuntimeEvent::GearDebug(pallet_gear_debug::Event::DebugDataSnapshot(snapshot)) =
+                &event.event
+            {
+                snapshots.push(snapshot.clone());
+            }
+
+            if let RuntimeEvent::Gear(pallet_gear::Event::UserMessageSent { message, .. }) =
+                &event.event
+            {
+                mailbox.push(message.clone());
+>>>>>>> 1a441afd (Vara: merge master (#1529))
             }
         }
 
@@ -228,6 +261,7 @@ pub(crate) mod gear {
     utils!();
 }
 
+<<<<<<< HEAD
 #[cfg(feature = "vara-native")]
 pub(crate) mod vara {
     use super::*;
@@ -237,4 +271,121 @@ pub(crate) mod vara {
     };
 
     utils!();
+=======
+// Run on_initialize hooks in order as they appear in AllPalletsWithSystem.
+pub(crate) fn on_initialize() {
+    System::on_initialize(System::block_number());
+    Authorship::on_initialize(System::block_number());
+    GearGas::on_initialize(System::block_number());
+    GearMessenger::on_initialize(System::block_number());
+    Gear::on_initialize(System::block_number());
+}
+
+// Run on_finalize hooks (in pallets reverse order, as they appear in AllPalletsWithSystem)
+pub(crate) fn on_finalize() {
+    Gear::on_finalize(System::block_number());
+    GearMessenger::on_finalize(System::block_number());
+    GearGas::on_finalize(System::block_number());
+    Authorship::on_finalize(System::block_number());
+    System::on_finalize(System::block_number());
+}
+
+// Generate a crypto pair from seed.
+pub(crate) fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+    TPublic::Pair::from_string(&format!("//{}", seed), None)
+        .expect("static values are valid; qed")
+        .public()
+}
+
+// Generate an account ID from seed.
+pub(crate) fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId32
+where
+    AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+{
+    AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+}
+
+// Generate authority keys.
+pub fn authority_keys_from_seed(s: &str) -> (AccountId32, BabeId, GrandpaId) {
+    (
+        get_account_id_from_seed::<sr25519::Public>(s),
+        get_from_seed::<BabeId>(s),
+        get_from_seed::<GrandpaId>(s),
+    )
+}
+
+// Build genesis storage according to the mock runtime.
+pub fn new_test_ext() -> sp_io::TestExternalities {
+    let mut t = system::GenesisConfig::default()
+        .build_storage::<Runtime>()
+        .unwrap();
+
+    let authorities = vec![authority_keys_from_seed("Val")];
+    let balances = vec![
+        (
+            AccountId32::unchecked_from(1000001.into_origin()),
+            (BlockGasLimitOf::<Runtime>::get() * 20) as u128,
+        ),
+        (
+            AccountId32::unchecked_from(crate::HACK.into_origin()),
+            (BlockGasLimitOf::<Runtime>::get() * 20) as u128,
+        ),
+    ];
+
+    pallet_balances::GenesisConfig::<Runtime> {
+        balances: balances
+            .into_iter()
+            .chain(
+                authorities
+                    .iter()
+                    .cloned()
+                    .map(|(acc, ..)| (acc, <Runtime as Config>::Currency::minimum_balance())),
+            )
+            .collect(),
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
+
+    SessionConfig {
+        keys: authorities
+            .iter()
+            .map(|x| {
+                (
+                    x.0.clone(),
+                    x.0.clone(),
+                    SessionKeys {
+                        babe: x.1.clone(),
+                        grandpa: x.2.clone(),
+                    },
+                )
+            })
+            .collect(),
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
+
+    let mut ext = sp_io::TestExternalities::new(t);
+    ext.execute_with(|| {
+        initialize(1);
+        on_initialize();
+    });
+    ext
+}
+
+pub fn run_to_block(n: u32, remaining_weight: Option<u64>, skip_process_queue: bool) {
+    while System::block_number() < n {
+        on_finalize();
+        initialize(System::block_number() + 1);
+        on_initialize();
+        let remaining_weight = remaining_weight.unwrap_or_else(BlockGasLimitOf::<Runtime>::get);
+        if skip_process_queue {
+            GasAllowanceOf::<Runtime>::put(remaining_weight);
+        } else {
+            Gear::on_idle(
+                System::block_number(),
+                Weight::from_ref_time(remaining_weight),
+            );
+        }
+    }
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 }

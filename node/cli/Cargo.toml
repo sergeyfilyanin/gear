@@ -17,7 +17,9 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "3.2", features = ["derive"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.1", default-features = false, features = [
+	"derive",
+] }
 
 # Gear
 runtime-primitives = { package = "gear-runtime-primitives", version = "0.1.0", default-features = false, path = "../../runtime/primitives" }
@@ -74,6 +76,7 @@ vara-native = [
 	"gear-runtime-test-cli?/vara-native",
 	"vara-runtime",
 ]
+<<<<<<< HEAD
 lazy-pages = [
 	"service?/lazy-pages",
 	"gear-runtime-test-cli?/lazy-pages",
@@ -95,3 +98,12 @@ try-runtime = [
 ]
 runtime-test = ["gear-runtime-test-cli"]
 program = ["gear-program"]
+=======
+lazy-pages = ["service/lazy-pages"]
+runtime-benchmarks = [
+	"service/runtime-benchmarks",
+	"frame-benchmarking-cli/runtime-benchmarks",
+]
+debug-mode = ["service/debug-mode"]
+try-runtime = ["service/try-runtime", "try-runtime-cli"]
+>>>>>>> 1a441afd (Vara: merge master (#1529))

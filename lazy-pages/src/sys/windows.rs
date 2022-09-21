@@ -62,10 +62,14 @@ where
         // that's why the case is impossible
         8 /* DEP */ => unreachable!("data execution prevention"),
 <<<<<<< HEAD
+<<<<<<< HEAD
         // existence of other values is undocumented and I expect they should be treated as reserved
 =======
         // existence of other values is undocumented and I expect they should be treated as reserved 
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+        // existence of other values is undocumented and I expect they should be treated as reserved
+>>>>>>> 1a441afd (Vara: merge master (#1529))
         _ => None,
     };
     let info = ExceptionInfo {
@@ -91,6 +95,7 @@ where
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 pub(crate) unsafe fn init_for_thread() -> Result<(), String> {
 =======
 pub unsafe fn setup_signal_handler<H>() -> io::Result<()>
@@ -100,6 +105,24 @@ where
     SetUnhandledExceptionFilter(Some(exception_handler::<H>));
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
     Ok(())
+=======
+pub(crate) unsafe fn init_for_thread() -> Result<(), String> {
+    Ok(())
+}
+
+pub(crate) unsafe fn setup_signal_handler<H>() -> io::Result<()>
+where
+    H: UserSignalHandler,
+{
+    const CALL_FIRST: bool = true;
+
+    let handle = AddVectoredExceptionHandler(CALL_FIRST as _, Some(exception_handler::<H>));
+    if handle.is_null() {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 }
 
 pub(crate) unsafe fn setup_signal_handler<H>() -> io::Result<()>

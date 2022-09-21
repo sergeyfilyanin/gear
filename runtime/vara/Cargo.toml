@@ -90,7 +90,10 @@ substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/gear
 default = ["std"]
 std = [
 	"codec/std",
+<<<<<<< HEAD
 	"common/std",
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
  	"frame-try-runtime?/std",
  	"frame-system-benchmarking?/std",
  	"frame-benchmarking?/std",
@@ -144,9 +147,13 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"frame-system-benchmarking/runtime-benchmarks",
 =======
 	"frame-system-benchmarking",
+=======
+	"frame-system-benchmarking/runtime-benchmarks",
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 	"frame-election-provider-support/runtime-benchmarks",
 >>>>>>> b382e078 (Add staking pallet to vara runtime (#1458))
 	"hex-literal",
@@ -157,6 +164,8 @@ runtime-benchmarks = [
 	"pallet-gear-program/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-airdrop/runtime-benchmarks",
+	"pallet-bags-list/runtime-benchmarks",
+	"pallet-staking/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-executive/try-runtime",
@@ -169,7 +178,11 @@ try-runtime = [
 	"pallet-gear-program/try-runtime",
 	"pallet-gear-gas/try-runtime",
 	"pallet-gear-scheduler/try-runtime",
+<<<<<<< HEAD
 	"pallet-gear-debug?/try-runtime",
+=======
+	"pallet-gear-debug/try-runtime",
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 	"pallet-authorship/try-runtime",
 	"pallet-babe/try-runtime",
 	"pallet-balances/try-runtime",
@@ -180,6 +193,11 @@ try-runtime = [
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-utility/try-runtime",
+<<<<<<< HEAD
+=======
+	"pallet-airdrop/try-runtime",
+	"pallet-bags-list/try-runtime",
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 ]
 debug-mode = ["pallet-gear-debug"]
 lazy-pages = [

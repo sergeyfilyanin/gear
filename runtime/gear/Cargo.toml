@@ -71,7 +71,10 @@ substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/gear
 default = ["std"]
 std = [
 	"codec/std",
+<<<<<<< HEAD
 	"common/std",
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
  	"frame-try-runtime?/std",
  	"frame-system-benchmarking?/std",
  	"frame-benchmarking?/std",
@@ -135,7 +138,11 @@ try-runtime = [
 	"pallet-gear-program/try-runtime",
 	"pallet-gear-gas/try-runtime",
 	"pallet-gear-scheduler/try-runtime",
+<<<<<<< HEAD
 	"pallet-gear-debug?/try-runtime",
+=======
+	"pallet-gear-debug/try-runtime",
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 	"pallet-authorship/try-runtime",
 	"pallet-babe/try-runtime",
 	"pallet-balances/try-runtime",

@@ -87,7 +87,11 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = RocksDbWeight;
+<<<<<<< HEAD
     type RuntimeOrigin = RuntimeOrigin;
+=======
+    type Origin = Origin;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
@@ -227,7 +231,14 @@ pub fn run_to_block(n: u64, remaining_weight: Option<u64>) {
             remaining_weight
         );
 
+<<<<<<< HEAD
         Gear::run_queue(remaining_weight);
         Gear::on_finalize(System::block_number());
+=======
+        Gear::on_idle(
+            System::block_number(),
+            Weight::from_ref_time(remaining_weight),
+        );
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     }
 }

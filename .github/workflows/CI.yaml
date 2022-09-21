@@ -257,6 +257,7 @@ jobs:
           ./target-no-lazy/gear runtime-spec-tests ./gear-test/spec/* --runtime gear
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       - name: "Test: Runtime upgrade and queue processing"
         run: ./scripts/gear.sh test runtime-upgrade
 
@@ -265,6 +266,12 @@ jobs:
           cargo build -p gear-cli --release --features runtime-benchmarks
           ./target/release/gear benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=pallet_gear --extrinsic="*" --execution=wasm --wasm-execution=compiled --heap-pages=4096
 =======
+=======
+      # FIX ME: use vara runtime
+      # - name: "Test: Runtime upgrade and queue processing"
+      #   run: ./scripts/gear.sh test runtime-upgrade
+
+>>>>>>> 1a441afd (Vara: merge master (#1529))
       - name: "Test: Weight on client for loop"
         run: ./scripts/gear.sh test client-weights
 
@@ -276,6 +283,7 @@ jobs:
       #   run: |
       #     cargo build -p gear-node --release --features runtime-benchmarks
       #     ./target/release/gear-node benchmark pallet --chain=dev --steps=1 --repeat=1 --pallet=pallet_gear --extrinsic="*" --execution=wasm --wasm-execution=compiled --heap-pages=4096
+<<<<<<< HEAD
 <<<<<<< HEAD
 
       - name: Find comment (performance)
@@ -326,6 +334,9 @@ jobs:
             </details>
 >>>>>>> ce2bb4dd (Vara: Update stage 1  (#1424))
 =======
+=======
+      
+>>>>>>> 1a441afd (Vara: merge master (#1529))
       - name: "Test: Upload programs"
 <<<<<<< HEAD
         run: ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/wrong_load.wasm"
@@ -423,8 +434,13 @@ jobs:
     if: github.ref == 'refs/heads/master'
     # needs: spec_version
     runs-on: ci-win
+<<<<<<< HEAD
     defaults:
       run:
+=======
+    defaults: 
+      run: 
+>>>>>>> 1a441afd (Vara: merge master (#1529))
         shell: msys2 {0}
     env:
       RUSTC_WRAPPER: "cachepot"
@@ -446,6 +462,19 @@ jobs:
           install: >-
             procps
             mingw-w64-x86_64-protobuf
+<<<<<<< HEAD
+=======
+
+      - name: "Install: rustup 1.24.3"
+        run: |
+          Invoke-WebRequest "https://static.rust-lang.org/rustup/archive/1.24.3/x86_64-pc-windows-msvc/rustup-init.exe" -OutFile "rustup-init.exe"
+          .\rustup-init.exe -y
+          rustup --version
+        shell: powershell
+
+      - name: "Install: Disable rustup auto-update"
+        run: rustup set auto-self-update disable
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
       - name: "Install: Nightly toolchain"
         uses: actions-rs/toolchain@v1
@@ -519,6 +548,7 @@ jobs:
 
       - name: "Install: Node.js packages"
         run: ./scripts/gear.sh init js
+<<<<<<< HEAD
 
       - name: "Build: Node"
         run: ./scripts/gear.sh build node --release --locked
@@ -604,6 +634,37 @@ jobs:
         with:
           command: build
           args: -p gear-cli --features=lazy-pages
+=======
+
+      - name: "Build: Node"
+        run: ./scripts/gear.sh build node --release --locked
+
+      - name: "Build: WAT examples"
+        run: ./scripts/gear.sh build wat-examples
+
+      - name: "Build: wasm-proc"
+        run: ./scripts/gear.sh build wasm-proc --locked
+
+      - name: "Build: Examples (WASM)"
+        run: ./scripts/gear.sh build examples --locked
+
+      - name: "Build: Split examples by .opt and .meta"
+        run: ./scripts/gear.sh build examples-proc
+
+      - name: "Test: Process node runtime testsuite"
+        run: ./scripts/gear.sh test rtest
+        
+      - name: "Test: Runtime upgrade and queue processing"
+        run: ./scripts/gear.sh test runtime-upgrade
+
+      - name: "Test: Weight on client for loop"
+        run: ./scripts/gear.sh test client-weights
+
+      - name: "Test: Upload programs"
+        run: |
+          ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/wrong_load.wasm"
+          ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/inf_recursion.wasm"
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 
       - name: "Test: Lazy pages"
         uses: actions-rs/cargo@v1
@@ -617,6 +678,7 @@ jobs:
             -p gear-lazy-pages
             -p gear-runtime-interface
             --features=lazy-pages
+            --release            
 
   build-macos-x86:
     if: github.ref == 'refs/heads/master'
@@ -630,6 +692,7 @@ jobs:
 
       - name: "ACTIONS: Checkout"
         uses: actions/checkout@v2
+        
       - name: "ACTIONS: Setup caching"
         uses: actions/cache@v3
         with:
@@ -642,6 +705,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
+
+      - name: "Install: protobuf"
+        run: brew install protobuf
 
       - name: "Install: Nightly toolchain"
         uses: actions-rs/toolchain@v1

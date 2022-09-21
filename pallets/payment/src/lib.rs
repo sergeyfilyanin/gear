@@ -210,6 +210,37 @@ where
     }
 }
 
+<<<<<<< HEAD
+=======
+/// A trait whose purpose is to extract the `Call` variant of an extrinsic
+pub trait ExtractCall<RuntimeCall> {
+    fn extract_call(&self) -> RuntimeCall;
+}
+
+/// Implementation for unchecked extrinsic.
+impl<Address, RuntimeCall, Signature, Extra> ExtractCall<RuntimeCall>
+    for UncheckedExtrinsic<Address, RuntimeCall, Signature, Extra>
+where
+    RuntimeCall: Dispatchable + Clone,
+    Extra: SignedExtension,
+{
+    fn extract_call(&self) -> RuntimeCall {
+        self.function.clone()
+    }
+}
+
+/// Implementation for checked extrinsic.
+impl<Address, RuntimeCall, Extra> ExtractCall<RuntimeCall>
+    for CheckedExtrinsic<Address, RuntimeCall, Extra>
+where
+    RuntimeCall: Dispatchable + Clone,
+{
+    fn extract_call(&self) -> RuntimeCall {
+        self.function.clone()
+    }
+}
+
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 impl<T: Config> Pallet<T> {
     /// Modification of the `pallet_transaction_payment::Pallet<T>::query_info()`
     /// that is aware of the transaction fee customization based on a specific call

@@ -28,7 +28,10 @@ gear-core = { path = "../../core", default-features = false }
 gear-core-errors = { path = "../../core-errors", default-features = false }
 gear-backend-common = { path = "../../core-backend/common", default-features = false }
 gear-backend-sandbox = { path = "../../core-backend/sandbox", default-features = false }
+<<<<<<< HEAD
 gear-backend-wasmi = { path = "../../core-backend/wasmi", default-features = false, optional = true }
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 pallet-gear-proc-macro = { version = "2.0.0", path = "proc-macro" }
 
 # Substrate deps
@@ -97,7 +100,10 @@ std = [
 	"frame-system/std",
 	"wasm-instrument/std",
 	"gear-backend-sandbox/std",
+<<<<<<< HEAD
 	"gear-backend-wasmi/std",
+=======
+>>>>>>> 1a441afd (Vara: merge master (#1529))
 	"scale-info/std",
 	"sp-io/std",
 	"sp-std/std",

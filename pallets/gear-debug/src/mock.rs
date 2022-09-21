@@ -23,6 +23,7 @@ use frame_support::{
     traits::{FindAuthor, OnFinalize, OnInitialize},
 };
 use frame_system as system;
+use pallet_gear_messenger::Weight;
 use primitive_types::H256;
 use sp_runtime::{
     testing::Header,
@@ -58,7 +59,11 @@ impl system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
+<<<<<<< HEAD
     type RuntimeOrigin = RuntimeOrigin;
+=======
+    type Origin = Origin;
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
@@ -214,8 +219,15 @@ pub fn run_to_block(n: u64, remaining_weight: Option<u64>) {
         Gear::on_initialize(System::block_number());
         let remaining_weight =
             remaining_weight.unwrap_or(pallet_gear::BlockGasLimitOf::<Test>::get());
+<<<<<<< HEAD
 
         Gear::run_queue(remaining_weight);
         Gear::on_finalize(System::block_number());
+=======
+        Gear::on_idle(
+            System::block_number(),
+            Weight::from_ref_time(remaining_weight),
+        );
+>>>>>>> 1a441afd (Vara: merge master (#1529))
     }
 }
