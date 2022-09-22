@@ -48,8 +48,11 @@ fn get_exports(
                 exports.insert(DispatchKind::Handle);
             } else if entry.field() == DispatchKind::Reply.into_entry() {
                 exports.insert(DispatchKind::Reply);
+<<<<<<< HEAD
             } else if entry.field() == DispatchKind::Signal.into_entry() {
                 exports.insert(DispatchKind::Signal);
+=======
+>>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
             } else if reject_unnecessary {
                 return Err(CodeError::NonGearExportFnFound);
             }

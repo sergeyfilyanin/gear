@@ -1,7 +1,14 @@
 use alloc::vec::Vec;
 use codec::{Decode, DecodeAll, MaxEncodedLen};
+<<<<<<< HEAD
 use gear_backend_common::{RuntimeCtx, RuntimeCtxError};
 use gear_core::{buffer::RuntimeBuffer, env::Ext, memory::WasmPageNumber};
+=======
+use gear_backend_common::{
+    error_processor::IntoExtError, AsTerminationReason, IntoExtInfo, RuntimeCtx,
+};
+use gear_core::{env::Ext, RUNTIME_MAX_ALLOC_SIZE};
+>>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
 use gear_core_errors::MemoryError;
 use sp_sandbox::{default_executor::Memory as DefaultExecutorMemory, HostError, SandboxMemory};
@@ -58,10 +65,40 @@ impl<'a, E: Ext> RuntimeCtx<E> for Runtime<'a, E> {
         Ok(())
     }
 
+<<<<<<< HEAD
     fn read_memory_as<D: Decode + MaxEncodedLen>(
         &self,
         ptr: u32,
     ) -> Result<D, RuntimeCtxError<E::Error>> {
+=======
+impl<'a, E> RuntimeCtx<E> for Runtime<'a, E>
+where
+    E: Ext + IntoExtInfo + 'static,
+    E::Error: AsTerminationReason + IntoExtError,
+{
+    fn alloc(&mut self, pages: u32) -> Result<gear_core::memory::WasmPageNumber, E::Error> {
+        self.ext.alloc(pages.into(), self.memory_wrap)
+    }
+
+    fn read_memory(&self, ptr: u32, len: u32) -> Result<Vec<u8>, MemoryError> {
+        if len as usize > RUNTIME_MAX_ALLOC_SIZE {
+            return Err(MemoryError::OutOfBounds);
+        }
+        let mut buf = vec![0u8; len as usize];
+        self.memory
+            .get(ptr, buf.as_mut_slice())
+            .map_err(|_| MemoryError::OutOfBounds)?;
+        Ok(buf)
+    }
+
+    fn read_memory_into_buf(&self, ptr: u32, buf: &mut [u8]) -> Result<(), MemoryError> {
+        self.memory
+            .get(ptr, buf)
+            .map_err(|_| MemoryError::OutOfBounds)
+    }
+
+    fn read_memory_as<D: Decode + MaxEncodedLen>(&self, ptr: u32) -> Result<D, MemoryError> {
+>>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
         let buf = self.read_memory(ptr, D::max_encoded_len() as u32)?;
         let decoded = D::decode_all(&mut &buf[..]).map_err(|_| MemoryError::MemoryAccessError)?;
         Ok(decoded)

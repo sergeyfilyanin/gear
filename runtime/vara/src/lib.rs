@@ -131,6 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     spec_version: 420,
 =======
     spec_version: 120,
@@ -150,6 +151,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 =======
     spec_version: 220,
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    spec_version: 230,
+>>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
