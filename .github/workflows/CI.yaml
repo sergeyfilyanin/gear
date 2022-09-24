@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 3 * * *"
   push:
-    branches: [master, vara-stage-1, vara-stage-2, vara-stage-3]
+    branches: [master, vara-stage-1, vara-stage-2, vara-stage-3, al-win-tests]
   pull_request:
     branches: [master, vara-stage-1, vara-stage-2, vara-stage-3]
   workflow_dispatch:
@@ -117,6 +117,7 @@ jobs:
           mv /tmp/*.tar /root/cache/
 
   build:
+    if: github.ref == 'refs/heads/master'
     needs: spec_version
     runs-on: [self-hosted, cachepot, epyc]
     env:
@@ -336,7 +337,7 @@ jobs:
           path: artifact
 
   build-win:
-    if: github.ref == 'refs/heads/master'
+    #if: github.ref == 'refs/heads/master'
     needs: spec_version
     runs-on: ci-win
     defaults: 
@@ -345,6 +346,7 @@ jobs:
     env:
       RUSTC_WRAPPER: "cachepot"
       CARGO_INCREMENTAL: 0
+      RUST_LOG: "debug"
     steps:
       - name: Cancel Previous Runs
         if: ${{ github.event_name == 'pull_request' }}
