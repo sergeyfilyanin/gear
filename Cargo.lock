@@ -394,6 +394,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "beefy-merkle-tree"
+version = "4.0.0-dev"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#267d1ef24d675858090f7078868e96d24d4a105e"
+dependencies = [
+ "beefy-primitives",
+ "sp-api",
+]
+
+[[package]]
+name = "beefy-primitives"
+version = "4.0.0-dev"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#267d1ef24d675858090f7078868e96d24d4a105e"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "bimap"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2817,6 +2840,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "gear-authorship"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "futures-timer",
+ "gear-common",
+ "gear-runtime-primitives",
+ "log",
+ "parity-scale-codec",
+ "parking_lot 0.12.1",
+ "sc-block-builder",
+ "sc-client-api",
+ "sc-proposer-metrics",
+ "sc-telemetry",
+ "sc-transaction-pool",
+ "sc-transaction-pool-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "substrate-prometheus-endpoint",
+ "substrate-test-runtime-client",
+]
+
+[[package]]
 name = "gear-backend-common"
 version = "0.1.0"
 dependencies = [
@@ -3194,6 +3244,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "futures",
  "futures-timer",
+ "gear-authorship",
  "gear-common",
  "gear-runtime",
  "gear-runtime-interface",
@@ -9395,6 +9446,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-consensus-aura"
+version = "0.10.0-dev"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#267d1ef24d675858090f7078868e96d24d4a105e"
+dependencies = [
+ "async-trait",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-consensus",
+ "sp-consensus-slots",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+ "sp-timestamp",
+]
+
+[[package]]
 name = "sp-consensus-babe"
 version = "0.10.0-dev"
 source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#267d1ef24d675858090f7078868e96d24d4a105e"
@@ -10427,6 +10496,95 @@ dependencies = [
  "prometheus",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "substrate-test-client"
+version = "2.0.1"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#267d1ef24d675858090f7078868e96d24d4a105e"
+dependencies = [
+ "async-trait",
+ "futures",
+ "hex",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-client-db",
+ "sc-consensus",
+ "sc-executor",
+ "sc-offchain",
+ "sc-service",
+ "serde",
+ "serde_json",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-keyring",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-state-machine",
+]
+
+[[package]]
+name = "substrate-test-runtime"
+version = "2.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#267d1ef24d675858090f7078868e96d24d4a105e"
+dependencies = [
+ "beefy-merkle-tree",
+ "beefy-primitives",
+ "cfg-if",
+ "frame-support",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "log",
+ "memory-db",
+ "pallet-babe",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "sc-service",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-consensus-babe",
+ "sp-core",
+ "sp-externalities",
+ "sp-finality-grandpa",
+ "sp-inherents",
+ "sp-io",
+ "sp-keyring",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-session",
+ "sp-state-machine",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-trie",
+ "sp-version",
+ "substrate-wasm-builder",
+ "trie-db",
+]
+
+[[package]]
+name = "substrate-test-runtime-client"
+version = "2.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#267d1ef24d675858090f7078868e96d24d4a105e"
+dependencies = [
+ "futures",
+ "parity-scale-codec",
+ "sc-block-builder",
+ "sc-client-api",
+ "sc-consensus",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-runtime",
+ "substrate-test-client",
+ "substrate-test-runtime",
 ]
 
 [[package]]

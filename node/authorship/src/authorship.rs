@@ -18,12 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Modified implementation of the basic block-authorship logic from
-// https://github.com/paritytech/substrate/tree/master/client/basic-authorship.
-// The block proposer explicitly pushes the `pallet_gear::run_process_queue`
-// extrinsic at the end of each block.
-
-use codec::{Decode, Encode};
+use codec::Encode;
 use common::CallFactory;
 use futures::{
     channel::oneshot,
@@ -45,39 +40,12 @@ use sp_inherents::InherentData;
 use sp_runtime::{
     generic::{BlockId, UncheckedExtrinsic},
     traits::{BlakeTwo256, Block as BlockT, Dispatchable, Hash as HashT, Header as HeaderT},
-    Digest, MultiAddress, MultiSignature, OpaqueExtrinsic, Percent, SaturatedConversion,
+    Digest, MultiAddress, MultiSignature, Percent, SaturatedConversion,
 };
 use std::{marker::PhantomData, pin::Pin, sync::Arc, time};
 
 use prometheus_endpoint::Registry as PrometheusRegistry;
 use sc_proposer_metrics::{EndProposingReason, MetricsLink as PrometheusMetrics};
-
-/// Extension of the `ExtractCall` trait onto `OpaqueExtrinsic`
-pub trait TryExtractCall<Call> {
-    type Address;
-    type Signature;
-    type Extra;
-
-    fn try_extract_call(&self) -> Option<Call>;
-}
-
-impl<Call> TryExtractCall<Call> for OpaqueExtrinsic
-where
-    Call: Dispatchable + Clone + Decode,
-{
-    type Address = MultiAddress<AccountId, ()>;
-    type Signature = Signature;
-    type Extra = ();
-
-    fn try_extract_call(&self) -> Option<Call> {
-        let encoded = self.encode();
-        UncheckedExtrinsic::<Self::Address, Call, Self::Signature, Self::Extra>::decode(
-            &mut &encoded[..],
-        )
-        .ok()
-        .map(|xt| xt.function)
-    }
-}
 
 /// Default block size limit in bytes used by [`Proposer`].
 ///
@@ -270,7 +238,6 @@ where
         ApiExt<Block, StateBackend = backend::StateBackendFor<B, Block>> + BlockBuilderApi<Block>,
     PR: ProofRecording,
     D: Dispatchable + Send + Sync + 'static,
-    <Block as BlockT>::Extrinsic: TryExtractCall<D>,
     F: CallFactory<D> + Send + Sync + 'static,
     <Block as BlockT>::Extrinsic:
         From<UncheckedExtrinsic<MultiAddress<AccountId, ()>, D, MultiSignature, ()>>,
@@ -317,7 +284,6 @@ where
         ApiExt<Block, StateBackend = backend::StateBackendFor<B, Block>> + BlockBuilderApi<Block>,
     PR: ProofRecording,
     D: Send + Sync + 'static,
-    <Block as BlockT>::Extrinsic: TryExtractCall<D>,
     F: CallFactory<D> + Send + Sync + 'static,
     <Block as BlockT>::Extrinsic:
         From<UncheckedExtrinsic<MultiAddress<AccountId, ()>, D, MultiSignature, ()>>,
@@ -382,7 +348,6 @@ where
         ApiExt<Block, StateBackend = backend::StateBackendFor<B, Block>> + BlockBuilderApi<Block>,
     PR: ProofRecording,
     D: Send + Sync + 'static,
-    <Block as BlockT>::Extrinsic: TryExtractCall<D>,
     F: CallFactory<D> + Send + Sync + 'static,
     <Block as BlockT>::Extrinsic:
         From<UncheckedExtrinsic<MultiAddress<AccountId, ()>, D, MultiSignature, ()>>,
@@ -597,7 +562,7 @@ where
 			"🎁 Prepared block for proposing at {} ({} ms) [hash: {:?}; parent_hash: {}; extrinsics ({}): [{}]]",
 			block.header().number(),
 			block_timer.elapsed().as_millis(),
-			<Block as BlockT>::Hash::from(block.header().hash()),
+			block.header().hash(),
 			block.header().parent_hash(),
 			block.extrinsics().len(),
 			block.extrinsics()
@@ -611,7 +576,7 @@ where
             CONSENSUS_INFO;
             "prepared_block_for_proposing";
             "number" => ?block.header().number(),
-            "hash" => ?<Block as BlockT>::Hash::from(block.header().hash()),
+            "hash" => ?block.header().hash(),
         );
 
         let proof =

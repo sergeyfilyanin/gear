@@ -50,8 +50,6 @@ mod client;
 
 pub mod rpc;
 
-pub mod authorship;
-
 pub trait IdentifyVariant {
     /// Returns `true` if this is a configuration for gear network.
     fn is_gear(&self) -> bool;

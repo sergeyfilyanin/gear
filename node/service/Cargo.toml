@@ -26,6 +26,7 @@ pallet-gear-rpc = { path = "../../pallets/gear/rpc" }
 pallet-gear-rpc-runtime-api = { path = "../../pallets/gear/rpc/runtime-api" }
 runtime-primitives = { package = "gear-runtime-primitives", version = "0.1.0", path = "../../runtime/primitives" }
 gear-runtime-interface = { path = "../../runtime-interface" }
+authorship = { package = "gear-authorship", path = "../authorship" }
 
 # Gear Runtimes
 gear-runtime = { path = "../../runtime/gear", optional = true }
