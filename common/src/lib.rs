@@ -59,6 +59,9 @@ use sp_std::{
 use storage::ValueStorage;
 extern crate alloc;
 
+#[cfg(test)]
+use sp_runtime::traits::Extrinsic;
+
 pub use gas_provider::{Provider as GasProvider, Tree as GasTree};
 
 pub const STORAGE_PROGRAM_PREFIX: &[u8] = b"g::prog::";
@@ -511,6 +514,17 @@ where
 }
 
 /// Trait whose implementors can generate some custom call.
-pub trait CallFactory<Call> {
-    fn call() -> Call;
+pub trait CustomExtrinsic<E> {
+    fn extrinsic() -> Option<E>;
+}
+
+// For testing purpose only
+#[cfg(test)]
+impl CustomExtrinsic<substrate_test_runtime::Extrinsic> for substrate_test_runtime::Runtime {
+    fn extrinsic() -> Option<substrate_test_runtime::Extrinsic> {
+        substrate_test_runtime::Extrinsic::new(
+            substrate_test_runtime::Extrinsic::Store(b"data".to_vec()),
+            None,
+        )
+    }
 }

@@ -376,10 +376,11 @@ where
     type OverarchingCall = RuntimeCall;
 }
 
-pub struct ProcessQueueCallCreator;
-impl gear_common::CallFactory<RuntimeCall> for ProcessQueueCallCreator {
-    fn call() -> RuntimeCall {
-        RuntimeCall::Gear(pallet_gear::Call::run_process_queue {})
+impl gear_common::CustomExtrinsic<UncheckedExtrinsic> for Runtime {
+    fn extrinsic() -> Option<UncheckedExtrinsic> {
+        Some(UncheckedExtrinsic::new_unsigned(RuntimeCall::Gear(
+            pallet_gear::Call::run_process_queue {},
+        )))
     }
 }
 

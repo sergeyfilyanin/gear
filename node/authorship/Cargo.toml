@@ -20,6 +20,7 @@ log = "0.4.17"
 # Gear
 common = { package = "gear-common", path = "../../common" }
 runtime-primitives = { package = "gear-runtime-primitives", version = "0.1.0", path = "../../runtime/primitives" }
+pallet-gear = { version = "2.0.0", path = "../../pallets/gear" }
 
 # Substrate Client
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
@@ -38,9 +39,22 @@ sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/gear-tech/sub
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 
 # Substrate Other
+frame-system = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 
 [dev-dependencies]
 parking_lot = "0.12.1"
+scale-info = { version = "2.1.1", features = ["derive"] }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sp-io = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+pallet-gear = { path = "../../pallets/gear" }
+pallet-gear-gas = { path = "../../pallets/gas" }
+pallet-gear-messenger = { path = "../../pallets/gear-messenger" }
+pallet-gear-scheduler = { path = "../../pallets/gear-scheduler" }
+pallet-gear-program = { path = "../../pallets/gear-program" }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+pallet-authorship = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }

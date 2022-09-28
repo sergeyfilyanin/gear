@@ -31,6 +31,7 @@ frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/gear-tec
 hex-literal = "0.3.3"
 wasm-instrument = { version = "0.2.1", git = "https://github.com/gear-tech/wasm-instrument.git", branch = "gear-stable", default-features = false }
 proptest = "1.0.0"
+substrate-test-runtime = { version = "2.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 
 [features]
 default = ["std"]
