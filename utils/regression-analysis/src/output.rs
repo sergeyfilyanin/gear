@@ -18,9 +18,13 @@
 
 use crate::stats::{average, median, std_dev};
 <<<<<<< HEAD
+<<<<<<< HEAD
 use std::borrow::Cow;
 =======
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+use std::borrow::Cow;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use thousands::Separable;
 
 #[derive(Debug)]

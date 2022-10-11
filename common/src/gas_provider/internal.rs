@@ -845,12 +845,18 @@ where
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fn exists(key: Self::Key) -> bool {
         Self::get_node(key).is_some()
     }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fn clear() {
         TotalValue::kill();
         StorageMap::clear();

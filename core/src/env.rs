@@ -72,7 +72,11 @@ pub trait Ext {
     /// Complete message and send it to another program.
     fn send_commit(
         &mut self,
+<<<<<<< HEAD
         handle: u32,
+=======
+        handle: usize,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         msg: HandlePacket,
         delay: u32,
     ) -> Result<MessageId, Self::Error>;
@@ -167,11 +171,15 @@ pub trait Ext {
     fn wake(&mut self, waker_id: MessageId, delay: u32) -> Result<(), Self::Error>;
 
     /// Send init message to create a new program
+<<<<<<< HEAD
     fn create_program(
         &mut self,
         packet: InitPacket,
         delay: u32,
     ) -> Result<(MessageId, ProgramId), Self::Error>;
+=======
+    fn create_program(&mut self, packet: InitPacket, delay: u32) -> Result<ProgramId, Self::Error>;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
     /// Return the set of functions that are forbidden to be called.
     fn forbidden_funcs(&self) -> &BTreeSet<&'static str>;

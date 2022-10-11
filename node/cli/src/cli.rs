@@ -97,7 +97,11 @@ pub enum Subcommand {
         name = "runtime-spec-tests",
         about = "Run gear runtime tests with yaml."
     )]
+<<<<<<< HEAD
     GearRuntimeTest(gear_runtime_test_cli::RuntimeTestCmd),
+=======
+    GearRuntimeTest(gear_runtime_test_cli::GearRuntimeTestCmd),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
     /// Program CLI
     #[cfg(feature = "program")]

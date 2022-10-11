@@ -24,7 +24,11 @@ use alloc::{
     string::{FromUtf8Error, String},
 };
 use core::{
+<<<<<<< HEAD
     convert::TryInto,
+=======
+    convert::{TryFrom, TryInto},
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fmt::{self, Display},
     marker::PhantomData,
     ops::Range,
@@ -41,12 +45,19 @@ use gear_core::{
     message::{HandlePacket, InitPacket, PayloadSizeError, ReplyPacket},
 =======
     ids::{MessageId, ProgramId},
+<<<<<<< HEAD
     message::{HandlePacket, InitPacket, ReplyPacket},
     RUNTIME_MAX_ALLOC_SIZE,
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 };
 use gear_core_errors::{CoreError, MemoryError};
 use sp_sandbox::{HostError, ReturnValue, SandboxMemory, Value};
+=======
+    message::{HandlePacket, InitPacket, PayloadSizeError, ReplyPacket},
+};
+use gear_core_errors::{CoreError, MemoryError};
+use sp_sandbox::{HostError, ReturnValue, Value};
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
 pub(crate) type SyscallOutput = Result<ReturnValue, HostError>;
 
@@ -111,6 +122,9 @@ fn args_to_str(args: &[Value]) -> String {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 /// We use this macros to avoid perf decrease because of log level comparing.
 /// By default `sys-trace` feature is disabled, so this macros does nothing.
 /// To see sys-calls tracing enable this feature and rebuild node.
@@ -122,8 +136,11 @@ macro_rules! sys_trace {
     );
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 impl<E> FuncsHandler<E>
 where
     E: Ext + IntoExtInfo<E::Error> + 'static,
@@ -131,12 +148,17 @@ where
 {
     pub fn send(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "send, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "send, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "send, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (destination_ptr, payload_ptr, payload_len, value_ptr, delay, message_id_ptr) =
             args.iter().read_6()?;
 
@@ -147,6 +169,24 @@ where
 
             ctx.ext
                 .send(HandlePacket::new(destination, payload, value), delay)
+=======
+        let program_id_ptr = pop_i32(&mut args)?;
+        let payload_ptr = pop_i32(&mut args)?;
+        let payload_len = pop_i32(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let dest: ProgramId = ctx.read_memory_as(program_id_ptr)?;
+            let payload = ctx.read_memory(payload_ptr, payload_len)?.try_into()?;
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+                .send(HandlePacket::new(dest, payload, value), delay)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .process_error()
                 .map_err(FuncError::Core)?
                 .error_len_on_success(|message_id| {
@@ -157,12 +197,17 @@ where
 
     pub fn send_wgas(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "send_wgas, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "send_wgas, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "send_wgas, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (
             destination_ptr,
             payload_ptr,
@@ -181,6 +226,26 @@ where
             ctx.ext
                 .send(
                     HandlePacket::new_with_gas(destination, payload, gas_limit, value),
+=======
+        let program_id_ptr = pop_i32(&mut args)?;
+        let payload_ptr = pop_i32(&mut args)?;
+        let payload_len = pop_i32(&mut args)?;
+        let gas_limit = pop_i64(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let dest: ProgramId = ctx.read_memory_as(program_id_ptr)?;
+            let payload = ctx.read_memory(payload_ptr, payload_len)?.try_into()?;
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+                .send(
+                    HandlePacket::new_with_gas(dest, payload, gas_limit, value),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                     delay,
                 )
                 .process_error()
@@ -193,22 +258,44 @@ where
 
     pub fn send_commit(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "send_commit, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "send_commit, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "send_commit, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (handle, destination_ptr, value_ptr, delay, message_id_ptr) = args.iter().read_5()?;
 
         ctx.run(|ctx| {
             let destination = ctx.read_memory_as(destination_ptr)?;
             let value = ctx.read_memory_as(value_ptr)?;
+=======
+        let handle_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let program_id_ptr = pop_i32(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let dest: ProgramId = ctx.read_memory_as(program_id_ptr)?;
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             ctx.ext
                 .send_commit(
+<<<<<<< HEAD
                     handle,
                     HandlePacket::new(destination, Default::default(), value),
+=======
+                    handle_ptr,
+                    HandlePacket::new(dest, Default::default(), value),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                     delay,
                 )
                 .process_error()
@@ -221,23 +308,46 @@ where
 
     pub fn send_commit_wgas(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "send_commit_wgas, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "send_commit_wgas, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "send_commit_wgas, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (handle, destination_ptr, gas_limit, value_ptr, delay, message_id_ptr) =
             args.iter().read_6()?;
 
         ctx.run(|ctx| {
             let destination = ctx.read_memory_as(destination_ptr)?;
             let value = ctx.read_memory_as(value_ptr)?;
+=======
+        let handle_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let program_id_ptr = pop_i32(&mut args)?;
+        let gas_limit = pop_i64(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let dest: ProgramId = ctx.read_memory_as(program_id_ptr)?;
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             ctx.ext
                 .send_commit(
+<<<<<<< HEAD
                     handle,
                     HandlePacket::new_with_gas(destination, Default::default(), gas_limit, value),
+=======
+                    handle_ptr,
+                    HandlePacket::new_with_gas(dest, Default::default(), gas_limit, value),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                     delay,
                 )
                 .process_error()
@@ -250,9 +360,13 @@ where
 
     pub fn send_init(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "send_init, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "send_init, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "send_init, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -269,18 +383,28 @@ where
 
     pub fn send_push(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "send_push, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "send_push, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "send_push, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
         let (handle, payload_ptr, payload_len) = args.iter().read_3()?;
 
+<<<<<<< HEAD
         ctx.run(|ctx| {
             let payload = ctx.read_memory(payload_ptr, payload_len)?;
 
             Ok(ctx
+=======
+        let mut f = || {
+            let payload = ctx.read_memory(payload_ptr, payload_len)?;
+            let error_len = ctx
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .ext
                 .send_push(handle, &payload)
                 .process_error()
@@ -309,9 +433,13 @@ where
 
     pub fn read(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "read, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "read, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "read, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -324,19 +452,32 @@ where
                         .set(buffer_ptr, buffer)
                         .map_err(|_| MemoryError::OutOfBounds)?;
 
+<<<<<<< HEAD
                     Ok(0u32)
                 }
                 // TODO: issue #1652.
                 Err(_err) => Ok(1),
+=======
+            let last_idx = at
+                .checked_add(len)
+                .ok_or_else(|| FuncError::ReadLenOverflow(at, len))?;
+
+            if last_idx > msg.len() {
+                return Err(FuncError::ReadWrongRange(at..last_idx, msg.len()));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             }
         })
     }
 
     pub fn size(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "size");
 =======
         log::trace!(target: "syscall::gear", "size");
+=======
+        sys_trace!(target: "syscall::gear", "size");
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let size = ctx.ext.size().map_err(FuncError::Core);
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -353,8 +494,12 @@ where
             let inheritor_id = ctx.read_memory_as(inheritor_id_ptr)?;
 =======
         let value_dest_ptr = pop_i32(&mut args.iter())?;
+<<<<<<< HEAD
         log::trace!(target: "syscall::gear", "exit, value_dest_ptr = {:#x}", value_dest_ptr);
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
+=======
+        sys_trace!(target: "syscall::gear", "exit, value_dest_ptr = {:#x}", value_dest_ptr);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             ctx.ext.exit().map_err(FuncError::Core)?;
 
@@ -367,7 +512,7 @@ where
         sys_trace!(target: "syscall::gear", "exit_code, args = {}", args_to_str(args));
 =======
     pub fn exit_code(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
-        log::trace!(target: "syscall::gear", "exit_code");
+        sys_trace!(target: "syscall::gear", "exit_code");
         let exit_code = ctx.ext.exit_code().map_err(FuncError::Core).map_err(|e| {
             ctx.err = e;
             HostError
@@ -389,9 +534,13 @@ where
 
     pub fn gas(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "gas::gear", "gas, args = {}", args_to_str(args));
 =======
         log::trace!(target: "gas::gear", "gas, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "gas::gear", "gas, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -413,12 +562,17 @@ where
 
     pub fn alloc(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "alloc, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "alloc, args = {:#x?}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "alloc, args = {:#x?}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let pages = args.iter().read()?;
 
         ctx.run(|ctx| {
@@ -436,6 +590,22 @@ where
         sys_trace!(target: "syscall::gear", "free, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "free, args = {:#x?}", args_to_str(args));
+=======
+        let pages: u32 = pop_i32(&mut args)?;
+        ctx.alloc(pages)
+            .map(|page| {
+                log::debug!("ALLOC: {} pages at {:?}", pages, page);
+                Value::I32(page.0 as i32).into()
+            })
+            .map_err(|e| {
+                ctx.err = e.into();
+                HostError
+            })
+    }
+
+    pub fn free(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
+        sys_trace!(target: "syscall::gear", "free, args = {:#x?}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -454,9 +624,13 @@ where
 
     pub fn block_height(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "block_height");
 =======
         log::trace!(target: "syscall::gear", "block_height");
+=======
+        sys_trace!(target: "syscall::gear", "block_height");
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let block_height = ctx
             .ext
             .block_height()
@@ -472,9 +646,13 @@ where
 
     pub fn block_timestamp(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "block_timestamp");
 =======
         log::trace!(target: "syscall::gear", "block_timestamp");
+=======
+        sys_trace!(target: "syscall::gear", "block_timestamp");
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let block_timestamp =
             ctx.ext
                 .block_timestamp()
@@ -490,9 +668,13 @@ where
 
     pub fn origin(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "origin, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "origin, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "origin, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -509,12 +691,17 @@ where
 
     pub fn reply(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "reply, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "reply, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "reply, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (payload_ptr, payload_len, value_ptr, delay, message_id_ptr) = args.iter().read_5()?;
 
         ctx.run(|ctx| {
@@ -522,6 +709,21 @@ where
             let value = ctx.read_memory_as(value_ptr)?;
 
             ctx.ext
+=======
+        let payload_ptr = pop_i32(&mut args)?;
+        let payload_len = pop_i32(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let payload = ctx.read_memory(payload_ptr, payload_len)?.try_into()?;
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .reply(ReplyPacket::new(payload, value), delay)
                 .process_error()
                 .map_err(FuncError::Core)?
@@ -533,12 +735,17 @@ where
 
     pub fn reply_wgas(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "reply_wgas, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "reply_wgas, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "reply_wgas, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (payload_ptr, payload_len, gas_limit, value_ptr, delay, message_id_ptr) =
             args.iter().read_6()?;
 
@@ -547,6 +754,22 @@ where
             let value = ctx.read_memory_as(value_ptr)?;
 
             ctx.ext
+=======
+        let payload_ptr = pop_i32(&mut args)?;
+        let payload_len = pop_i32(&mut args)?;
+        let gas_limit = pop_i64(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let payload = ctx.read_memory(payload_ptr, payload_len)?.try_into()?;
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .reply(ReplyPacket::new_with_gas(payload, gas_limit, value), delay)
                 .process_error()
                 .map_err(FuncError::Core)?
@@ -558,18 +781,35 @@ where
 
     pub fn reply_commit(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "reply_commit, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "reply_commit, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "reply_commit, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (value_ptr, delay, message_id_ptr) = args.iter().read_3()?;
 
         ctx.run(|ctx| {
             let value = ctx.read_memory_as(value_ptr)?;
 
             ctx.ext
+=======
+        let value_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .reply_commit(ReplyPacket::new(Default::default(), value), delay)
                 .process_error()
                 .map_err(FuncError::Core)?
@@ -581,18 +821,36 @@ where
 
     pub fn reply_commit_wgas(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "reply_commit_wgas, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "reply_commit_wgas, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "reply_commit_wgas, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (gas_limit, value_ptr, delay, message_id_ptr) = args.iter().read_4()?;
 
         ctx.run(|ctx| {
             let value = ctx.read_memory_as(value_ptr)?;
 
             ctx.ext
+=======
+        let gas_limit = pop_i64(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let message_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .reply_commit(
                     ReplyPacket::new_with_gas(Default::default(), gas_limit, value),
                     delay,
@@ -607,9 +865,13 @@ where
 
     pub fn reply_to(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "reply_to, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "reply_to, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "reply_to, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -626,18 +888,28 @@ where
 
     pub fn reply_push(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "reply_push, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "reply_push, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "reply_push, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
         let (payload_ptr, payload_len) = args.iter().read_2()?;
 
+<<<<<<< HEAD
         ctx.run(|ctx| {
             let payload = ctx.read_memory(payload_ptr, payload_len)?;
 
             Ok(ctx
+=======
+        let mut f = || {
+            let payload = ctx.read_memory(payload_ptr, payload_len)?;
+            let error_len = ctx
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .ext
                 .reply_push(&payload)
                 .process_error()
@@ -648,9 +920,13 @@ where
 
     pub fn debug(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "debug, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "debug, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "debug, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -664,6 +940,7 @@ where
             let s = String::from_utf8(data.into_vec()).map_err(FuncError::DebugString)?;
 =======
         let mut f = || {
+<<<<<<< HEAD
             if str_len > RUNTIME_MAX_ALLOC_SIZE {
                 return Err(FuncError::Memory(MemoryError::OutOfBounds));
             }
@@ -671,6 +948,11 @@ where
             ctx.read_memory_into_buf(str_ptr, &mut data)?;
             let s = String::from_utf8(data).map_err(FuncError::DebugString)?;
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
+=======
+            let mut data = RuntimeBuffer::try_new_default(str_len)?;
+            ctx.read_memory_into_buf(str_ptr, data.get_mut())?;
+            let s = String::from_utf8(data.into_vec()).map_err(FuncError::DebugString)?;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             ctx.ext.debug(&s).map_err(FuncError::Core)?;
 
             Ok(())
@@ -679,9 +961,13 @@ where
 
     pub fn gas_available(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "gas_available");
 =======
         log::trace!(target: "syscall::gear", "gas_available");
+=======
+        sys_trace!(target: "syscall::gear", "gas_available");
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let gas_available = ctx
             .ext
             .gas_available()
@@ -697,7 +983,7 @@ where
         sys_trace!(target: "syscall::gear", "message_id, args = {}", args_to_str(args));
 =======
     pub fn msg_id(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
-        log::trace!(target: "syscall::gear", "msg_id, args = {}", args_to_str(args));
+        sys_trace!(target: "syscall::gear", "msg_id, args = {}", args_to_str(args));
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -713,9 +999,13 @@ where
 
     pub fn program_id(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "program_id, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "program_id, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "program_id, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -731,9 +1021,13 @@ where
 
     pub fn source(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "source, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "source, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "source, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -749,9 +1043,13 @@ where
 
     pub fn value(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "value, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "value, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "value, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -767,9 +1065,13 @@ where
 
     pub fn value_available(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "value_available, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "value_available, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "value_available, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -784,6 +1086,7 @@ where
     }
 
     pub fn leave(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
+<<<<<<< HEAD
 <<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "leave");
 
@@ -814,30 +1117,33 @@ where
         sys_trace!(target: "syscall::gear", "wait_for, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "leave");
+=======
+        sys_trace!(target: "syscall::gear", "leave");
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let err = ctx
             .ext
             .leave()
             .map_err(FuncError::Core)
             .err()
-            .unwrap_or(FuncError::Terminated(TerminationReason::Leave));
+            .unwrap_or_else(|| FuncError::Terminated(TerminationReason::Leave));
         ctx.err = err;
         Err(HostError)
     }
 
     pub fn wait(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
-        log::trace!(target: "syscall::gear", "wait");
+        sys_trace!(target: "syscall::gear", "wait");
         let err = ctx
             .ext
             .wait()
             .map_err(FuncError::Core)
             .err()
-            .unwrap_or(FuncError::Terminated(TerminationReason::Wait(None)));
+            .unwrap_or_else(|| FuncError::Terminated(TerminationReason::Wait(None)));
         ctx.err = err;
         Err(HostError)
     }
 
     pub fn wait_for(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
-        log::trace!(target: "syscall::gear", "wait_for, args = {}", args_to_str(args));
+        sys_trace!(target: "syscall::gear", "wait_for, args = {}", args_to_str(args));
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -854,16 +1160,22 @@ where
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     pub fn wait_up_to(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
         sys_trace!(target: "syscall::gear", "wait_up_to, args = {}", args_to_str(args));
 =======
     pub fn wait_no_more(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
         log::trace!(target: "syscall::gear", "wait_no_more, args = {}", args_to_str(args));
+=======
+    pub fn wait_up_to(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
+        sys_trace!(target: "syscall::gear", "wait_up_to, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
         let duration = args.iter().read()?;
 
+<<<<<<< HEAD
         ctx.run(|ctx| -> Result<(), _> {
             Err(ctx
                 .ext
@@ -879,13 +1191,42 @@ where
         sys_trace!(target: "syscall::gear", "wake, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "wake, args = {}", args_to_str(args));
+=======
+        let mut f = || {
+            let duration: u32 = ctx.read_memory_as(duration_ptr)?;
+            ctx.ext.wait_up_to(duration).map_err(FuncError::Core)?;
+            Ok(Some(duration))
+        };
+
+        ctx.err = match f() {
+            Ok(duration) => FuncError::Terminated(TerminationReason::Wait(duration)),
+            Err(e) => e,
+        };
+        Err(HostError)
+    }
+
+    pub fn wake(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
+        sys_trace!(target: "syscall::gear", "wake, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (message_id_ptr, delay) = args.iter().read_2()?;
 
         ctx.run(|ctx| {
             let message_id = ctx.read_memory_as(message_id_ptr)?;
+=======
+        let waker_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+
+        let mut f = || {
+            let waker_id: MessageId = ctx.read_memory_as(waker_id_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            ctx.ext.wake(waker_id, delay).map_err(FuncError::Core)
+        };
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             Ok(ctx
                 .ext
@@ -898,12 +1239,17 @@ where
 
     pub fn create_program(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "create_program, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "create_program, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "create_program, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (
             code_id_ptr,
             salt_ptr,
@@ -915,15 +1261,37 @@ where
             message_id_ptr,
             program_id_ptr,
         ) = args.iter().read_9()?;
+=======
+        let code_hash_ptr = pop_i32(&mut args)?;
+        let salt_ptr = pop_i32(&mut args)?;
+        let salt_len = pop_i32(&mut args)?;
+        let payload_ptr = pop_i32(&mut args)?;
+        let payload_len = pop_i32(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let program_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
         ctx.run(|ctx| {
             let code_id = ctx.read_memory_as(code_id_ptr)?;
             let salt = ctx.read_memory(salt_ptr, salt_len)?;
             let payload = ctx.read_memory(payload_ptr, payload_len)?.try_into()?;
+<<<<<<< HEAD
             let value = ctx.read_memory_as(value_ptr)?;
 
             ctx.ext
                 .create_program(InitPacket::new(code_id, salt, payload, value), delay)
+=======
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+                .create_program(
+                    InitPacket::new(code_hash.into(), salt, payload, value),
+                    delay,
+                )
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .process_error()
                 .map_err(FuncError::Core)?
                 .error_len_on_success(|(message_id, program_id)| {
@@ -935,12 +1303,17 @@ where
 
     pub fn create_program_wgas(ctx: &mut Runtime<E>, args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "create_program_wgas, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "create_program_wgas, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "create_program_wgas, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
+<<<<<<< HEAD
         let (
             code_id_ptr,
             salt_ptr,
@@ -953,16 +1326,37 @@ where
             message_id_ptr,
             program_id_ptr,
         ) = args.iter().read_10()?;
+=======
+        let code_hash_ptr = pop_i32(&mut args)?;
+        let salt_ptr = pop_i32(&mut args)?;
+        let salt_len = pop_i32(&mut args)?;
+        let payload_ptr = pop_i32(&mut args)?;
+        let payload_len = pop_i32(&mut args)?;
+        let gas_limit = pop_i64(&mut args)?;
+        let value_ptr = pop_i32(&mut args)?;
+        let program_id_ptr = pop_i32(&mut args)?;
+        let delay_ptr = pop_i32(&mut args)?;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
         ctx.run(|ctx| {
             let code_id = ctx.read_memory_as(code_id_ptr)?;
             let salt = ctx.read_memory(salt_ptr, salt_len)?;
             let payload = ctx.read_memory(payload_ptr, payload_len)?.try_into()?;
+<<<<<<< HEAD
             let value = ctx.read_memory_as(value_ptr)?;
 
             ctx.ext
                 .create_program(
                     InitPacket::new_with_gas(code_id, salt, payload, gas_limit, value),
+=======
+            let value: u128 = ctx.read_memory_as(value_ptr)?;
+            let delay: u32 = ctx.read_memory_as(delay_ptr)?;
+
+            let error_len = ctx
+                .ext
+                .create_program(
+                    InitPacket::new_with_gas(code_hash.into(), salt, payload, gas_limit, value),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                     delay,
                 )
                 .process_error()
@@ -976,9 +1370,13 @@ where
 
     pub fn error(ctx: &mut Runtime<E>, args: &[Value]) -> Result<ReturnValue, HostError> {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "error, args = {}", args_to_str(args));
 =======
         log::trace!(target: "syscall::gear", "error, args = {}", args_to_str(args));
+=======
+        sys_trace!(target: "syscall::gear", "error, args = {}", args_to_str(args));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let mut args = args.iter();
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
 
@@ -995,6 +1393,7 @@ where
 
     pub fn forbidden(ctx: &mut Runtime<E>, _args: &[Value]) -> SyscallOutput {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sys_trace!(target: "syscall::gear", "forbidden");
 
         ctx.run(|_ctx| -> Result<(), _> { Err(FuncError::Core(E::Error::forbidden_function())) })
@@ -1002,6 +1401,10 @@ where
         log::trace!(target: "syscall::gear", "forbidden");
         ctx.err =
             FuncError::Terminated(TerminationReason::Trap(TrapExplanation::ForbiddenFunction));
+=======
+        sys_trace!(target: "syscall::gear", "forbidden");
+        ctx.err = FuncError::Core(E::Error::forbidden_function());
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Err(HostError)
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
     }

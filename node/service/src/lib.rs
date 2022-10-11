@@ -17,9 +17,13 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 use common::TerminalExtrinsicProvider;
 =======
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+use common::TerminalExtrinsicProvider;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use sc_client_api::{Backend as BackendT, BlockBackend, UsageProvider};
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
 use sc_network::NetworkService;
@@ -30,13 +34,19 @@ use sc_service::{
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_api::ConstructRuntimeApi;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use sp_runtime::{
     traits::{BlakeTwo256, Block as BlockT},
     OpaqueExtrinsic,
 };
+<<<<<<< HEAD
 =======
 use sp_runtime::{traits::BlakeTwo256, OpaqueExtrinsic};
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
 
@@ -44,12 +54,17 @@ pub use client::*;
 
 pub use sc_client_api::AuxStore;
 <<<<<<< HEAD
+<<<<<<< HEAD
 use sc_consensus_babe::{self, SlotProportion};
 pub use sp_blockchain::{HeaderBackend, HeaderMetadata};
 =======
 pub use sp_blockchain::{HeaderBackend, HeaderMetadata};
 pub use sp_consensus_babe::BabeApi;
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+use sc_consensus_babe::{self, SlotProportion};
+pub use sp_blockchain::{HeaderBackend, HeaderMetadata};
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
 #[cfg(feature = "gear-native")]
 pub use gear_runtime;
@@ -245,11 +260,15 @@ where
     let justification_import = grandpa_block_import.clone();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     let (block_import, babe_link) = sc_consensus_babe::block_import(
         sc_consensus_babe::configuration(&*client)?,
         grandpa_block_import,
         client.clone(),
     )?;
+<<<<<<< HEAD
 =======
     let (import_queue, babe_block_import_setup) = {
         let babe_config = sc_consensus_babe::configuration(&*client)?;
@@ -269,6 +288,8 @@ where
                 move |_, ()| async move {
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
     let slot_duration = babe_link.config().slot_duration();
     let import_queue = sc_consensus_babe::import_queue(
@@ -334,6 +355,9 @@ where
                     keystore: keystore.clone(),
                 },
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 grandpa: crate::rpc::GrandpaDeps {
                     shared_voter_state: shared_voter_state.clone(),
                     shared_authority_set: shared_authority_set.clone(),
@@ -347,6 +371,7 @@ where
         };
 
         (rpc_extensions_builder, shared_voter_state2)
+<<<<<<< HEAD
 =======
                 &task_manager.spawn_essential_handle(),
                 config.prometheus_registry(),
@@ -355,6 +380,8 @@ where
             (babe_block_import, babe_link),
         )
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     };
 
     let partial = PartialComponents {
@@ -529,6 +556,9 @@ where
         );
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let slot_duration = babe_link.config().slot_duration();
         let babe_config = sc_consensus_babe::BabeParams {
             keystore: keystore_container.sync_keystore(),
@@ -540,6 +570,7 @@ where
             justification_sync_link: network.clone(),
             create_inherent_data_providers: move |_, ()| async move {
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+<<<<<<< HEAD
 
                 let slot =
                         sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
@@ -593,6 +624,31 @@ where
             );
         }
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+
+                let slot =
+                        sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration,
+                        );
+
+                Ok((slot, timestamp))
+            },
+            force_authoring,
+            backoff_authoring_blocks,
+            babe_link,
+            block_proposal_slot_portion: SlotProportion::new(0.5),
+            max_block_proposal_slot_portion: None,
+            telemetry: telemetry.as_ref().map(|x| x.handle()),
+        };
+
+        let babe = sc_consensus_babe::start_babe(babe_config)?;
+        task_manager.spawn_essential_handle().spawn_blocking(
+            "babe-proposer",
+            Some("block-authoring"),
+            babe,
+        );
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
 
     // if the node isn't actively participating in consensus then it doesn't
@@ -651,6 +707,7 @@ where
     })
 }
 
+<<<<<<< HEAD
 struct RevertConsensus {
     blocks: BlockNumber,
     backend: Arc<FullBackend>,
@@ -688,6 +745,8 @@ impl ExecuteWithClient for RevertConsensus {
     }
 }
 
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 /// Build a full node for different chain "flavors".
 ///
 /// The actual "flavor", aka if it will use `Gear`, `Vara` etc. is determined based on
@@ -715,6 +774,7 @@ pub fn new_full(
         .map(|NewFullBase { task_manager, .. }| task_manager),
         _ => Err(ServiceError::Other("Invalid chain spec".into())),
     }
+<<<<<<< HEAD
 }
 
 /// Reverts the node state down to at most the last finalized block.
@@ -730,6 +790,8 @@ pub fn revert_backend(
     client.execute_with(RevertConsensus { blocks, backend })?;
 
     Ok(())
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 struct RevertConsensus {

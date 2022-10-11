@@ -18,10 +18,14 @@
 
 use clap::{Parser, Subcommand};
 <<<<<<< HEAD
+<<<<<<< HEAD
 use frame_support::dispatch::GetCallName;
 =======
 use frame_support::{dispatch::GetCallName, weights::Weight};
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+use frame_support::dispatch::GetCallName;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use junit_common::TestSuites;
 use pallet_gear::{HostFnWeights, InstructionWeights};
 use quick_xml::de::from_str;
@@ -115,6 +119,7 @@ struct GithubActionBenchmark {
 #[derive(Deserialize)]
 #[serde(transparent)]
 <<<<<<< HEAD
+<<<<<<< HEAD
 struct WeightBenchmark(Vec<u64>);
 
 impl WeightBenchmark {
@@ -130,6 +135,13 @@ impl WeightBenchmark {
 =======
         Weight::from_ref_time(self.0.iter().map(|w| w.ref_time()).sum())
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+struct WeightBenchmark(Vec<u64>);
+
+impl WeightBenchmark {
+    fn calc_weight(&self) -> u64 {
+        self.0.iter().sum()
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
 }
 
@@ -267,7 +279,7 @@ fn weights(kind: WeightsKind, input_file: PathBuf, output_file: PathBuf) {
         map.get(field).map(|weight| GithubActionBenchmark {
             name: field.to_string(),
             unit: "ns".to_string(),
-            value: weight.calc_weight().ref_time() / 1000,
+            value: weight.calc_weight() / 1000,
             range: None,
             extra: None,
         })
@@ -356,10 +368,14 @@ fn weights(kind: WeightsKind, input_file: PathBuf, output_file: PathBuf) {
                     gr_wait,
                     gr_wait_for,
 <<<<<<< HEAD
+<<<<<<< HEAD
                     gr_wait_up_to,
 =======
                     gr_wait_no_more,
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+                    gr_wait_up_to,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                     gr_wake,
                     gr_create_program_wgas,
                     gr_create_program_wgas_per_byte,

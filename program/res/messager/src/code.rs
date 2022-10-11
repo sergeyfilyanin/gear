@@ -3,7 +3,11 @@ use gstd::msg;
 
 #[no_mangle]
 extern "C" fn init() {
+<<<<<<< HEAD
     let maybe_to = msg::load_bytes().unwrap();
+=======
+    let maybe_to = msg::load_bytes();
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     let to = if maybe_to.len() == 32 {
         let mut to = [0; 32];
         to.copy_from_slice(&maybe_to);

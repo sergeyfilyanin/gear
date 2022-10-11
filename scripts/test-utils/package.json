@@ -5,12 +5,16 @@
   "main": "index.js",
   "scripts": {
 <<<<<<< HEAD
+<<<<<<< HEAD
     "upgrade": "node processingMessageWithRuntimeUpgrade.js"
 =======
     "upgrade": "node processingMessageWithRuntimeUpgrade.js",
     "weights": "node infiniteLoop.js",
     "uploads": "node harmlessUploadDemos.js"
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    "upgrade": "node processingMessageWithRuntimeUpgrade.js"
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
   },
   "author": "",
   "license": "ISC",

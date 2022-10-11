@@ -49,10 +49,15 @@ fn get_exports(
             } else if entry.field() == DispatchKind::Reply.into_entry() {
                 exports.insert(DispatchKind::Reply);
 <<<<<<< HEAD
+<<<<<<< HEAD
             } else if entry.field() == DispatchKind::Signal.into_entry() {
                 exports.insert(DispatchKind::Signal);
 =======
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
+=======
+            } else if entry.field() == DispatchKind::Signal.into_entry() {
+                exports.insert(DispatchKind::Signal);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             } else if reject_unnecessary {
                 return Err(CodeError::NonGearExportFnFound);
             }

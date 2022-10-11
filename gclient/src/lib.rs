@@ -20,6 +20,7 @@ mod api;
 mod node;
 mod utils;
 
+<<<<<<< HEAD
 <<<<<<< HEAD:gclient/src/lib.rs
 pub use api::{calls::*, error::*, listener::*, storage::*, GearApi};
 pub use node::ws::*;
@@ -44,3 +45,8 @@ impl WeightInfo for () {
     }
 }
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464)):pallets/gear-program/src/weights/mod.rs
+=======
+pub use api::{calls::*, error::*, listener::*, storage::*, GearApi};
+pub use node::ws::*;
+pub use utils::*;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)

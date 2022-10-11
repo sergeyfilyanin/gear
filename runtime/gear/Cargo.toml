@@ -72,9 +72,13 @@ default = ["std"]
 std = [
 	"codec/std",
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"common/std",
 =======
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+	"common/std",
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
  	"frame-try-runtime?/std",
  	"frame-system-benchmarking?/std",
  	"frame-benchmarking?/std",

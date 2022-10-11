@@ -44,12 +44,18 @@ mod sys {
         pub fn gr_value_available(value_ptr: *mut u128);
 
         pub fn gr_wait() -> !;
+<<<<<<< HEAD
 
         pub fn gr_wait_up_to(duration: u32) -> !;
 
         pub fn gr_wait_for(duration: u32) -> !;
 
         pub fn gr_wake(message_id_ptr: *const [u8; 32], delay: u32) -> SyscallError;
+=======
+        pub fn gr_wait_up_to(duration: *const u8) -> !;
+        pub fn gr_wait_for(duration: *const u8) -> !;
+        pub fn gr_wake(waker_id_ptr: *const u8, delay_ptr: *const u8);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
 }
 
@@ -217,7 +223,11 @@ pub fn wait_for(duration: u32) -> ! {
 /// Same as [`wait`], but delays handling for maximal amount of blocks
 /// that could be payed, that doesn't exceed given duration.
 pub fn wait_up_to(duration: u32) -> ! {
+<<<<<<< HEAD
     unsafe { sys::gr_wait_up_to(duration) }
+=======
+    unsafe { sys::gr_wait_up_to(duration.to_le_bytes().as_ptr()) }
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 /// Resume previously paused message handling.
@@ -237,6 +247,7 @@ pub fn wait_up_to(duration: u32) -> ! {
 ///     exec::wake(MessageId::default()).unwrap();
 /// }
 /// ```
+<<<<<<< HEAD
 pub fn wake(message_id: MessageId) -> Result<()> {
     wake_delayed(message_id, 0)
 }
@@ -244,6 +255,19 @@ pub fn wake(message_id: MessageId) -> Result<()> {
 /// Same as [`wake`], but wakes delayed.
 pub fn wake_delayed(message_id: MessageId, delay: u32) -> Result<()> {
     unsafe { sys::gr_wake(message_id.as_ptr(), delay).into_result() }
+=======
+pub fn wake(waker_id: MessageId) {
+    unsafe {
+        sys::gr_wake(waker_id.as_slice().as_ptr(), 0u32.to_le_bytes().as_ptr());
+    }
+}
+
+/// Same as [`wake`], but wakes delayed.
+pub fn wake_delayed(waker_id: MessageId, delay: u32) {
+    unsafe {
+        sys::gr_wake(waker_id.as_slice().as_ptr(), delay.to_le_bytes().as_ptr());
+    }
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 /// Return ID of the current program.

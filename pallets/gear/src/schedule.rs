@@ -351,12 +351,17 @@ pub struct HostFnWeights<T: Config> {
     pub gr_wait_for: u64,
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     /// Weight of calling `gr_wait_up_to`.
     pub gr_wait_up_to: u64,
 =======
     /// Weight of calling `gr_wait_no_more`.
     pub gr_wait_no_more: u64,
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    /// Weight of calling `gr_wait_up_to`.
+    pub gr_wait_up_to: u64,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
     /// Weight of calling `gr_wake`.
     pub gr_wake: u64,

@@ -161,7 +161,11 @@ impl MessageContext {
         &mut self,
         packet: InitPacket,
         delay: u32,
+<<<<<<< HEAD
     ) -> Result<(MessageId, ProgramId), Error> {
+=======
+    ) -> Result<(ProgramId, MessageId), Error> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         let program_id = packet.destination();
 
         if self.store.initialized.contains(&program_id) {

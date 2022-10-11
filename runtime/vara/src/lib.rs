@@ -43,6 +43,7 @@ pub use frame_support::{
     StorageValue,
 =======
 use codec::{Decode, Encode};
+<<<<<<< HEAD
 use frame_election_provider_support::{ElectionDataProvider, ElectionProvider};
 #[cfg(feature = "try-runtime")]
 use frame_support::weights::Weight;
@@ -58,12 +59,35 @@ use frame_support::{
         IdentityFee,
     },
 >>>>>>> a3248f56 (Add block weight dependency from block time (#1574))
+=======
+use common::TerminalExtrinsicProvider;
+use frame_election_provider_support::{ElectionDataProvider, ElectionProvider, ElectionProviderBase};
+pub use frame_support::{
+    construct_runtime,
+    dispatch::{DispatchClass, WeighData},
+    parameter_types,
+    traits::{
+        ConstU128, ConstU32, Contains, FindAuthor, KeyOwnerProofSystem, Randomness, StorageInfo, U128CurrencyToVote
+    },
+    weights::{
+        constants::{
+            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_MILLIS,
+            WEIGHT_PER_SECOND,
+        },
+        IdentityFee, Weight,
+    },
+    StorageValue,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 };
 <<<<<<< HEAD
 use frame_system::limits::{BlockLength, BlockWeights};
 =======
 use frame_system::EnsureRoot;
+<<<<<<< HEAD
 >>>>>>> b382e078 (Add staking pallet to vara runtime (#1458))
+=======
+use frame_system::limits::{BlockLength, BlockWeights};
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 pub use pallet_gear::manager::{ExtManager, HandleKind};
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -71,6 +95,7 @@ use pallet_grandpa::{
 use pallet_session::historical::{self as pallet_session_historical};
 pub use pallet_timestamp::Call as TimestampCall;
 pub use pallet_transaction_payment::{CurrencyAdapter, Multiplier};
+<<<<<<< HEAD
 <<<<<<< HEAD
 pub use runtime_common::{
     impl_runtime_apis_plus_common, BlockHashCount, DealWithFees, GasConverter,
@@ -81,6 +106,11 @@ use runtime_common::{
     GasLimitMaxPercentage, MailboxCost, MailboxThreshold, OperationalFeeMultiplier, OutgoingLimit,
     QueueLengthStep, ReserveThreshold, WaitlistCost, NORMAL_DISPATCH_RATIO,
 >>>>>>> a3248f56 (Add block weight dependency from block time (#1574))
+=======
+pub use runtime_common::{
+    impl_runtime_apis_plus_common, BlockHashCount, DealWithFees, GasConverter,
+    AVERAGE_ON_INITIALIZE_RATIO, GAS_LIMIT_MIN_PERCENTAGE_NUM, NORMAL_DISPATCH_RATIO,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 };
 pub use runtime_primitives::{AccountId, Signature};
 use runtime_primitives::{Balance, BlockNumber, Hash, Index, Moment};
@@ -98,7 +128,7 @@ use sp_runtime::{
     transaction_validity::{
         InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, Perbill,
+    ApplyExtrinsicResult, Perbill, Percent,
 };
 use sp_std::{
     convert::{TryFrom, TryInto},
@@ -146,6 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     spec_version: 420,
 =======
     spec_version: 120,
@@ -168,6 +199,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 =======
     spec_version: 230,
 >>>>>>> 36d97063 (move fix for sandbox backend to vara (#1544))
+=======
+    spec_version: 390,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -250,14 +284,6 @@ impl SignedExtension for DisableValueTransfers {
 }
 
 parameter_types! {
-    /// We allow for 1/3 of block time for computations.
-    ///
-    /// It's 2/3 sec for vara runtime with 2 second block duration.
-    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(MILLISECS_PER_BLOCK * WEIGHT_PER_MILLIS / 3, NORMAL_DISPATCH_RATIO);
-
-    pub BlockGasLimit: u64 = GasLimitMaxPercentage::get() * BlockWeights::get().max_block.ref_time();
-
     pub const Version: RuntimeVersion = VERSION;
     pub const SS58Prefix: u8 = 42;
     pub RuntimeBlockLength: BlockLength =
@@ -429,6 +455,12 @@ parameter_types! {
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 }
 
+parameter_types! {
+    pub const TransactionByteFee: Balance = 1;
+    pub const QueueLengthStep: u128 = 10;
+    pub const OperationalFeeMultiplier: u8 = 5;
+}
+
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
@@ -515,15 +547,24 @@ impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
 
 pub struct ElectNone<DataProvider>(sp_std::marker::PhantomData<DataProvider>);
 
-impl<DataProvider> ElectionProvider for ElectNone<DataProvider>
+impl<DataProvider> ElectionProviderBase for ElectNone<DataProvider>
 where
-    DataProvider: ElectionDataProvider<AccountId = AccountId, BlockNumber = BlockNumber>,
+    DataProvider: ElectionDataProvider<AccountId = AccountId, BlockNumber = BlockNumber>
 {
     type AccountId = AccountId;
     type BlockNumber = BlockNumber;
     type Error = &'static str;
     type DataProvider = DataProvider;
 
+    fn ongoing() -> bool {
+        false
+    }
+}
+
+impl<DataProvider> ElectionProvider for ElectNone<DataProvider>
+where
+    DataProvider: ElectionDataProvider<AccountId = AccountId, BlockNumber = BlockNumber>
+{
     fn elect() -> Result<sp_npos_elections::Supports<AccountId>, Self::Error> {
         Err("No election takes place at stage 1")
     }
@@ -531,15 +572,24 @@ where
 
 pub struct ElectAll<DataProvider>(sp_std::marker::PhantomData<DataProvider>);
 
-impl<DataProvider> ElectionProvider for ElectAll<DataProvider>
+impl<DataProvider> ElectionProviderBase for ElectAll<DataProvider>
 where
-    DataProvider: ElectionDataProvider<AccountId = AccountId, BlockNumber = BlockNumber>,
+    DataProvider: ElectionDataProvider<AccountId = AccountId, BlockNumber = BlockNumber>
 {
     type AccountId = AccountId;
     type BlockNumber = BlockNumber;
     type Error = &'static str;
     type DataProvider = DataProvider;
 
+    fn ongoing() -> bool {
+        false
+    }
+}
+
+impl<DataProvider: ElectionDataProvider> ElectionProvider for ElectAll<DataProvider>
+where
+    DataProvider: ElectionDataProvider<AccountId = AccountId, BlockNumber = BlockNumber>
+{
     fn elect() -> Result<sp_npos_elections::Supports<AccountId>, Self::Error> {
         let targets = Self::DataProvider::electable_targets(None)?
             .into_iter()
@@ -547,6 +597,10 @@ where
             .collect();
         Ok(targets)
     }
+}
+
+parameter_types! {
+    pub HistoryDepth: u32 = 84;
 }
 
 impl pallet_staking::Config for Runtime {
@@ -575,6 +629,8 @@ impl pallet_staking::Config for Runtime {
     type BenchmarkingConfig = StakingBenchmarkingConfig;
     type OnStakerSlash = ();
     type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
+    type TargetList = pallet_staking::UseValidatorsMap<Self>;
+    type HistoryDepth = HistoryDepth;
 }
 
 // Mocked threshoulds
@@ -728,6 +784,14 @@ impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
     }
 =======
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+}
+
+impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
+    fn extrinsic() -> Option<UncheckedExtrinsic> {
+        Some(UncheckedExtrinsic::new_unsigned(RuntimeCall::Gear(
+            pallet_gear::Call::run {},
+        )))
+    }
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -920,10 +984,14 @@ impl_runtime_apis_plus_common! {
             // right here and right now.
             let weight = Executive::try_runtime_upgrade().unwrap();
 <<<<<<< HEAD
+<<<<<<< HEAD
             (weight, RuntimeBlockWeights::get().max_block)
 =======
             (weight, BlockWeights::get().max_block)
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+            (weight, RuntimeBlockWeights::get().max_block)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         }
 
         fn execute_block(

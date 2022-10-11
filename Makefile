@@ -222,10 +222,15 @@ test: test-gear test-js gtest # There should be no release builds (e.g. `rtest`)
 test-release: test-gear-release test-js gtest rtest test-runtime-upgrade
 
 .PHONY: test-gear
+<<<<<<< HEAD
 test-gear: init-js examples # \
 	We use lazy-pages feature for pallet-gear-debug due to cargo building issue \
 	and fact that pallet-gear default is lazy-pages.
 	@ ./scripts/gear.sh test gear --exclude gclient --features pallet-gear-debug/lazy-pages
+=======
+test-gear: init-js examples
+	@ ./scripts/gear.sh test gear --exclude gclient
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
 .PHONY: test-gear-release
 test-gear-release: init-js examples
@@ -284,4 +289,8 @@ fuzz-vara:
 
 .PHONY: kill
 kill:
+<<<<<<< HEAD
 	@ pkill -f 'gear |gear$' -9
+=======
+	@ pgrep -f "gear-node" | xargs kill -9
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)

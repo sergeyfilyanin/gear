@@ -18,6 +18,10 @@ async fn api_timeout() {
 
 #[test]
 fn paths() {
+<<<<<<< HEAD
     assert!(PathBuf::from(env::bin("gear")).exists());
+=======
+    assert!(PathBuf::from(env::bin("gear-node")).exists());
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     assert!(PathBuf::from(env::bin("gprogram")).exists());
 }

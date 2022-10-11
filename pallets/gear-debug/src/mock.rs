@@ -60,10 +60,14 @@ impl system::Config for Test {
     type BlockLength = ();
     type DbWeight = ();
 <<<<<<< HEAD
+<<<<<<< HEAD
     type RuntimeOrigin = RuntimeOrigin;
 =======
     type Origin = Origin;
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    type RuntimeOrigin = RuntimeOrigin;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
@@ -220,6 +224,7 @@ pub fn run_to_block(n: u64, remaining_weight: Option<u64>) {
         let remaining_weight =
             remaining_weight.unwrap_or(pallet_gear::BlockGasLimitOf::<Test>::get());
 <<<<<<< HEAD
+<<<<<<< HEAD
 
         Gear::run_queue(remaining_weight);
         Gear::on_finalize(System::block_number());
@@ -229,5 +234,10 @@ pub fn run_to_block(n: u64, remaining_weight: Option<u64>) {
             Weight::from_ref_time(remaining_weight),
         );
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+
+        Gear::run_queue(remaining_weight);
+        Gear::on_finalize(System::block_number());
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
 }

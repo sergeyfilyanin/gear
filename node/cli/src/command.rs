@@ -19,7 +19,10 @@
 use crate::cli::{Cli, Subcommand};
 use runtime_primitives::Block;
 use sc_cli::{ChainSpec, ExecutionStrategy, RuntimeVersion, SubstrateCli};
+<<<<<<< HEAD
 use sc_service::config::BasePath;
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use service::{chain_spec, IdentifyVariant};
 
 impl SubstrateCli for Cli {
@@ -133,6 +136,7 @@ pub fn run() -> sc_cli::Result<()> {
         .execution_strategies
         .execution
         .get_or_insert(ExecutionStrategy::Wasm);
+<<<<<<< HEAD
 
     // Set default base directory to `gear-node`.
     cli.run
@@ -140,6 +144,8 @@ pub fn run() -> sc_cli::Result<()> {
         .shared_params
         .base_path
         .get_or_insert_with(|| BasePath::from_project("", "", "gear-node").path().into());
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
     match &cli.subcommand {
         Some(Subcommand::Key(cmd)) => cmd.run(&cli),

@@ -481,6 +481,9 @@ pub mod pallet {
             log::debug!(target: "runtime::gear", "⚙️  Initialization of block #{:?}", bn);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             // Decide whether queue processing should be scheduled or skipped for current block
 
             // If some forcing mode is on
@@ -503,9 +506,12 @@ pub mod pallet {
                 }
                 _ => T::DbWeight::get().reads(1),
             }
+<<<<<<< HEAD
 =======
             Weight::zero()
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         }
 
         /// Finalization
@@ -537,10 +543,14 @@ pub mod pallet {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig {
         fn build(&self) {
             ForceQueue::<T>::put(self.force_queue);
+<<<<<<< HEAD
 =======
             // Adjust the block gas allowance based on actual remaining weight.
             //
@@ -572,6 +582,8 @@ pub mod pallet {
 
             weight
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         }
     }
 

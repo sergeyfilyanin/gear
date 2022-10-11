@@ -20,12 +20,15 @@ hex-literal = "0.3.4"
 <<<<<<< HEAD
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 log = "0.4.17"
+<<<<<<< HEAD
 =======
 jsonrpsee = { version = "0.14.0", features = ["server"] }
 >>>>>>> e1884759 (Vara: Add ChainSpec extensions (#1424) (#1480))
 =======
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 serde = { version = "1.0.136", features = ["derive"] }
 
 # Gear
@@ -42,12 +45,18 @@ vara-runtime = { path = "../../runtime/vara", optional = true }
 
 # Substrate Client
 <<<<<<< HEAD
+<<<<<<< HEAD
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 sc-chain-spec = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 sc-authority-discovery = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 =======
 sc-chain-spec = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 >>>>>>> e1884759 (Vara: Add ChainSpec extensions (#1424) (#1480))
+=======
+sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sc-chain-spec = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sc-authority-discovery = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 sc-executor = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable", features = [
 	"wasmtime",
 	"wasmer-sandbox",
@@ -72,12 +81,18 @@ sc-finality-grandpa-rpc = { version = "0.10.0-dev", git = "https://github.com/ge
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 <<<<<<< HEAD
+<<<<<<< HEAD
 sc-rpc-spec-v2 = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 sc-sync-state-rpc = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 sc-sysinfo = { version = "6.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 =======
 sc-sync-state-rpc = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 >>>>>>> e1884759 (Vara: Add ChainSpec extensions (#1424) (#1480))
+=======
+sc-rpc-spec-v2 = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sc-sync-state-rpc = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sc-sysinfo = { version = "6.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
 # Substrate Primitives
 sp-core = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }

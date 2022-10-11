@@ -46,7 +46,11 @@ impl ProgramGenerator {
     }
 
     pub fn create_program_with_gas(
+<<<<<<< HEAD
         code_id: CodeId,
+=======
+        code_hash: CodeHash,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         payload: impl AsRef<[u8]>,
         gas_limit: u64,
         value: u128,
@@ -55,9 +59,31 @@ impl ProgramGenerator {
     }
 
     pub fn create_program_with_gas_delayed(
+<<<<<<< HEAD
         code_id: CodeId,
         payload: impl AsRef<[u8]>,
         gas_limit: u64,
+=======
+        code_hash: CodeHash,
+        payload: impl AsRef<[u8]>,
+        gas_limit: u64,
+        value: u128,
+        delay: u32,
+    ) -> Result<ActorId> {
+        prog::create_program_with_gas_delayed(
+            code_hash,
+            Self::get_salt(),
+            payload,
+            gas_limit,
+            value,
+            delay,
+        )
+    }
+
+    pub fn create_program(
+        code_hash: CodeHash,
+        payload: impl AsRef<[u8]>,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         value: u128,
         delay: u32,
     ) -> Result<(MessageId, ActorId)> {
@@ -86,5 +112,14 @@ impl ProgramGenerator {
         delay: u32,
     ) -> Result<(MessageId, ActorId)> {
         prog::create_program_delayed(code_id, Self::get_salt(), payload, value, delay)
+    }
+
+    pub fn create_program_delayed(
+        code_hash: CodeHash,
+        payload: impl AsRef<[u8]>,
+        value: u128,
+        delay: u32,
+    ) -> Result<ActorId> {
+        prog::create_program_delayed(code_hash, Self::get_salt(), payload, value, delay)
     }
 }

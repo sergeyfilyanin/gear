@@ -5,6 +5,9 @@ authors = ["Gear Technologies"]
 edition = "2018"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 [dependencies.schnorrkel]
 version = "0.10.2"
 features = [
@@ -12,6 +15,7 @@ features = [
     "u64_backend",
 ]
 default-features = false
+<<<<<<< HEAD
 =======
 [dependencies]
 schnorrkel = { version = "0.9.1", features = [
@@ -19,3 +23,5 @@ schnorrkel = { version = "0.9.1", features = [
 	"u64_backend",
 ], default-features = false }
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)

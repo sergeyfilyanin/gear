@@ -16,7 +16,11 @@ thiserror = "1.0.34"
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 =======
 env_logger = "0.9.1"
+<<<<<<< HEAD
 thiserror = "1.0.35"
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+thiserror = "1.0.37"
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 gear-wasm-builder = { path = "../wasm-builder" }
 parity-wasm = "0.45.0"

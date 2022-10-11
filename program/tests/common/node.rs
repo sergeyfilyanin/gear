@@ -4,7 +4,11 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
+<<<<<<< HEAD
 /// Run gear with docker.
+=======
+/// Run gear-node with docker.
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 pub struct Node {
     /// child process
     ps: Child,
@@ -18,10 +22,17 @@ impl Node {
         format!("ws://{}:{}", port::LOCALHOST, self.port)
     }
 
+<<<<<<< HEAD
     /// Run gear with docker in development mode.
     pub fn dev() -> Result<Self> {
         let port = port::pick();
         let ps = Command::new(env::bin("gear"))
+=======
+    /// Run gear-node with docker in development mode.
+    pub fn dev() -> Result<Self> {
+        let port = port::pick();
+        let ps = Command::new(env::bin("gear-node"))
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             .args(["--ws-port", &port.to_string(), "--tmp", "--dev"])
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())

@@ -11,7 +11,11 @@ proc-macro = true
 [dependencies]
 quote = "1.0.21"
 <<<<<<< HEAD
+<<<<<<< HEAD
 syn = "1.0.102"
 =======
 syn = "1.0.100"
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+syn = "1.0.102"
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)

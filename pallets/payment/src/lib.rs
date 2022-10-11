@@ -211,6 +211,7 @@ where
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /// A trait whose purpose is to extract the `Call` variant of an extrinsic
 pub trait ExtractCall<RuntimeCall> {
@@ -241,6 +242,8 @@ where
 }
 
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 impl<T: Config> Pallet<T> {
     /// Modification of the `pallet_transaction_payment::Pallet<T>::query_info()`
     /// that is aware of the transaction fee customization based on a specific call

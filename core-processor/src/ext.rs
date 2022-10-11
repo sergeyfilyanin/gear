@@ -22,7 +22,10 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
+<<<<<<< HEAD
 use codec::{Decode, Encode};
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use gear_backend_common::{
     error_processor::IntoExtError, AsTerminationReason, ExtInfo, GetGasAmount, IntoExtInfo,
     TerminationReason, TrapExplanation,
@@ -370,7 +373,11 @@ impl EnvExt for Ext {
 
     fn send_commit(
         &mut self,
+<<<<<<< HEAD
         handle: u32,
+=======
+        handle: usize,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         msg: HandlePacket,
         delay: u32,
     ) -> Result<MessageId, Self::Error> {
@@ -379,7 +386,14 @@ impl EnvExt for Ext {
         self.check_forbidden_call(msg.destination())?;
         self.charge_expiring_resources(&msg)?;
 
+<<<<<<< HEAD
         let result = self.context.message_context.send_commit(handle, msg, delay);
+=======
+        let result = self
+            .context
+            .message_context
+            .send_commit(handle as u32, msg, delay);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
         self.return_and_store_err(result)
     }
@@ -591,11 +605,15 @@ impl EnvExt for Ext {
         self.return_and_store_err(result)
     }
 
+<<<<<<< HEAD
     fn create_program(
         &mut self,
         packet: InitPacket,
         delay: u32,
     ) -> Result<(MessageId, ProgramId), Self::Error> {
+=======
+    fn create_program(&mut self, packet: InitPacket, delay: u32) -> Result<ProgramId, Self::Error> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         self.charge_gas_runtime(RuntimeCosts::CreateProgram(packet.payload().len() as u32))?;
 
         self.charge_expiring_resources(&packet)?;
@@ -607,16 +625,26 @@ impl EnvExt for Ext {
             .context
             .message_context
             .init_program(packet, delay)
+<<<<<<< HEAD
             .map(|(init_msg_id, new_prog_id)| {
+=======
+            .map(|(new_prog_id, init_msg_id)| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 // Save a program candidate for this run
                 let entry = self
                     .context
                     .program_candidates_data
                     .entry(code_hash)
                     .or_default();
+<<<<<<< HEAD
                 entry.push((init_msg_id, new_prog_id));
 
                 (init_msg_id, new_prog_id)
+=======
+                entry.push((new_prog_id, init_msg_id));
+
+                new_prog_id
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             });
 
         self.return_and_store_err(result)

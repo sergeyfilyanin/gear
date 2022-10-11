@@ -30,22 +30,38 @@ use wasmi::{core::memory_units::Pages, Memory as WasmiMemory, Store, StoreContex
 
 pub fn read_memory_as<D: Decode + MaxEncodedLen>(
     memory: &impl Memory,
+<<<<<<< HEAD
     ptr: u32,
 ) -> Result<D, MemoryError> {
     let mut buffer = vec![0u8; D::max_encoded_len()];
     memory
         .read(ptr as usize, &mut buffer)
+=======
+    ptr: usize,
+) -> Result<D, MemoryError> {
+    let mut buffer = vec![0u8; D::max_encoded_len()];
+    memory
+        .read(ptr, &mut buffer)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         .map_err(|_| MemoryError::OutOfBounds)?;
     let decoded = D::decode_all(&mut &buffer[..]).map_err(|_| MemoryError::MemoryAccessError)?;
     Ok(decoded)
 }
 
+<<<<<<< HEAD
 pub struct MemoryWrapRef<'a, E: Ext + IntoExtInfo<E::Error> + 'static> {
+=======
+pub struct MemoryWrapRef<'a, E: Ext + IntoExtInfo + 'static> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     pub memory: WasmiMemory,
     pub store: StoreContextMut<'a, HostState<E>>,
 }
 
+<<<<<<< HEAD
 impl<'a, E: Ext + IntoExtInfo<E::Error> + 'static> Memory for MemoryWrapRef<'a, E> {
+=======
+impl<'a, E: Ext + IntoExtInfo + 'static> Memory for MemoryWrapRef<'a, E> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fn grow(&mut self, pages: WasmPageNumber) -> Result<PageNumber, Error> {
         self.memory
             .grow(&mut self.store, Pages(pages.0 as usize))
@@ -79,12 +95,20 @@ impl<'a, E: Ext + IntoExtInfo<E::Error> + 'static> Memory for MemoryWrapRef<'a, 
 }
 
 /// Wrapper for [`wasmi::Memory`].
+<<<<<<< HEAD
 pub struct MemoryWrap<E: Ext + IntoExtInfo<E::Error> + 'static> {
+=======
+pub struct MemoryWrap<E: Ext + IntoExtInfo + 'static> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     pub memory: WasmiMemory,
     pub store: Store<HostState<E>>,
 }
 
+<<<<<<< HEAD
 impl<E: Ext + IntoExtInfo<E::Error> + 'static> MemoryWrap<E> {
+=======
+impl<E: Ext + IntoExtInfo + 'static> MemoryWrap<E> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     /// Wrap [`wasmi::Memory`] for Memory trait.
     pub fn new(memory: WasmiMemory, store: Store<HostState<E>>) -> Self {
         MemoryWrap { memory, store }
@@ -92,7 +116,11 @@ impl<E: Ext + IntoExtInfo<E::Error> + 'static> MemoryWrap<E> {
 }
 
 /// Memory interface for the allocator.
+<<<<<<< HEAD
 impl<E: Ext + IntoExtInfo<E::Error> + 'static> Memory for MemoryWrap<E> {
+=======
+impl<E: Ext + IntoExtInfo + 'static> Memory for MemoryWrap<E> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fn grow(&mut self, pages: WasmPageNumber) -> Result<PageNumber, Error> {
         self.memory
             .grow(&mut self.store, Pages(pages.0 as usize))

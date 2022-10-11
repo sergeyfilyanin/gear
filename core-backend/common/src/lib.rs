@@ -110,7 +110,11 @@ pub struct ExtInfo {
     pub pages_data: BTreeMap<PageNumber, PageBuf>,
     pub generated_dispatches: Vec<(Dispatch, u32)>,
     pub awakening: Vec<(MessageId, u32)>,
+<<<<<<< HEAD
     pub program_candidates_data: BTreeMap<CodeId, Vec<(MessageId, ProgramId)>>,
+=======
+    pub program_candidates_data: BTreeMap<CodeId, Vec<(ProgramId, MessageId)>>,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     pub context_store: ContextStore,
 }
 

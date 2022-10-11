@@ -151,11 +151,19 @@ impl EnvExt for LazyPagesExt {
         self.inner.origin()
     }
 
+<<<<<<< HEAD
     fn send_init(&mut self) -> Result<u32, Self::Error> {
         self.inner.send_init()
     }
 
     fn send_push(&mut self, handle: u32, buffer: &[u8]) -> Result<(), Self::Error> {
+=======
+    fn send_init(&mut self) -> Result<usize, Self::Error> {
+        self.inner.send_init()
+    }
+
+    fn send_push(&mut self, handle: usize, buffer: &[u8]) -> Result<(), Self::Error> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         self.inner.send_push(handle, buffer)
     }
 
@@ -165,7 +173,11 @@ impl EnvExt for LazyPagesExt {
 
     fn send_commit(
         &mut self,
+<<<<<<< HEAD
         handle: u32,
+=======
+        handle: usize,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         msg: HandlePacket,
         delay: u32,
     ) -> Result<MessageId, Self::Error> {
@@ -176,7 +188,11 @@ impl EnvExt for LazyPagesExt {
         self.inner.reply_commit(msg, delay)
     }
 
+<<<<<<< HEAD
     fn reply_to(&mut self) -> Result<MessageId, Self::Error> {
+=======
+    fn reply_to(&mut self) -> Result<Option<MessageId>, Self::Error> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         self.inner.reply_to()
     }
 
@@ -188,7 +204,11 @@ impl EnvExt for LazyPagesExt {
         self.inner.exit()
     }
 
+<<<<<<< HEAD
     fn exit_code(&mut self) -> Result<ExitCode, Self::Error> {
+=======
+    fn exit_code(&mut self) -> Result<Option<ExitCode>, Self::Error> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         self.inner.exit_code()
     }
 
@@ -260,11 +280,15 @@ impl EnvExt for LazyPagesExt {
         self.inner.value_available()
     }
 
+<<<<<<< HEAD
     fn create_program(
         &mut self,
         packet: InitPacket,
         delay: u32,
     ) -> Result<(MessageId, ProgramId), Self::Error> {
+=======
+    fn create_program(&mut self, packet: InitPacket, delay: u32) -> Result<ProgramId, Self::Error> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         self.inner.create_program(packet, delay)
     }
 

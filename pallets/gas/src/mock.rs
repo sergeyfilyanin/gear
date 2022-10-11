@@ -70,10 +70,14 @@ impl system::Config for Test {
     type BlockLength = ();
     type DbWeight = ();
 <<<<<<< HEAD
+<<<<<<< HEAD
     type RuntimeOrigin = RuntimeOrigin;
 =======
     type Origin = Origin;
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    type RuntimeOrigin = RuntimeOrigin;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;

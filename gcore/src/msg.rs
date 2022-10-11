@@ -42,11 +42,19 @@ mod sys {
 
         #[allow(improper_ctypes)]
         pub fn gr_reply(
+<<<<<<< HEAD
             payload_ptr: *const u8,
             payload_len: u32,
             value_ptr: *const u128,
             delay: u32,
             message_id_ptr: *mut [u8; 32],
+=======
+            data_ptr: *const u8,
+            data_len: u32,
+            value_ptr: *const u8,
+            message_id_ptr: *mut u8,
+            delay_ptr: *const u8,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         ) -> SyscallError;
 
         #[allow(improper_ctypes)]
@@ -54,6 +62,7 @@ mod sys {
             payload_ptr: *const u8,
             payload_len: u32,
             gas_limit: u64,
+<<<<<<< HEAD
             value_ptr: *const u128,
             delay: u32,
             message_id_ptr: *mut [u8; 32],
@@ -72,6 +81,22 @@ mod sys {
             value_ptr: *const u128,
             delay: u32,
             message_id_ptr: *mut [u8; 32],
+=======
+            value_ptr: *const u8,
+            message_id_ptr: *mut u8,
+            delay_ptr: *const u8,
+        ) -> SyscallError;
+        pub fn gr_reply_commit(
+            value_ptr: *const u8,
+            message_id_ptr: *mut u8,
+            delay_ptr: *const u8,
+        ) -> SyscallError;
+        pub fn gr_reply_commit_wgas(
+            gas_limit: u64,
+            value_ptr: *const u8,
+            message_id_ptr: *mut u8,
+            delay_ptr: *const u8,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         ) -> SyscallError;
 
         pub fn gr_reply_push(payload_ptr: *const u8, payload_len: u32) -> SyscallError;
@@ -80,12 +105,21 @@ mod sys {
 
         #[allow(improper_ctypes)]
         pub fn gr_send(
+<<<<<<< HEAD
             destination_ptr: *const [u8; 32],
             payload_ptr: *const u8,
             payload_len: u32,
             value_ptr: *const u128,
             delay: u32,
             message_id_ptr: *mut [u8; 32],
+=======
+            program: *const u8,
+            data_ptr: *const u8,
+            data_len: u32,
+            value_ptr: *const u8,
+            message_id_ptr: *mut u8,
+            delay_ptr: *const u8,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         ) -> SyscallError;
 
         #[allow(improper_ctypes)]
@@ -94,18 +128,32 @@ mod sys {
             payload_ptr: *const u8,
             data_len: u32,
             gas_limit: u64,
+<<<<<<< HEAD
             value_ptr: *const u128,
             delay: u32,
             message_id_ptr: *mut [u8; 32],
+=======
+            value_ptr: *const u8,
+            message_id_ptr: *mut u8,
+            delay_ptr: *const u8,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         ) -> SyscallError;
 
         #[allow(improper_ctypes)]
         pub fn gr_send_commit(
+<<<<<<< HEAD
             handle: MessageHandle,
             destination_ptr: *const [u8; 32],
             value_ptr: *const u128,
             delay: u32,
             message_id_ptr: *mut [u8; 32],
+=======
+            handle: u32,
+            message_id_ptr: *mut u8,
+            program: *const u8,
+            value_ptr: *const u8,
+            delay_ptr: *const u8,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         ) -> SyscallError;
 
         #[allow(improper_ctypes)]
@@ -113,9 +161,14 @@ mod sys {
             handle: MessageHandle,
             destination_ptr: *const [u8; 32],
             gas_limit: u64,
+<<<<<<< HEAD
             value_ptr: *const u128,
             delay: u32,
             message_id_ptr: *mut [u8; 32],
+=======
+            value_ptr: *const u8,
+            delay_ptr: *const u8,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         ) -> SyscallError;
 
         pub fn gr_send_init(handle_ptr: *mut u32) -> SyscallError;
@@ -255,10 +308,33 @@ pub fn reply_delayed(payload: &[u8], value: u128, delay: u32) -> Result<MessageI
     unsafe {
         sys::gr_reply(
             payload.as_ptr(),
+<<<<<<< HEAD
             payload_len,
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            payload.len() as _,
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`reply`], but sends delayed.
+pub fn reply_delayed(payload: &[u8], value: u128, delay: u32) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_reply(
+            payload.as_ptr(),
+            payload.len() as _,
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }
@@ -305,9 +381,37 @@ pub fn reply_with_gas_delayed(
             payload.as_ptr(),
             payload_len,
             gas_limit,
+<<<<<<< HEAD
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`reply_with_gas`], but sends delayed.
+pub fn reply_with_gas_delayed(
+    payload: &[u8],
+    gas_limit: u64,
+    value: u128,
+    delay: u32,
+) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_reply_wgas(
+            payload.as_ptr(),
+            payload.len() as _,
+            gas_limit,
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }
@@ -355,9 +459,29 @@ pub fn reply_commit_delayed(value: u128, delay: u32) -> Result<MessageId> {
 
     unsafe {
         sys::gr_reply_commit(
+<<<<<<< HEAD
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`reply_commit`], but sends delayed.
+pub fn reply_commit_delayed(value: u128, delay: u32) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_reply_commit(
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }
@@ -396,9 +520,30 @@ pub fn reply_commit_with_gas_delayed(gas_limit: u64, value: u128, delay: u32) ->
     unsafe {
         sys::gr_reply_commit_wgas(
             gas_limit,
+<<<<<<< HEAD
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`reply_commit_with_gas`], but sends delayed.
+pub fn reply_commit_with_gas_delayed(gas_limit: u64, value: u128, delay: u32) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_reply_commit_wgas(
+            gas_limit,
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }
@@ -520,10 +665,39 @@ pub fn send_delayed(
         sys::gr_send(
             destination.as_ptr(),
             payload.as_ptr(),
+<<<<<<< HEAD
             payload_len,
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            payload.len() as _,
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`send`], but sends delayed.
+pub fn send_delayed(
+    program: ActorId,
+    payload: &[u8],
+    value: u128,
+    delay: u32,
+) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_send(
+            program.as_slice().as_ptr(),
+            payload.as_ptr(),
+            payload.len() as _,
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }
@@ -583,9 +757,39 @@ pub fn send_with_gas_delayed(
             payload.as_ptr(),
             payload_len,
             gas_limit,
+<<<<<<< HEAD
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`send_with_gas`], but sends delayed.
+pub fn send_with_gas_delayed(
+    program: ActorId,
+    payload: &[u8],
+    gas_limit: u64,
+    value: u128,
+    delay: u32,
+) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_send_wgas(
+            program.as_slice().as_ptr(),
+            payload.as_ptr(),
+            payload.len() as _,
+            gas_limit,
+            value.to_le_bytes().as_ptr(),
+            message_id.as_mut_slice().as_mut_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }
@@ -642,11 +846,40 @@ pub fn send_commit_delayed(
 
     unsafe {
         sys::gr_send_commit(
+<<<<<<< HEAD
             handle,
             destination.as_ptr(),
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            handle.0,
+            message_id.as_mut_slice().as_mut_ptr(),
+            program.as_slice().as_ptr(),
+            value.to_le_bytes().as_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`send_commit`], but with explicit gas limit.
+pub fn send_commit_delayed(
+    handle: MessageHandle,
+    program: ActorId,
+    value: u128,
+    delay: u32,
+) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_send_commit(
+            handle.0,
+            message_id.as_mut_slice().as_mut_ptr(),
+            program.as_slice().as_ptr(),
+            value.to_le_bytes().as_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }
@@ -699,9 +932,37 @@ pub fn send_commit_with_gas_delayed(
             handle,
             destination.as_ptr(),
             gas_limit,
+<<<<<<< HEAD
             value.to_le_bytes().as_ptr() as *const u128,
             delay,
             message_id.as_mut_ptr(),
+=======
+            value.to_le_bytes().as_ptr(),
+            0u32.to_le_bytes().as_ptr(),
+        )
+        .into_result()?;
+        Ok(message_id)
+    }
+}
+
+/// Same as [`send_commit_with_gas`], but with explicit gas limit.
+pub fn send_commit_with_gas_delayed(
+    handle: MessageHandle,
+    program: ActorId,
+    gas_limit: u64,
+    value: u128,
+    delay: u32,
+) -> Result<MessageId> {
+    unsafe {
+        let mut message_id = MessageId::default();
+        sys::gr_send_commit_wgas(
+            handle.0,
+            message_id.as_mut_slice().as_mut_ptr(),
+            program.as_slice().as_ptr(),
+            gas_limit,
+            value.to_le_bytes().as_ptr(),
+            delay.to_le_bytes().as_ptr(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         )
         .into_result()?
     }

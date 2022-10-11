@@ -23,11 +23,15 @@ use common::{
 };
 use frame_support::{
 <<<<<<< HEAD
+<<<<<<< HEAD
     traits::{GenesisBuild, OnFinalize, OnInitialize},
 =======
     traits::{GenesisBuild, OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    traits::{GenesisBuild, OnFinalize, OnInitialize},
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     BasicExternalities,
 };
 use frame_system as system;
@@ -265,6 +269,7 @@ pub(crate) fn run_to_block(n: u32, remaining_weight: Option<u64>) {
         // Process message queue
         let remaining_weight = remaining_weight.unwrap_or_else(BlockGasLimitOf::<Runtime>::get);
 <<<<<<< HEAD
+<<<<<<< HEAD
         GasAllowanceOf::<Runtime>::put(remaining_weight);
         Gear::run(frame_support::dispatch::RawOrigin::None.into()).unwrap();
 =======
@@ -273,6 +278,10 @@ pub(crate) fn run_to_block(n: u32, remaining_weight: Option<u64>) {
             Weight::from_ref_time(remaining_weight),
         );
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+        GasAllowanceOf::<Runtime>::put(remaining_weight);
+        Gear::run(frame_support::dispatch::RawOrigin::None.into()).unwrap();
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
         let current_blk = System::block_number();
         on_finalize(current_blk);
@@ -297,11 +306,16 @@ pub(crate) fn run_to_block_with_ocw(
 
         // Processing message queue
 <<<<<<< HEAD
+<<<<<<< HEAD
         GasAllowanceOf::<Runtime>::put(remaining_weight);
         Gear::run(frame_support::dispatch::RawOrigin::None.into()).unwrap();
 =======
         Gear::on_idle(i, Weight::from_ref_time(remaining_weight));
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+        GasAllowanceOf::<Runtime>::put(remaining_weight);
+        Gear::run(frame_support::dispatch::RawOrigin::None.into()).unwrap();
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
         on_finalize(i);
 

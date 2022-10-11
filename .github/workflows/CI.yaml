@@ -227,12 +227,16 @@ jobs:
 
       - name: "Test: Gear workspace"
 <<<<<<< HEAD
+<<<<<<< HEAD
         run: ./scripts/gear.sh test gear --exclude gclient --exclude gprogram --features pallet-gear-debug/lazy-pages --release --locked
 =======
         run: ./scripts/gear.sh test gear --release --locked
         env:
           RUSTFLAGS: -Cinstrument-coverage
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+        run: ./scripts/gear.sh test gear --exclude gclient --exclude gprogram --release --locked
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
       - name: "Test: JS metadata"
         run: ./scripts/gear.sh test js
@@ -271,17 +275,22 @@ jobs:
       # - name: "Test: Runtime upgrade and queue processing"
       #   run: ./scripts/gear.sh test runtime-upgrade
 
+<<<<<<< HEAD
 >>>>>>> 1a441afd (Vara: merge master (#1529))
       - name: "Test: Weight on client for loop"
         run: ./scripts/gear.sh test client-weights
+=======
+      - name: "Test: Program CLI"
+        run: cargo nextest run --release -p gear-program --features bin
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
-      # FIX ME: use vara runtime
-      # - name: "Test: Runtime upgrade and queue processing"
-      #   run: ./scripts/gear.sh test runtime-upgrade
+      - name: "Test: Client tests"
+        run: ./scripts/gear.sh test client --run-node
 
       # - name: "Test: Runtime benchmarks work"
       #   run: |
       #     cargo build -p gear-node --release --features runtime-benchmarks
+<<<<<<< HEAD
       #     ./target/release/gear-node benchmark pallet --chain=dev --steps=1 --repeat=1 --pallet=pallet_gear --extrinsic="*" --execution=wasm --wasm-execution=compiled --heap-pages=4096
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -346,6 +355,9 @@ jobs:
           ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/wrong_load.wasm"
           ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/inf_recursion.wasm"
 >>>>>>> e9a8cde0 (merge master to vara (#1473))
+=======
+      #     ./target/release/gear-node benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=pallet_gear --extrinsic="*" --execution=wasm --wasm-execution=compiled --heap-pages=4096
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
       - name: "Coverage: Aggregate"
         if: github.ref == 'refs/heads/master'
@@ -435,12 +447,17 @@ jobs:
     # needs: spec_version
     runs-on: ci-win
 <<<<<<< HEAD
+<<<<<<< HEAD
     defaults:
       run:
 =======
     defaults: 
       run: 
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    defaults:
+      run:
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         shell: msys2 {0}
     env:
       RUSTC_WRAPPER: "cachepot"
@@ -465,6 +482,7 @@ jobs:
 <<<<<<< HEAD
 =======
 
+<<<<<<< HEAD
       - name: "Install: rustup 1.24.3"
         run: |
           Invoke-WebRequest "https://static.rust-lang.org/rustup/archive/1.24.3/x86_64-pc-windows-msvc/rustup-init.exe" -OutFile "rustup-init.exe"
@@ -476,6 +494,8 @@ jobs:
         run: rustup set auto-self-update disable
 >>>>>>> 1a441afd (Vara: merge master (#1529))
 
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
       - name: "Install: Nightly toolchain"
         uses: actions-rs/toolchain@v1
         with:
@@ -653,10 +673,11 @@ jobs:
 
       - name: "Test: Process node runtime testsuite"
         run: ./scripts/gear.sh test rtest
-        
+
       - name: "Test: Runtime upgrade and queue processing"
         run: ./scripts/gear.sh test runtime-upgrade
 
+<<<<<<< HEAD
       - name: "Test: Weight on client for loop"
         run: ./scripts/gear.sh test client-weights
 
@@ -665,6 +686,10 @@ jobs:
           ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/wrong_load.wasm"
           ./scripts/gear.sh test uploads "$(pwd)/target/wat-examples/inf_recursion.wasm"
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+      - name: "Test: Client tests"
+        run: ./scripts/gear.sh test client --run-node
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
       - name: "Test: Lazy pages"
         uses: actions-rs/cargo@v1
@@ -678,10 +703,11 @@ jobs:
             -p gear-lazy-pages
             -p gear-runtime-interface
             --features=lazy-pages
-            --release            
+            --release
 
   build-macos-x86:
     if: github.ref == 'refs/heads/master'
+    needs: spec_version
     runs-on: macos-latest
     steps:
       - name: Cancel Previous Runs
@@ -692,7 +718,6 @@ jobs:
 
       - name: "ACTIONS: Checkout"
         uses: actions/checkout@v2
-        
       - name: "ACTIONS: Setup caching"
         uses: actions/cache@v3
         with:

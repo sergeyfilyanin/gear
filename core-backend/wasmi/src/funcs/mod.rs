@@ -24,8 +24,16 @@ use crate::{
 };
 #[cfg(not(feature = "std"))]
 use alloc::string::ToString;
+<<<<<<< HEAD
 use alloc::{string::String, vec};
 use codec::{Decode, Encode};
+=======
+use alloc::{
+    string::{FromUtf8Error, String},
+    vec,
+};
+use codec::Encode;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use core::{
     convert::TryFrom,
     fmt::{self, Debug},
@@ -39,6 +47,10 @@ use gear_backend_common::{
 use gear_core::{
     buffer::{RuntimeBuffer, RuntimeBufferSizeError},
     env::Ext,
+<<<<<<< HEAD
+=======
+    ids::ProgramId,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     memory::Memory,
     message::{HandlePacket, InitPacket, Payload, PayloadSizeError, ReplyPacket},
 };
@@ -48,7 +60,11 @@ use wasmi::{
     AsContextMut, Caller, Func, Memory as WasmiMemory, Store,
 };
 
+<<<<<<< HEAD
 fn get_caller_memory<'a, E: Ext + IntoExtInfo<E::Error> + 'static>(
+=======
+fn get_caller_memory<'a, E: Ext + IntoExtInfo + 'static>(
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     caller: &'a mut Caller<'_, HostState<E>>,
     mem: &WasmiMemory,
 ) -> MemoryWrapRef<'a, E> {
@@ -124,7 +140,11 @@ macro_rules! exit_if {
     };
 }
 
+<<<<<<< HEAD
 #[derive(Debug, derive_more::Display, Encode, Decode)]
+=======
+#[derive(Debug, derive_more::Display)]
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 pub enum FuncError<E> {
     #[display(fmt = "{}", _0)]
     Core(E),
@@ -140,8 +160,13 @@ pub enum FuncError<E> {
     NonReplyExitCode,
     #[display(fmt = "Not running in reply context")]
     NoReplyContext,
+<<<<<<< HEAD
     #[display(fmt = "Failed to parse debug string")]
     DebugStringParsing,
+=======
+    #[display(fmt = "Failed to parse debug string: {}", _0)]
+    DebugString(FromUtf8Error),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     #[display(fmt = "`gr_error` expects error occurred earlier")]
     SyscallErrorExpected,
     #[display(fmt = "Terminated: {:?}", _0)]
@@ -151,9 +176,15 @@ pub enum FuncError<E> {
         _0,
         _1
     )]
+<<<<<<< HEAD
     ReadWrongRange(Range<u32>, u32),
     #[display(fmt = "Overflow at {} + len {} in `gr_read`", _0, _1)]
     ReadLenOverflow(u32, u32),
+=======
+    ReadWrongRange(Range<usize>, usize),
+    #[display(fmt = "Overflow at {} + len {} in `gr_read`", _0, _1)]
+    ReadLenOverflow(usize, usize),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 impl<E> FuncError<E>
@@ -185,6 +216,7 @@ pub struct FuncsHandler<E: Ext + 'static> {
     _phantom: PhantomData<E>,
 }
 
+<<<<<<< HEAD
 type FnResult<T> = Result<(T,), Trap>;
 type EmptyOutput = Result<(), Trap>;
 type FallibleOutput = FnResult<u32>;
@@ -223,6 +255,49 @@ where
             };
 
             let (destination, value) = process_read_result!(read_result, caller);
+=======
+impl<E> FuncsHandler<E>
+where
+    E: Ext + IntoExtInfo + 'static,
+    E::Error: AsTerminationReason + IntoExtError,
+{
+    pub fn send(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+                         program_id_ptr: i32,
+                         payload_ptr: i32,
+                         payload_len: i32,
+                         value_ptr: i32,
+                         message_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let program_id_ptr = program_id_ptr as u32 as usize;
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let mut payload = Payload::try_new_default(payload_len).map_err(|e| {
+                host_state_mut!(caller).err = FuncError::PayloadBufferSize(e);
+                Trap::from(TrapCode::Unreachable)
+            })?;
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<ProgramId>(&memory_wrap, program_id_ptr)
+                    .and_then(|id| read_memory_as::<u128>(&memory_wrap, value_ptr).map(|v| (id, v)))
+                    .and_then(|(id, v)| {
+                        read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (id, v, d))
+                    })
+                    .and_then(|(id, v, d)| {
+                        memory_wrap
+                            .read(payload_ptr, payload.get_mut())
+                            .map(|_| (id, v, d))
+                    })
+            };
+
+            let (destination, value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
@@ -241,6 +316,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          destination_ptr: u32,
                          payload_ptr: u32,
                          payload_len: u32,
@@ -269,6 +345,43 @@ where
             };
 
             let (destination, value) = process_read_result!(read_result, caller);
+=======
+                         program_id_ptr: i32,
+                         payload_ptr: i32,
+                         payload_len: i32,
+                         gas_limit: u64,
+                         value_ptr: i32,
+                         message_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let program_id_ptr = program_id_ptr as u32 as usize;
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let mut payload = Payload::try_new_default(payload_len).map_err(|e| {
+                host_state_mut!(caller).err = FuncError::PayloadBufferSize(e);
+                Trap::from(TrapCode::Unreachable)
+            })?;
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<ProgramId>(&memory_wrap, program_id_ptr)
+                    .and_then(|id| read_memory_as::<u128>(&memory_wrap, value_ptr).map(|v| (id, v)))
+                    .and_then(|(id, v)| {
+                        read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (id, v, d))
+                    })
+                    .and_then(|(id, v, d)| {
+                        memory_wrap
+                            .read(payload_ptr, payload.get_mut())
+                            .map(|_| (id, v, d))
+                    })
+            };
+
+            let (destination, value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
@@ -292,6 +405,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          handle: u32,
                          destination_ptr: u32,
                          value_ptr: u32,
@@ -308,13 +422,42 @@ where
             };
 
             let (destination, value) = process_read_result!(read_result, caller);
+=======
+                         handle_ptr: i32,
+                         message_id_ptr: i32,
+                         program_id_ptr: i32,
+                         value_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let handle_ptr = handle_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let program_id_ptr = program_id_ptr as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<ProgramId>(&memory_wrap, program_id_ptr)
+                    .and_then(|id| read_memory_as::<u128>(&memory_wrap, value_ptr).map(|v| (id, v)))
+                    .and_then(|(id, v)| {
+                        read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (id, v, d))
+                    })
+            };
+
+            let (destination, value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
                 memory,
                 |ext| {
                     ext.send_commit(
+<<<<<<< HEAD
                         handle,
+=======
+                        handle_ptr,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                         HandlePacket::new(destination, Default::default(), value),
                         delay,
                     )
@@ -332,6 +475,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          handle: u32,
                          destination_ptr: u32,
                          gas_limit: u64,
@@ -349,13 +493,43 @@ where
             };
 
             let (destination, value) = process_read_result!(read_result, caller);
+=======
+                         handle_ptr: i32,
+                         message_id_ptr: i32,
+                         program_id_ptr: i32,
+                         gas_limit: u64,
+                         value_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let handle_ptr = handle_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let program_id_ptr = program_id_ptr as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<ProgramId>(&memory_wrap, program_id_ptr)
+                    .and_then(|id| read_memory_as::<u128>(&memory_wrap, value_ptr).map(|v| (id, v)))
+                    .and_then(|(id, v)| {
+                        read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (id, v, d))
+                    })
+            };
+
+            let (destination, value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
                 memory,
                 |ext| {
                     ext.send_commit(
+<<<<<<< HEAD
                         handle,
+=======
+                        handle_ptr,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                         HandlePacket::new_with_gas(
                             destination,
                             Default::default(),
@@ -377,16 +551,28 @@ where
         forbidden: bool,
         memory: WasmiMemory,
     ) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
                          handle_ptr: u32|
               -> FallibleOutput {
             exit_if!(forbidden, caller);
 
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, handle_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let handle_ptr = handle_ptr as u32 as usize;
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             process_call_result!(
                 caller,
                 memory,
                 |ext| ext.send_init(),
+<<<<<<< HEAD
                 |memory_wrap, handle| memory_wrap.write(handle_ptr as usize, &handle.to_le_bytes())
+=======
+                |memory_wrap, handle| memory_wrap.write(handle_ptr, &handle.to_le_bytes())
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             )
         };
 
@@ -399,6 +585,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          handle: u32,
                          payload_ptr: u32,
                          payload_len: u32|
@@ -413,11 +600,30 @@ where
             let read_result = {
                 let memory_wrap = get_caller_memory(&mut caller, &memory);
                 memory_wrap.read(payload_ptr as usize, payload.get_mut())
+=======
+                         handle_ptr: i32,
+                         payload_ptr: i32,
+                         payload_len: i32| {
+            exit_if!(forbidden, caller);
+
+            let handle_ptr = handle_ptr as u32 as usize;
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+
+            let mut payload = vec![0u8; payload_len];
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap.read(payload_ptr, &mut payload)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             };
 
             process_read_result!(read_result, caller);
 
+<<<<<<< HEAD
             process_call_unit_result!(caller, |ext| ext.send_push(handle, payload.get()))
+=======
+            process_call_unit_result!(caller, |ext| ext.send_push(handle_ptr, &payload))
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         };
 
         Func::wrap(store, func)
@@ -425,21 +631,38 @@ where
 
     pub fn read(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          at: u32,
                          len: u32,
                          buffer_ptr: u32|
               -> FallibleOutput {
             exit_if!(forbidden, caller);
 
+=======
+                         at: i32,
+                         len: i32,
+                         destination_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let at = at as u32 as usize;
+            let len = len as u32 as usize;
+            let destination_ptr = destination_ptr as u32 as usize;
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             let host_state = host_state_mut!(caller);
 
             let last_idx = match at.checked_add(len) {
                 Some(i) => i,
                 None => {
+<<<<<<< HEAD
                     let err = FuncError::ReadLenOverflow(at, len);
                     let size = Encode::encoded_size(&err) as u32;
                     host_state.err = err;
                     return Ok((size,));
+=======
+                    host_state.err = FuncError::ReadLenOverflow(at, len);
+                    return Err(TrapCode::Unreachable.into());
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 }
             };
 
@@ -452,6 +675,7 @@ where
                 }
             };
 
+<<<<<<< HEAD
             if last_idx > message.len() as u32 {
                 let err = FuncError::ReadWrongRange(at..last_idx, message.len() as u32);
                 let size = Encode::encoded_size(&err) as u32;
@@ -463,6 +687,17 @@ where
             let mut memory_wrap = get_caller_memory(&mut caller, &memory);
             match memory_wrap.write(buffer_ptr as usize, &buffer) {
                 Ok(_) => Ok((0,)),
+=======
+            if last_idx > message.len() {
+                host_state.err = FuncError::ReadWrongRange(at..last_idx, message.len());
+                return Err(TrapCode::Unreachable.into());
+            }
+
+            let buffer = message[at..last_idx].to_vec();
+            let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+            match memory_wrap.write(destination_ptr, &buffer) {
+                Ok(_) => Ok(()),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 Err(e) => {
                     host_state_mut!(caller).err = e.into();
 
@@ -475,7 +710,11 @@ where
     }
 
     pub fn size(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> FnResult<u32> {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
@@ -500,6 +739,7 @@ where
 
     pub fn exit(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          inheritor_id_ptr: u32|
               -> EmptyOutput {
             exit_if!(forbidden, caller);
@@ -511,6 +751,21 @@ where
 
             host_state_mut!(caller).err = match read_result {
                 Ok(id) => FuncError::Terminated(TerminationReason::Exit(id)),
+=======
+                         value_dest_ptr: i32|
+              -> Result<(), Trap> {
+            exit_if!(forbidden, caller);
+
+            let value_dest_ptr = value_dest_ptr as u32 as usize;
+
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<ProgramId>(&memory_wrap, value_dest_ptr)
+            };
+
+            host_state_mut!(caller).err = match read_result {
+                Ok(pid) => FuncError::Terminated(TerminationReason::Exit(pid)),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 Err(e) => e.into(),
             };
 
@@ -520,6 +775,7 @@ where
         Func::wrap(store, func)
     }
 
+<<<<<<< HEAD
     pub fn exit_code(
         store: &mut Store<HostState<E>>,
         forbidden: bool,
@@ -528,12 +784,17 @@ where
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
                          exit_code_ptr: u32|
               -> FallibleOutput {
+=======
+    pub fn exit_code(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
             let exit_code = match host_state.ext.exit_code() {
                 Ok(c) => c,
                 Err(e) => {
+<<<<<<< HEAD
                     let err = FuncError::Core(e);
                     let size = Encode::encoded_size(&err) as u32;
                     host_state.err = err;
@@ -548,18 +809,39 @@ where
                 |memory_wrap, exit_code| memory_wrap
                     .write(exit_code_ptr as usize, &exit_code.to_le_bytes())
             )
+=======
+                    host_state.err = FuncError::Core(e);
+                    return Err(TrapCode::Unreachable.into());
+                }
+            };
+
+            if let Some(exit_code) = exit_code {
+                Ok((exit_code,))
+            } else {
+                host_state.err = FuncError::NonReplyExitCode;
+                Err(TrapCode::Unreachable.into())
+            }
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         };
 
         Func::wrap(store, func)
     }
 
     pub fn gas(store: &mut Store<HostState<E>>) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, gas: u32| -> EmptyOutput {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, val: u32| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             let host_state = host_state_mut!(caller);
 
             host_state
                 .ext
+<<<<<<< HEAD
                 .gas(gas)
+=======
+                .gas(val)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 .map_err(FuncError::Core)
                 .map_err(|e| {
                     if let Some(TerminationReason::GasAllowanceExceeded) = e
@@ -578,6 +860,7 @@ where
     }
 
     pub fn alloc(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+<<<<<<< HEAD
         let func =
             move |mut caller: wasmi::Caller<'_, HostState<E>>, pages: u32| -> FnResult<u32> {
                 exit_if!(forbidden, caller);
@@ -606,12 +889,47 @@ where
                     }
                 }
             };
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+                         pages: u32|
+              -> Result<(u32,), Trap> {
+            exit_if!(forbidden, caller);
+
+            let mut host_state = caller.host_data_mut().take();
+
+            let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+            let page = host_state
+                .as_mut()
+                .expect("alloc; should be set")
+                .ext
+                .alloc(pages.into(), &mut memory_wrap);
+
+            *caller.host_data_mut() = host_state;
+
+            match page {
+                Ok(page) => {
+                    log::debug!("ALLOC PAGES: {} pages at {:?}", pages, page);
+
+                    Ok((page.0,))
+                }
+                Err(e) => {
+                    host_state_mut!(caller).err = FuncError::Core(e);
+
+                    Err(TrapCode::Unreachable.into())
+                }
+            }
+        };
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
         Func::wrap(store, func)
     }
 
     pub fn free(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, page: u32| -> EmptyOutput {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, page: u32| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
@@ -629,7 +947,11 @@ where
     }
 
     pub fn block_height(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> FnResult<u32> {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
@@ -646,7 +968,11 @@ where
     }
 
     pub fn block_timestamp(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> FnResult<u64> {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
@@ -663,6 +989,7 @@ where
     }
 
     pub fn origin(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+<<<<<<< HEAD
         let func =
             move |mut caller: wasmi::Caller<'_, HostState<E>>, origin_ptr: u32| -> EmptyOutput {
                 exit_if!(forbidden, caller);
@@ -687,11 +1014,39 @@ where
                 }
             };
 
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, origin_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let origin_ptr = origin_ptr as u32 as usize;
+
+            let host_state = host_state_mut!(caller);
+            let origin = match host_state.ext.origin() {
+                Ok(o) => o,
+                Err(e) => {
+                    host_state.err = FuncError::Core(e);
+                    return Err(TrapCode::Unreachable.into());
+                }
+            };
+
+            let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+            match memory_wrap.write(origin_ptr, origin.as_ref()) {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    host_state_mut!(caller).err = e.into();
+
+                    Err(TrapCode::Unreachable.into())
+                }
+            }
+        };
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Func::wrap(store, func)
     }
 
     pub fn reply(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          payload_ptr: u32,
                          payload_len: u32,
                          value_ptr: u32,
@@ -713,6 +1068,34 @@ where
             };
 
             let value = process_read_result!(read_result, caller);
+=======
+                         payload_ptr: i32,
+                         payload_len: i32,
+                         value_ptr: i32,
+                         message_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let mut payload = Payload::try_new_default(payload_len).map_err(|e| {
+                host_state_mut!(caller).err = FuncError::PayloadBufferSize(e);
+                Trap::from(TrapCode::Unreachable)
+            })?;
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap
+                    .read(payload_ptr, payload.get_mut())
+                    .and_then(|_| read_memory_as::<u128>(&memory_wrap, value_ptr))
+                    .and_then(|v| read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (v, d)))
+            };
+
+            let (value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
@@ -731,6 +1114,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          payload_ptr: u32,
                          payload_len: u32,
                          gas_limit: u64,
@@ -753,6 +1137,35 @@ where
             };
 
             let value = process_read_result!(read_result, caller);
+=======
+                         payload_ptr: i32,
+                         payload_len: i32,
+                         gas_limit: u64,
+                         value_ptr: i32,
+                         message_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let mut payload = Payload::try_new_default(payload_len).map_err(|e| {
+                host_state_mut!(caller).err = FuncError::PayloadBufferSize(e);
+                Trap::from(TrapCode::Unreachable)
+            })?;
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap
+                    .read(payload_ptr, payload.get_mut())
+                    .and_then(|_| read_memory_as::<u128>(&memory_wrap, value_ptr))
+                    .and_then(|v| read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (v, d)))
+            };
+
+            let (value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
@@ -771,6 +1184,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          value_ptr: u32,
                          delay: u32,
                          message_id_ptr: u32| {
@@ -783,6 +1197,24 @@ where
             };
 
             let value = process_read_result!(read_result, caller);
+=======
+                         value_ptr: i32,
+                         message_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let value_ptr = value_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<u128>(&memory_wrap, value_ptr)
+                    .and_then(|v| read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (v, d)))
+            };
+
+            let (value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
@@ -802,6 +1234,7 @@ where
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
                          gas_limit: u64,
+<<<<<<< HEAD
                          value_ptr: u32,
                          delay: u32,
                          message_id_ptr: u32|
@@ -815,6 +1248,24 @@ where
             };
 
             let value = process_read_result!(read_result, caller);
+=======
+                         value_ptr: i32,
+                         message_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let value_ptr = value_ptr as u32 as usize;
+            let message_id_ptr = message_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<u128>(&memory_wrap, value_ptr)
+                    .and_then(|v| read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (v, d)))
+            };
+
+            let (value, delay) = process_read_result!(read_result, caller);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
             process_call_result_as_ref!(
                 caller,
@@ -833,16 +1284,25 @@ where
     }
 
     pub fn reply_to(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
                          message_id_ptr: u32|
               -> FallibleOutput {
             exit_if!(forbidden, caller);
 
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, destination_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let destination_ptr = destination_ptr as u32 as usize;
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             let host_state = host_state_mut!(caller);
             let call_result = host_state.ext.reply_to();
             let message_id = match call_result {
                 Ok(m) => m,
                 Err(e) => {
+<<<<<<< HEAD
                     let err = FuncError::Core(e);
                     let size = Encode::encoded_size(&err) as u32;
                     host_state.err = err;
@@ -853,6 +1313,24 @@ where
             let mut memory_wrap = get_caller_memory(&mut caller, &memory);
             match memory_wrap.write(message_id_ptr as usize, message_id.as_ref()) {
                 Ok(_) => Ok((0,)),
+=======
+                    host_state.err = FuncError::Core(e);
+                    return Err(TrapCode::Unreachable.into());
+                }
+            };
+
+            let message_id = match message_id {
+                None => {
+                    host_state.err = FuncError::NoReplyContext;
+                    return Err(TrapCode::Unreachable.into());
+                }
+                Some(m) => m,
+            };
+
+            let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+            match memory_wrap.write(destination_ptr, message_id.as_ref()) {
+                Ok(_) => Ok(()),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 Err(e) => {
                     host_state_mut!(caller).err = e.into();
 
@@ -870,6 +1348,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          payload_ptr: u32,
                          payload_len: u32| {
             exit_if!(forbidden, caller);
@@ -883,17 +1362,35 @@ where
             let read_result = {
                 let memory_wrap = get_caller_memory(&mut caller, &memory);
                 memory_wrap.read(payload_ptr as usize, payload.get_mut())
+=======
+                         payload_ptr: i32,
+                         payload_len: i32| {
+            exit_if!(forbidden, caller);
+
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+
+            let mut payload = vec![0u8; payload_len];
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap.read(payload_ptr, &mut payload)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             };
 
             process_read_result!(read_result, caller);
 
+<<<<<<< HEAD
             process_call_unit_result!(caller, |ext| ext.reply_push(payload.get()))
+=======
+            process_call_unit_result!(caller, |ext| ext.reply_push(&payload))
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         };
 
         Func::wrap(store, func)
     }
 
     pub fn debug(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
                          string_ptr: u32,
                          string_len: u32|
@@ -935,16 +1432,67 @@ where
             }
         };
 
+=======
+        let func =
+            move |mut caller: wasmi::Caller<'_, HostState<E>>, string_ptr: i32, string_len: i32| {
+                exit_if!(forbidden, caller);
+
+                let string_ptr = string_ptr as u32 as usize;
+                let string_len = string_len as u32 as usize;
+
+                let mut buffer = RuntimeBuffer::try_new_default(string_len).map_err(|e| {
+                    host_state_mut!(caller).err = FuncError::RuntimeBufferSize(e);
+                    Trap::from(TrapCode::Unreachable)
+                })?;
+                let read_result = {
+                    let memory_wrap = get_caller_memory(&mut caller, &memory);
+                    memory_wrap.read(string_ptr, buffer.get_mut())
+                };
+
+                let host_state = host_state_mut!(caller);
+
+                process_read_result!(read_result, caller);
+
+                let debug_string = match String::from_utf8(buffer.into_vec()) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        host_state.err = FuncError::DebugString(e);
+
+                        return Err(TrapCode::Unreachable.into());
+                    }
+                };
+
+                let debug_result = host_state.ext.debug(&debug_string);
+
+                match debug_result {
+                    Ok(_) => Ok(()),
+                    Err(e) => {
+                        host_state.err = FuncError::Core(e);
+
+                        Err(TrapCode::Unreachable.into())
+                    }
+                }
+            };
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Func::wrap(store, func)
     }
 
     pub fn gas_available(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> FnResult<u64> {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
             match host_state.ext.gas_available() {
+<<<<<<< HEAD
                 Ok(gas) => Ok((gas,)),
+=======
+                Ok(g) => Ok((g as i64,)),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 Err(e) => {
                     host_state.err = FuncError::Core(e);
                     Err(TrapCode::Unreachable.into())
@@ -955,6 +1503,7 @@ where
         Func::wrap(store, func)
     }
 
+<<<<<<< HEAD
     pub fn message_id(
         store: &mut Store<HostState<E>>,
         forbidden: bool,
@@ -965,6 +1514,14 @@ where
               -> EmptyOutput {
             exit_if!(forbidden, caller);
 
+=======
+    pub fn msg_id(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, msg_id_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let msg_id_ptr = msg_id_ptr as u32 as usize;
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             let host_state = host_state_mut!(caller);
             let message_id = match host_state.ext.message_id() {
                 Ok(o) => o,
@@ -975,7 +1532,11 @@ where
             };
 
             let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+<<<<<<< HEAD
             match memory_wrap.write(message_id_ptr as usize, message_id.as_ref()) {
+=======
+            match memory_wrap.write(msg_id_ptr, message_id.as_ref()) {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 Ok(_) => Ok(()),
                 Err(e) => {
                     host_state_mut!(caller).err = e.into();
@@ -993,11 +1554,19 @@ where
         forbidden: bool,
         memory: WasmiMemory,
     ) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
                          program_id_ptr: u32|
               -> EmptyOutput {
             exit_if!(forbidden, caller);
 
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, program_id_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let program_id_ptr = program_id_ptr as u32 as usize;
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             let host_state = host_state_mut!(caller);
             let program_id = match host_state.ext.program_id() {
                 Ok(pid) => pid,
@@ -1008,7 +1577,11 @@ where
             };
 
             let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+<<<<<<< HEAD
             match memory_wrap.write(program_id_ptr as usize, program_id.as_ref()) {
+=======
+            match memory_wrap.write(program_id_ptr, program_id.as_ref()) {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 Ok(_) => Ok(()),
                 Err(e) => {
                     host_state_mut!(caller).err = e.into();
@@ -1022,6 +1595,7 @@ where
     }
 
     pub fn source(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+<<<<<<< HEAD
         let func =
             move |mut caller: wasmi::Caller<'_, HostState<E>>, source_ptr: u32| -> EmptyOutput {
                 exit_if!(forbidden, caller);
@@ -1048,10 +1622,40 @@ where
                 }
             };
 
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, source_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let source_ptr = source_ptr as u32 as usize;
+
+            let host_state = host_state_mut!(caller);
+            let source = host_state.ext.source().map_err(|e| {
+                host_state.err = FuncError::Core(e);
+
+                Trap::from(TrapCode::Unreachable)
+            })?;
+
+            let write_result = {
+                let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap.write(source_ptr, &source.encode())
+            };
+
+            match write_result {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    host_state_mut!(caller).err = e.into();
+
+                    Err(TrapCode::Unreachable.into())
+                }
+            }
+        };
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Func::wrap(store, func)
     }
 
     pub fn value(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+<<<<<<< HEAD
         let func =
             move |mut caller: wasmi::Caller<'_, HostState<E>>, value_ptr: u32| -> EmptyOutput {
                 exit_if!(forbidden, caller);
@@ -1078,6 +1682,35 @@ where
                 }
             };
 
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, value_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let value_ptr = value_ptr as u32 as usize;
+
+            let host_state = host_state_mut!(caller);
+            let value = host_state.ext.value().map_err(|e| {
+                host_state.err = FuncError::Core(e);
+
+                Trap::from(TrapCode::Unreachable)
+            })?;
+
+            let write_result = {
+                let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap.write(value_ptr, &value.encode())
+            };
+
+            match write_result {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    host_state_mut!(caller).err = e.into();
+
+                    Err(TrapCode::Unreachable.into())
+                }
+            }
+        };
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Func::wrap(store, func)
     }
 
@@ -1086,6 +1719,7 @@ where
         forbidden: bool,
         memory: WasmiMemory,
     ) -> Func {
+<<<<<<< HEAD
         let func =
             move |mut caller: wasmi::Caller<'_, HostState<E>>, value_ptr: u32| -> EmptyOutput {
                 exit_if!(forbidden, caller);
@@ -1112,11 +1746,44 @@ where
                 }
             };
 
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, value_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let value_ptr = value_ptr as u32 as usize;
+
+            let host_state = host_state_mut!(caller);
+            let value_available = host_state.ext.value_available().map_err(|e| {
+                host_state.err = FuncError::Core(e);
+
+                Trap::from(TrapCode::Unreachable)
+            })?;
+
+            let write_result = {
+                let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap.write(value_ptr, &value_available.encode())
+            };
+
+            match write_result {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    host_state_mut!(caller).err = e.into();
+
+                    Err(TrapCode::Unreachable.into())
+                }
+            }
+        };
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Func::wrap(store, func)
     }
 
     pub fn leave(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> EmptyOutput {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> Result<(), Trap> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
@@ -1132,7 +1799,11 @@ where
     }
 
     pub fn wait(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
+<<<<<<< HEAD
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> EmptyOutput {
+=======
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>| -> Result<(), Trap> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let host_state = host_state_mut!(caller);
@@ -1150,6 +1821,7 @@ where
         Func::wrap(store, func)
     }
 
+<<<<<<< HEAD
     pub fn wait_for(store: &mut Store<HostState<E>>, forbidden: bool) -> Func {
         let func =
             move |mut caller: wasmi::Caller<'_, HostState<E>>, duration: u32| -> EmptyOutput {
@@ -1185,18 +1857,85 @@ where
                 Err(TrapCode::Unreachable.into())
             };
 
+=======
+    pub fn wait_for(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+                         duration_ptr: i32|
+              -> Result<(), Trap> {
+            exit_if!(forbidden, caller);
+
+            let duration_ptr = duration_ptr as u32 as usize;
+
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<u32>(&memory_wrap, duration_ptr)
+            };
+
+            let duration = process_read_result!(read_result, caller);
+
+            let host_state = host_state_mut!(caller);
+            let call_result = host_state.ext.wait_for(duration);
+
+            host_state.err = match call_result {
+                Ok(_) => FuncError::Terminated(TerminationReason::Wait(Some(duration))),
+                Err(e) => FuncError::Core(e),
+            };
+
+            Err(TrapCode::Unreachable.into())
+        };
+
+        Func::wrap(store, func)
+    }
+
+    pub fn wait_up_to(
+        store: &mut Store<HostState<E>>,
+        forbidden: bool,
+        memory: WasmiMemory,
+    ) -> Func {
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+                         duration_ptr: i32|
+              -> Result<(), Trap> {
+            exit_if!(forbidden, caller);
+
+            let duration_ptr = duration_ptr as u32 as usize;
+
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                read_memory_as::<u32>(&memory_wrap, duration_ptr)
+            };
+
+            let duration = process_read_result!(read_result, caller);
+
+            let host_state = host_state_mut!(caller);
+            let call_result = host_state.ext.wait_up_to(duration);
+
+            host_state.err = match call_result {
+                Ok(_) => FuncError::Terminated(TerminationReason::Wait(Some(duration))),
+                Err(e) => FuncError::Core(e),
+            };
+
+            Err(TrapCode::Unreachable.into())
+        };
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Func::wrap(store, func)
     }
 
     pub fn wake(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          message_id_ptr: u32,
                          delay: u32|
               -> FallibleOutput {
+=======
+                         waker_id_ptr: i32,
+                         delay_ptr: i32| {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             exit_if!(forbidden, caller);
 
             let read_result = {
                 let memory_wrap = get_caller_memory(&mut caller, &memory);
+<<<<<<< HEAD
                 read_memory_as(&memory_wrap, message_id_ptr)
             };
 
@@ -1211,6 +1950,23 @@ where
                     let size = Encode::encoded_size(&err) as u32;
                     host_state.err = err;
                     Ok((size,))
+=======
+                read_memory_as::<[u8; 32]>(&memory_wrap, waker_id_ptr as usize).and_then(|a| {
+                    read_memory_as::<u32>(&memory_wrap, delay_ptr as usize).map(|d| (a, d))
+                })
+            };
+
+            let (waker_id, delay) = process_read_result!(read_result, caller);
+
+            let host_state = host_state_mut!(caller);
+
+            match host_state.ext.wake(waker_id.into(), delay) {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    host_state.err = FuncError::Core(e);
+
+                    Err(TrapCode::Unreachable.into())
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 }
             }
         };
@@ -1224,6 +1980,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          code_id_ptr: u32,
                          salt_ptr: u32,
                          salt_len: u32,
@@ -1297,6 +2054,57 @@ where
                     Err(TrapCode::Unreachable.into())
                 }
             }
+=======
+                         code_hash_ptr: i32,
+                         salt_ptr: i32,
+                         salt_len: i32,
+                         payload_ptr: i32,
+                         payload_len: i32,
+                         value_ptr: i32,
+                         program_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let code_hash_ptr = code_hash_ptr as u32 as usize;
+            let salt_ptr = salt_ptr as u32 as usize;
+            let salt_len = salt_len as u32 as usize;
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let program_id_ptr = program_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let mut salt = vec![0u8; salt_len];
+            let mut payload = Payload::try_new_default(payload_len).map_err(|e| {
+                host_state_mut!(caller).err = FuncError::PayloadBufferSize(e);
+                Trap::from(TrapCode::Unreachable)
+            })?;
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap
+                    .read(payload_ptr, payload.get_mut())
+                    .and_then(|_| memory_wrap.read(salt_ptr, &mut salt))
+                    .and_then(|_| read_memory_as::<u128>(&memory_wrap, value_ptr))
+                    .and_then(|v| {
+                        read_memory_as::<[u8; 32]>(&memory_wrap, code_hash_ptr).map(|c| (v, c))
+                    })
+                    .and_then(|(v, c)| {
+                        read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (v, c, d))
+                    })
+            };
+
+            let (value, code_hash, delay) = process_read_result!(read_result, caller);
+
+            process_call_result_as_ref!(
+                caller,
+                memory,
+                |ext| ext.create_program(
+                    InitPacket::new(code_hash.into(), salt, payload, value),
+                    delay
+                ),
+                program_id_ptr
+            )
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         };
 
         Func::wrap(store, func)
@@ -1308,6 +2116,7 @@ where
         memory: WasmiMemory,
     ) -> Func {
         let func = move |mut caller: wasmi::Caller<'_, HostState<E>>,
+<<<<<<< HEAD
                          code_id_ptr: u32,
                          salt_ptr: u32,
                          salt_len: u32,
@@ -1380,6 +2189,86 @@ where
                         .as_mut()
                         .expect("host_data untouched")
                         .err = e.into();
+=======
+                         code_hash_ptr: i32,
+                         salt_ptr: i32,
+                         salt_len: i32,
+                         payload_ptr: i32,
+                         payload_len: i32,
+                         gas_limit: u64,
+                         value_ptr: i32,
+                         program_id_ptr: i32,
+                         delay_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let code_hash_ptr = code_hash_ptr as u32 as usize;
+            let salt_ptr = salt_ptr as u32 as usize;
+            let salt_len = salt_len as u32 as usize;
+            let payload_ptr = payload_ptr as u32 as usize;
+            let payload_len = payload_len as u32 as usize;
+            let value_ptr = value_ptr as u32 as usize;
+            let program_id_ptr = program_id_ptr as u32 as usize;
+            let delay_ptr = delay_ptr as u32 as usize;
+
+            let mut salt = vec![0u8; salt_len];
+            let mut payload = Payload::try_new_default(payload_len).map_err(|e| {
+                host_state_mut!(caller).err = FuncError::PayloadBufferSize(e);
+                Trap::from(TrapCode::Unreachable)
+            })?;
+            let read_result = {
+                let memory_wrap = get_caller_memory(&mut caller, &memory);
+                memory_wrap
+                    .read(payload_ptr, payload.get_mut())
+                    .and_then(|_| memory_wrap.read(salt_ptr, &mut salt))
+                    .and_then(|_| read_memory_as::<u128>(&memory_wrap, value_ptr))
+                    .and_then(|v| {
+                        read_memory_as::<[u8; 32]>(&memory_wrap, code_hash_ptr).map(|c| (v, c))
+                    })
+                    .and_then(|(v, c)| {
+                        read_memory_as::<u32>(&memory_wrap, delay_ptr).map(|d| (v, c, d))
+                    })
+            };
+
+            let (value, code_hash, delay) = process_read_result!(read_result, caller);
+
+            process_call_result_as_ref!(
+                caller,
+                memory,
+                |ext| {
+                    ext.create_program(
+                        InitPacket::new_with_gas(code_hash.into(), salt, payload, gas_limit, value),
+                        delay,
+                    )
+                },
+                program_id_ptr
+            )
+        };
+
+        Func::wrap(store, func)
+    }
+
+    pub fn error(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
+        let func = move |mut caller: wasmi::Caller<'_, HostState<E>>, data_ptr: i32| {
+            exit_if!(forbidden, caller);
+
+            let data_ptr = data_ptr as u32 as usize;
+
+            let host_state = host_state_mut!(caller);
+            let error = match host_state.ext.last_error() {
+                Some(e) => e,
+                None => {
+                    host_state.err = FuncError::SyscallErrorExpected;
+                    return Err(TrapCode::Unreachable.into());
+                }
+            };
+
+            let encoded = error.encode();
+            let mut memory_wrap = get_caller_memory(&mut caller, &memory);
+            match memory_wrap.write(data_ptr, &encoded) {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    host_state_mut!(caller).err = e.into();
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
                     Err(TrapCode::Unreachable.into())
                 }
@@ -1388,6 +2277,7 @@ where
 
         Func::wrap(store, func)
     }
+<<<<<<< HEAD
 
     pub fn error(store: &mut Store<HostState<E>>, forbidden: bool, memory: WasmiMemory) -> Func {
         let func =
@@ -1419,4 +2309,6 @@ where
 
         Func::wrap(store, func)
     }
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }

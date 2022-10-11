@@ -89,10 +89,14 @@ jobs:
           mkdir ./target/tests/
           mkdir ./target/tests-output/
 <<<<<<< HEAD
+<<<<<<< HEAD
           for i in `seq 1 $COUNT`; do echo $i; ./scripts/gear.sh test gear --exclude gclient --features pallet-gear-debug/lazy-pages --release -j1 > ./target/tests-output/$i ; mv ./target/nextest/ci/junit.xml ./target/tests/$i; done
 =======
           for i in `seq 1 $COUNT`; do echo $i; ./scripts/gear.sh test gear --release -j1 > ./target/tests-output/$i ; mv ./target/nextest/ci/junit.xml ./target/tests/$i; done
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+          for i in `seq 1 $COUNT`; do echo $i; ./scripts/gear.sh test gear --exclude gclient --release -j1 > ./target/tests-output/$i ; mv ./target/nextest/ci/junit.xml ./target/tests/$i; done
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
           ./target/release/regression-analysis collect-data --data-folder-path ./target/tests/ --output-path ./target/pallet-tests.json
 
       - name: "Collect: Node runtime tests"

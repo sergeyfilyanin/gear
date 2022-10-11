@@ -33,7 +33,11 @@ RUN rustc --version
 RUN rustup update nightly && rustup target add wasm32-unknown-unknown --toolchain nightly
 
 # Build
+<<<<<<< HEAD
 RUN cargo build -p gear-cli --profile $PROFILE
+=======
+RUN cargo build -p gear-node --profile $PROFILE
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
 # ===== SECOND STAGE ======
 

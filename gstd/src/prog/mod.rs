@@ -25,7 +25,11 @@ pub use generator::ProgramGenerator;
 use crate::{common::errors::Result, prelude::convert::AsRef, ActorId, CodeId, MessageId};
 
 pub fn create_program(
+<<<<<<< HEAD
     code_id: CodeId,
+=======
+    code_hash: CodeHash,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     salt: impl AsRef<[u8]>,
     payload: impl AsRef<[u8]>,
     value: u128,
@@ -35,25 +39,43 @@ pub fn create_program(
 
 /// Same as [`create_program`], but sends delayed.
 pub fn create_program_delayed(
+<<<<<<< HEAD
     code_id: CodeId,
+=======
+    code_hash: CodeHash,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     salt: impl AsRef<[u8]>,
     payload: impl AsRef<[u8]>,
     value: u128,
     delay: u32,
+<<<<<<< HEAD
 ) -> Result<(MessageId, ActorId)> {
     let (message_id, program_id) = gcore::prog::create_program_delayed(
         code_id.into(),
+=======
+) -> Result<ActorId> {
+    let id = gcore::prog::create_program_delayed(
+        code_hash.into(),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         salt.as_ref(),
         payload.as_ref(),
         value,
         delay,
     )?;
+<<<<<<< HEAD
 
     Ok((message_id.into(), program_id.into()))
 }
 
 pub fn create_program_with_gas(
     code_id: CodeId,
+=======
+    Ok(id.into())
+}
+
+pub fn create_program_with_gas(
+    code_hash: CodeHash,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     salt: impl AsRef<[u8]>,
     payload: impl AsRef<[u8]>,
     gas_limit: u64,
@@ -81,4 +103,24 @@ pub fn create_program_with_gas_delayed(
     )?;
 
     Ok((message_id.into(), program_id.into()))
+}
+
+/// Same as [`create_program_with_gas`], but sends delayed.
+pub fn create_program_with_gas_delayed(
+    code_hash: CodeHash,
+    salt: impl AsRef<[u8]>,
+    payload: impl AsRef<[u8]>,
+    gas_limit: u64,
+    value: u128,
+    delay: u32,
+) -> Result<ActorId> {
+    let id = gcore::prog::create_program_with_gas_delayed(
+        code_hash.into(),
+        salt.as_ref(),
+        payload.as_ref(),
+        gas_limit,
+        value,
+        delay,
+    )?;
+    Ok(id.into())
 }

@@ -73,6 +73,7 @@ macro_rules! with_signed_payload {
                 $( $setup )*
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                 signed_payload!($extra, $raw_payload,
                     ($period, $current_block, $nonce, $call, $genesis, $best_hash, $tip));
 
@@ -111,6 +112,10 @@ macro_rules! with_signed_payload {
                         (),
                     ),
                 );
+=======
+                signed_payload!($extra, $raw_payload,
+                    ($period, $current_block, $nonce, $call, $genesis, $best_hash, $tip));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
                 $( $usage )*
             },
@@ -121,6 +126,7 @@ macro_rules! with_signed_payload {
 
                 $( $setup )*
 
+<<<<<<< HEAD
 <<<<<<< HEAD
                 $( $usage )*
             },
@@ -187,10 +193,62 @@ macro_rules! signed_payload {
                     ),
                 );
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+                signed_payload!($extra, $raw_payload,
+                    ($period, $current_block, $nonce, $call, $genesis, $best_hash, $tip));
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
                 $( $usage )*
             },
         }
+    }
+}
+
+/// Generates a `SignedPayload` for the Gear and Vara runtimes.
+///
+/// Should only be used for benchmarking as it is not tested for regular usage.
+macro_rules! signed_payload {
+    (
+    $extra:ident, $raw_payload:ident,
+    (
+        $period:expr,
+        $current_block:expr,
+        $nonce:expr,
+        $call:expr,
+        $genesis:expr,
+        $best_hash:expr,
+        $tip:expr
+    )
+    ) => {
+        let $extra: runtime::SignedExtra = (
+            runtime::DisableValueTransfers,
+            frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
+            frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
+            frame_system::CheckTxVersion::<runtime::Runtime>::new(),
+            frame_system::CheckGenesis::<runtime::Runtime>::new(),
+            frame_system::CheckMortality::<runtime::Runtime>::from(
+                sp_runtime::generic::Era::mortal($period, $current_block),
+            ),
+            frame_system::CheckNonce::<runtime::Runtime>::from($nonce),
+            frame_system::CheckWeight::<runtime::Runtime>::new(),
+            pallet_gear_payment::CustomChargeTransactionPayment::<runtime::Runtime>::from($tip),
+        );
+
+        let $raw_payload = runtime::SignedPayload::from_raw(
+            $call.clone(),
+            $extra.clone(),
+            (
+                (),
+                (),
+                runtime::VERSION.spec_version,
+                runtime::VERSION.transaction_version,
+                $genesis,
+                $best_hash,
+                (),
+                (),
+                (),
+            ),
+        );
     };
 }
 

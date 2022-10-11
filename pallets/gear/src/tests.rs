@@ -21,6 +21,7 @@ use crate::{
     manager::HandleKind,
     mock::{
 <<<<<<< HEAD
+<<<<<<< HEAD
         self, new_test_ext, run_to_block, run_to_next_block, Balances, Gear, GearProgram,
         RuntimeEvent as MockRuntimeEvent, RuntimeOrigin, System, Test, BLOCK_AUTHOR,
         LOW_BALANCE_USER, USER_1, USER_2, USER_3,
@@ -29,6 +30,11 @@ use crate::{
         RuntimeEvent as MockRuntimeEvent, System, Test, BLOCK_AUTHOR, LOW_BALANCE_USER, USER_1,
         USER_2, USER_3,
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+        self, new_test_ext, run_to_block, run_to_next_block, Balances, Gear, GearProgram,
+        RuntimeEvent as MockRuntimeEvent, RuntimeOrigin, System, Test, BLOCK_AUTHOR,
+        LOW_BALANCE_USER, USER_1, USER_2, USER_3,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     },
     pallet, BlockGasLimitOf, Config, CostsPerBlockOf, Error, Event, GasAllowanceOf, GasHandlerOf,
     GasInfo, MailboxOf, WaitlistOf,
@@ -1384,7 +1390,11 @@ fn block_gas_limit_works() {
                 (get_local $msg_val)
                 (i32.const 0)
             )
+<<<<<<< HEAD
             (call $send (i32.const 2) (i32.const 0) (i32.const 32) (i64.const 10000000) (i32.const 10) (i32.const 0) (i32.const 40000))
+=======
+            (call $send (i32.const 2) (i32.const 0) (i32.const 32) (i64.const 10000000) (i32.const 10) (i32.const 40000) (i32.const 10))
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             (if
                 (then unreachable)
                 (else)
@@ -5420,6 +5430,7 @@ fn missing_functions_are_not_executed() {
         (func $handle
             (local $msg_source i32)
             (local $msg_val i32)
+            (local $delay i32)
             (i32.store offset=2
                 (get_local $msg_source)
                 (i32.const 1)
@@ -5428,7 +5439,15 @@ fn missing_functions_are_not_executed() {
                 (get_local $msg_val)
                 (i32.const 1000)
             )
+<<<<<<< HEAD
             (call $send (i32.const 2) (i32.const 0) (i32.const 32) (i64.const 10000000) (i32.const 10) (i32.const 0) (i32.const 40000))
+=======
+            (i32.store offset=20
+                (get_local $delay)
+                (i32.const 0)
+            )
+            (call $send (i32.const 2) (i32.const 0) (i32.const 32) (i64.const 10000000) (i32.const 10) (i32.const 40000) (i32.const 20))
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
             (if
                 (then unreachable)
                 (else)
@@ -5573,10 +5592,14 @@ fn invalid_memory_page_count_rejected() {
         assert_noop!(
             Gear::upload_code(
 <<<<<<< HEAD
+<<<<<<< HEAD
                 RuntimeOrigin::signed(USER_1),
 =======
                 Origin::signed(USER_1),
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+                RuntimeOrigin::signed(USER_1),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 ProgramCodeKind::Custom(&wat).to_bytes(),
             ),
             Error::<Test>::FailedToConstructProgram
@@ -5585,10 +5608,14 @@ fn invalid_memory_page_count_rejected() {
         assert_noop!(
             Gear::upload_program(
 <<<<<<< HEAD
+<<<<<<< HEAD
                 RuntimeOrigin::signed(USER_1),
 =======
                 Origin::signed(USER_1),
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+                RuntimeOrigin::signed(USER_1),
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 ProgramCodeKind::Custom(&wat).to_bytes(),
                 vec![],
                 EMPTY_PAYLOAD.to_vec(),
@@ -5623,12 +5650,17 @@ mod utils {
 
     use super::{
 <<<<<<< HEAD
+<<<<<<< HEAD
         assert_ok, pallet, run_to_block, Event, MailboxOf, MockRuntimeEvent, RuntimeOrigin,
         SystemPallet, Test,
 =======
         assert_ok, pallet, run_to_block, Event, MailboxOf, MockRuntimeEvent, Origin, SystemPallet,
         Test,
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+        assert_ok, pallet, run_to_block, Event, MailboxOf, MockRuntimeEvent, RuntimeOrigin,
+        SystemPallet, Test,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     };
     use crate::{
         mock::{Balances, Gear, System},
@@ -6155,6 +6187,7 @@ mod utils {
                         (func $handle
                             (local $msg_source i32)
                             (local $msg_val i32)
+                            (local $delay i32)
                             (i32.store offset=2
                                 (get_local $msg_source)
                                 (i32.const 1)
@@ -6163,7 +6196,15 @@ mod utils {
                                 (get_local $msg_val)
                                 (i32.const 1000)
                             )
+<<<<<<< HEAD
                             (call $send (i32.const 2) (i32.const 0) (i32.const 32) (i64.const 10000000) (i32.const 10) (i32.const 0) (i32.const 40000))
+=======
+                            (i32.store offset=20
+                                (get_local $delay)
+                                (i32.const 0)
+                            )
+                            (call $send (i32.const 2) (i32.const 0) (i32.const 32) (i64.const 10000000) (i32.const 10) (i32.const 40000) (i32.const 20))
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                             (if
                                 (then unreachable)
                                 (else)
@@ -6334,6 +6375,7 @@ fn check_gr_read_error_works() {
     new_test_ext().execute_with(|| {
         Gear::upload_program(
             RuntimeOrigin::signed(USER_1),
+<<<<<<< HEAD
             ProgramCodeKind::Custom(wat).to_bytes(),
             DEFAULT_SALT.to_vec(),
             EMPTY_PAYLOAD.to_vec(),
@@ -6346,6 +6388,66 @@ fn check_gr_read_error_works() {
 
         run_to_block(2, None);
         assert_succeed(message_id);
+    });
+}
+
+/// Check that too large message, which is constructed by `gr_reply_push`,
+/// leads to program execution error.
+#[test]
+fn check_reply_push_payload_exceed() {
+    let wat = r#"
+        (module
+            (import "env" "memory" (memory 0x100))
+            (import "env" "gr_reply_push" (func $gr (param i32 i32) (result i32)))
+            (export "init" (func $init))
+            (func $init
+                ;; first reply push must be ok
+                (block
+                    i32.const 0
+                    i32.const 0x1000000
+                    call $gr
+                    i32.eqz
+                    br_if 0
+                    unreachable
+                )
+                ;; second must lead to overflow
+                (block
+                    i32.const 0
+                    i32.const 0x1000000
+                    call $gr
+                    unreachable
+                )
+            )
+        )"#;
+
+    init_logger();
+    new_test_ext().execute_with(|| {
+        Gear::upload_program(
+            RuntimeOrigin::signed(USER_1),
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
+            ProgramCodeKind::Custom(wat).to_bytes(),
+            DEFAULT_SALT.to_vec(),
+            EMPTY_PAYLOAD.to_vec(),
+            50_000_000_000,
+            0,
+        )
+        .expect("Failed to upload program");
+
+        let message_id = get_last_message_id();
+
+        run_to_block(2, None);
+        assert_last_dequeued(1);
+        assert_failed(
+            message_id,
+            ExecutionErrorReason::Ext(TrapExplanation::Other(
+<<<<<<< HEAD
+=======
+                FuncError::<&str>::ReadWrongRange(0..10, 0)
+                    .to_string()
+                    .into(),
+            )),
+        );
     });
 }
 
@@ -6397,6 +6499,7 @@ fn check_reply_push_payload_exceed() {
         assert_failed(
             message_id,
             ExecutionErrorReason::Ext(TrapExplanation::Other(
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
                 ExtError::Message(MessageError::MaxMessageSizeExceed)
                     .to_string()
                     .into(),

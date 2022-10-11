@@ -33,7 +33,11 @@ unsafe extern "C" fn init() {}
 
 #[no_mangle]
 unsafe extern "C" fn handle_signal() {
+<<<<<<< HEAD
     assert_eq!(msg::exit_code().unwrap(), 0xBEEF);
+=======
+    assert_eq!(msg::exit_code(), 0xBEEF);
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 #[cfg(test)]

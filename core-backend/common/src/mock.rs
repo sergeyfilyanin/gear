@@ -21,7 +21,10 @@ use crate::{
     TerminationReason,
 };
 use alloc::collections::BTreeSet;
+<<<<<<< HEAD
 use codec::{Decode, Encode};
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use core::fmt;
 use gear_core::{
     costs::RuntimeCosts,
@@ -34,7 +37,11 @@ use gear_core::{
 use gear_core_errors::{CoreError, ExtError, MemoryError};
 
 /// Mock error
+<<<<<<< HEAD
 #[derive(Debug, Encode, Decode)]
+=======
+#[derive(Debug)]
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 pub struct Error;
 
 impl fmt::Display for Error {
@@ -84,10 +91,17 @@ impl Ext for MockExt {
     fn origin(&mut self) -> Result<ProgramId, Self::Error> {
         Ok(ProgramId::from(0))
     }
+<<<<<<< HEAD
     fn send_init(&mut self) -> Result<u32, Self::Error> {
         Ok(0)
     }
     fn send_push(&mut self, _handle: u32, _buffer: &[u8]) -> Result<(), Self::Error> {
+=======
+    fn send_init(&mut self) -> Result<usize, Self::Error> {
+        Ok(0)
+    }
+    fn send_push(&mut self, _handle: usize, _buffer: &[u8]) -> Result<(), Self::Error> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         Ok(())
     }
     fn reply_commit(&mut self, _msg: ReplyPacket, _delay: u32) -> Result<MessageId, Self::Error> {
@@ -98,14 +112,23 @@ impl Ext for MockExt {
     }
     fn send_commit(
         &mut self,
+<<<<<<< HEAD
         _handle: u32,
+=======
+        _handle: usize,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         _msg: HandlePacket,
         _delay: u32,
     ) -> Result<MessageId, Self::Error> {
         Ok(MessageId::default())
     }
+<<<<<<< HEAD
     fn reply_to(&mut self) -> Result<MessageId, Self::Error> {
         Ok(Default::default())
+=======
+    fn reply_to(&mut self) -> Result<Option<MessageId>, Self::Error> {
+        Ok(None)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
     fn source(&mut self) -> Result<ProgramId, Self::Error> {
         Ok(ProgramId::from(0))
@@ -113,8 +136,13 @@ impl Ext for MockExt {
     fn exit(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
+<<<<<<< HEAD
     fn exit_code(&mut self) -> Result<ExitCode, Self::Error> {
         Ok(Default::default())
+=======
+    fn exit_code(&mut self) -> Result<Option<ExitCode>, Self::Error> {
+        Ok(None)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
     fn message_id(&mut self) -> Result<MessageId, Self::Error> {
         Ok(0.into())
@@ -174,15 +202,24 @@ impl Ext for MockExt {
         &mut self,
         _packet: InitPacket,
         _delay: u32,
+<<<<<<< HEAD
     ) -> Result<(MessageId, ProgramId), Self::Error> {
         Ok((Default::default(), Default::default()))
+=======
+    ) -> Result<ProgramId, Self::Error> {
+        Ok(Default::default())
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
     fn forbidden_funcs(&self) -> &BTreeSet<&'static str> {
         &self.0
     }
 }
 
+<<<<<<< HEAD
 impl IntoExtInfo<<MockExt as Ext>::Error> for MockExt {
+=======
+impl IntoExtInfo for MockExt {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fn into_ext_info(self, _memory: &impl Memory) -> Result<ExtInfo, (MemoryError, GasAmount)> {
         Ok(ExtInfo {
             gas_amount: GasAmount::from(GasCounter::new(0)),
@@ -199,8 +236,13 @@ impl IntoExtInfo<<MockExt as Ext>::Error> for MockExt {
         GasAmount::from(GasCounter::new(0))
     }
 
+<<<<<<< HEAD
     fn last_error(&self) -> Result<&gear_core_errors::ExtError, Error> {
         Ok(&ExtError::SyscallUsage)
+=======
+    fn last_error(&self) -> Option<&gear_core_errors::ExtError> {
+        None
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     }
 
     fn trap_explanation(&self) -> Option<crate::TrapExplanation> {

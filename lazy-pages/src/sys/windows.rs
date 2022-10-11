@@ -19,13 +19,19 @@
  */
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use crate::{
     sys::{ExceptionInfo, UserSignalHandler},
     Error,
 };
+<<<<<<< HEAD
 =======
 use crate::sys::{ExceptionInfo, UserSignalHandler};
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use std::io;
 use winapi::{
     shared::ntdef::LONG,
@@ -78,6 +84,9 @@ where
     };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     if let Err(err) = H::handle(info) {
         if let Error::SignalFromUnknownMemory { .. } | Error::WasmMemAddrIsNotSet = err {
             return EXCEPTION_CONTINUE_SEARCH;
@@ -85,11 +94,14 @@ where
             panic!("Signal handler failed: {}", err);
         }
     }
+<<<<<<< HEAD
 =======
     H::handle(info)
         .map_err(|err| err.to_string())
         .expect("Memory exception handler failed");
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
     EXCEPTION_CONTINUE_EXECUTION
 }

@@ -44,9 +44,12 @@ pub mod message;
 pub mod program;
 
 pub mod buffer;
+<<<<<<< HEAD
 
 use core::mem::size_of;
 use static_assertions::const_assert;
 
 // This allows all casts from u32 into usize be safe.
 const_assert!(size_of::<u32>() <= size_of::<usize>());
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)

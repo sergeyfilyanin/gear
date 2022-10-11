@@ -102,7 +102,11 @@ impl<'a, E: Ext> From<EnvBuilder<'a, E>> for EnvironmentDefinitionBuilder<Runtim
 
 impl<E> Environment<E> for SandboxEnvironment
 where
+<<<<<<< HEAD
     E: Ext + IntoExtInfo<E::Error> + GetGasAmount + 'static,
+=======
+    E: Ext + IntoExtInfo + GetGasAmount + 'static,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     E::Error: AsTerminationReason + IntoExtError,
 {
     type Memory = MemoryWrap;

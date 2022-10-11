@@ -85,8 +85,13 @@ pub struct WasmiEnvironment;
 
 impl<E> Environment<E> for WasmiEnvironment
 where
+<<<<<<< HEAD
     E: Ext + IntoExtInfo<E::Error> + GetGasAmount + 'static,
     E::Error: Encode + AsTerminationReason + IntoExtError,
+=======
+    E: Ext + IntoExtInfo + GetGasAmount + 'static,
+    E::Error: AsTerminationReason + IntoExtError,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 {
     type Memory = MemoryWrap<E>;
     type Error = Error;

@@ -23,7 +23,11 @@ use crate::funcs::FuncError;
 
 pub type HostState<E> = Option<State<E>>;
 
+<<<<<<< HEAD
 pub struct State<E: Ext + IntoExtInfo<E::Error> + 'static> {
+=======
+pub struct State<E: Ext + IntoExtInfo + 'static> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     pub ext: E,
     pub err: FuncError<E::Error>,
 }

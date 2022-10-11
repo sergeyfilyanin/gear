@@ -230,11 +230,17 @@ pub trait Tree {
     ) -> Result<(), Self::Error>;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     /// Return bool, defining does node exist.
     fn exists(key: Self::Key) -> bool;
 
 =======
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    /// Return bool, defining does node exist.
+    fn exists(key: Self::Key) -> bool;
+
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     /// Removes all values.
     fn clear();
 }

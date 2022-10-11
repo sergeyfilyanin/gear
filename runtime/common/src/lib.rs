@@ -26,13 +26,19 @@ use frame_support::{
 };
 use runtime_primitives::{AccountId, Balance, BlockNumber};
 use sp_runtime::Perbill;
+<<<<<<< HEAD
 
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 pub const NORMAL_DISPATCH_RATIO_NUM: u8 = 25;
 pub const GAS_LIMIT_MIN_PERCENTAGE_NUM: u8 = 100 - NORMAL_DISPATCH_RATIO_NUM;
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 pub const NORMAL_DISPATCH_RATIO_NUM: u8 = 25;
 pub const GAS_LIMIT_MIN_PERCENTAGE_NUM: u8 = 100 - NORMAL_DISPATCH_RATIO_NUM;
 
@@ -43,11 +49,14 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(NORMAL_DISPATCH
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 >>>>>>> a3248f56 (Add block weight dependency from block time (#1574))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 pub struct GasConverter;
@@ -55,6 +64,7 @@ impl gear_common::GasPrice for GasConverter {
     type Balance = Balance;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 parameter_types! {
@@ -73,6 +83,8 @@ parameter_types! {
 }
 
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
     <T as frame_system::Config>::AccountId,
 >>::NegativeImbalance;

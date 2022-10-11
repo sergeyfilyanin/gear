@@ -1,4 +1,9 @@
 //! build script for gear-program cli
+<<<<<<< HEAD
+=======
+use frame_metadata::RuntimeMetadataPrefixed;
+use parity_scale_codec::{Decode, Encode};
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 use std::{
     env, fs,
     io::Write,
@@ -16,8 +21,15 @@ const GENERATED_TITLE: &str = r#"
 
 /// Generate api
 fn codegen(raw_derives: Vec<String>) -> String {
+<<<<<<< HEAD
     let metadata = gear_runtime::Runtime::metadata();
 
+=======
+    let encoded = gear_runtime::Runtime::metadata().encode();
+
+    let metadata = <RuntimeMetadataPrefixed as Decode>::decode(&mut encoded.as_ref())
+        .expect("decode metadata failed");
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     let generator = subxt_codegen::RuntimeGenerator::new(metadata);
     let item_mod = syn::parse_quote!(
         pub mod api {}
@@ -34,10 +46,17 @@ fn codegen(raw_derives: Vec<String>) -> String {
     generator.generate_runtime(item_mod, derives).to_string()
 }
 
+<<<<<<< HEAD
 /// Check if gear exists
 fn check_node() -> bool {
     let profile = std::env::var("PROFILE").unwrap();
     let node = PathBuf::from("../target").join(profile).join("gear");
+=======
+/// Check if gear-node exists
+fn check_node() -> bool {
+    let profile = std::env::var("PROFILE").unwrap();
+    let node = PathBuf::from("../target").join(profile).join("gear-node");
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     node.exists()
 }
 

@@ -106,4 +106,8 @@ runtime-benchmarks = [
 ]
 debug-mode = ["service/debug-mode"]
 try-runtime = ["service/try-runtime", "try-runtime-cli"]
+<<<<<<< HEAD
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+program = [ "gear-program" ]
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)

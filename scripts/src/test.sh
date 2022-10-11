@@ -23,11 +23,15 @@ test_usage() {
     pallet         run pallet-gear tests
     runtime-upgrade run runtime-upgrade test for queue processing
 <<<<<<< HEAD
+<<<<<<< HEAD
     client         run client tests via gclient
 =======
     client-weights run client weight test for infinite loop demo execution
     uploads        run client upload code test
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
+=======
+    client         run client tests via gclient
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fuzz           run fuzzer with a fuzz target
 
 EOF
@@ -116,6 +120,7 @@ client_tests() {
   ROOT_DIR="$1"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   if [ "$2" = "--run-node" ]; then
     # Run node
     RUST_LOG="pallet_gear=debug,runtime::gear=debug" $ROOT_DIR/target/release/gear \
@@ -127,6 +132,14 @@ client_tests() {
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 
     cargo test -p gclient || pkill -f 'gear |gear$' -9 | pkill -f 'gear |gear$' -9
+=======
+  if [ "$2" = "--run-node" ]; then
+    # Run node
+    RUST_LOG="pallet_gear=debug,runtime::gear=debug" $ROOT_DIR/target/release/gear-node \
+      --dev --tmp --unsafe-ws-external --unsafe-rpc-external --rpc-methods Unsafe --rpc-cors all & sleep 3
+
+    cargo test -p gclient || pgrep -f "gear-node" | xargs kill -9 && pgrep -f "gear-node" | xargs kill -9
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
   else
     cargo test -p gclient
   fi

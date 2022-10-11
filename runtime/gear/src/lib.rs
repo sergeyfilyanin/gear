@@ -25,10 +25,14 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 use common::TerminalExtrinsicProvider;
 =======
 use frame_support::weights::constants::WEIGHT_PER_MILLIS;
 >>>>>>> a3248f56 (Add block weight dependency from block time (#1574))
+=======
+use common::TerminalExtrinsicProvider;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 pub use frame_support::{
     construct_runtime,
     dispatch::{DispatchClass, WeighData},
@@ -52,6 +56,7 @@ use pallet_grandpa::{
 };
 pub use pallet_transaction_payment::{CurrencyAdapter, Multiplier};
 <<<<<<< HEAD
+<<<<<<< HEAD
 pub use runtime_common::{
     impl_runtime_apis_plus_common, BlockHashCount, DealWithFees, GasConverter,
     AVERAGE_ON_INITIALIZE_RATIO, GAS_LIMIT_MIN_PERCENTAGE_NUM, NORMAL_DISPATCH_RATIO,
@@ -61,6 +66,11 @@ use runtime_common::{
     GasLimitMaxPercentage, MailboxCost, MailboxThreshold, OperationalFeeMultiplier, OutgoingLimit,
     QueueLengthStep, ReserveThreshold, WaitlistCost, NORMAL_DISPATCH_RATIO,
 >>>>>>> a3248f56 (Add block weight dependency from block time (#1574))
+=======
+pub use runtime_common::{
+    impl_runtime_apis_plus_common, BlockHashCount, DealWithFees, GasConverter,
+    AVERAGE_ON_INITIALIZE_RATIO, GAS_LIMIT_MIN_PERCENTAGE_NUM, NORMAL_DISPATCH_RATIO,
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 };
 pub use runtime_primitives::{AccountId, Signature};
 use runtime_primitives::{Balance, BlockNumber, Hash, Index, Moment};
@@ -70,7 +80,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
+    ApplyExtrinsicResult, Percent,
 };
 use sp_std::{
     convert::{TryFrom, TryInto},
@@ -109,7 +119,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_name: create_runtime_str!("gear"),
     apis: RUNTIME_API_VERSIONS,
     authoring_version: 1,
-    spec_version: 230,
+    spec_version: 390,
     impl_version: 1,
     transaction_version: 1,
     state_version: 1,
@@ -137,14 +147,6 @@ pub fn native_version() -> NativeVersion {
 }
 
 parameter_types! {
-    /// We allow for 1/3 of block time for computations.
-    ///
-    /// It's 1/3 sec for gear runtime with 1 second block duration.
-    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(MILLISECS_PER_BLOCK * WEIGHT_PER_MILLIS / 3, NORMAL_DISPATCH_RATIO);
-
-    pub BlockGasLimit: u64 = GasLimitMaxPercentage::get() * BlockWeights::get().max_block.ref_time();
-
     pub const Version: RuntimeVersion = VERSION;
     pub const SS58Prefix: u8 = 42;
     pub RuntimeBlockLength: BlockLength =
@@ -313,6 +315,12 @@ parameter_types! {
 >>>>>>> 4ff7e31a (Vara: Update stage 1 to latest master (#1464))
 }
 
+parameter_types! {
+    pub const TransactionByteFee: Balance = 1;
+    pub const QueueLengthStep: u128 = 10;
+    pub const OperationalFeeMultiplier: u8 = 5;
+}
+
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
@@ -471,6 +479,14 @@ impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
     }
 =======
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+}
+
+impl TerminalExtrinsicProvider<UncheckedExtrinsic> for Runtime {
+    fn extrinsic() -> Option<UncheckedExtrinsic> {
+        Some(UncheckedExtrinsic::new_unsigned(RuntimeCall::Gear(
+            pallet_gear::Call::run {},
+        )))
+    }
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -641,10 +657,14 @@ impl_runtime_apis_plus_common! {
             // right here and right now.
             let weight = Executive::try_runtime_upgrade().unwrap();
 <<<<<<< HEAD
+<<<<<<< HEAD
             (weight, RuntimeBlockWeights::get().max_block)
 =======
             (weight, BlockWeights::get().max_block)
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+            (weight, RuntimeBlockWeights::get().max_block)
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
         }
 
         fn execute_block(

@@ -21,10 +21,14 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU8, Contains, Currency, FindAuthor, OnFinalize, OnInitialize, OnUnbalanced},
 <<<<<<< HEAD
+<<<<<<< HEAD
     weights::{constants::WEIGHT_PER_SECOND, IdentityFee},
 =======
     weights::{IdentityFee, Weight},
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    weights::{constants::WEIGHT_PER_SECOND, IdentityFee},
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 };
 use frame_system as system;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -111,6 +115,7 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
     pub const ExistentialDeposit: u64 = 1;
 <<<<<<< HEAD
+<<<<<<< HEAD
     pub RuntimeBlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::simple_max(
         (WEIGHT_PER_SECOND/2).set_proof_size(u64::MAX)
     );
@@ -118,6 +123,11 @@ parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1_000_000_000));
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    pub RuntimeBlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::simple_max(
+        (WEIGHT_PER_SECOND/2).set_proof_size(u64::MAX)
+    );
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 impl system::Config for Test {
@@ -126,10 +136,14 @@ impl system::Config for Test {
     type BlockLength = ();
     type DbWeight = ();
 <<<<<<< HEAD
+<<<<<<< HEAD
     type RuntimeOrigin = RuntimeOrigin;
 =======
     type Origin = Origin;
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+    type RuntimeOrigin = RuntimeOrigin;
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
@@ -280,10 +294,14 @@ pub fn run_to_block(n: u64) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 impl common::ExtractCall<RuntimeCall> for TestXt<RuntimeCall, ()> {
 =======
 impl crate::ExtractCall<RuntimeCall> for TestXt<RuntimeCall, ()> {
 >>>>>>> 1a441afd (Vara: merge master (#1529))
+=======
+impl common::ExtractCall<RuntimeCall> for TestXt<RuntimeCall, ()> {
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
     fn extract_call(&self) -> RuntimeCall {
         self.call.clone()
     }

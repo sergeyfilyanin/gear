@@ -134,6 +134,11 @@ pub fn wake_delayed(message_id: MessageId, delay: u32) -> Result<()> {
     gcore::exec::wake_delayed(message_id.into(), delay).map_err(Into::into)
 }
 
+/// Same as [`wake`], but wakes delayed.
+pub fn wake_delayed(waker_id: MessageId, delay: u32) {
+    gcore::exec::wake_delayed(waker_id.into(), delay)
+}
+
 /// Return ID of the current program.
 ///
 /// # Examples

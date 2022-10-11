@@ -194,10 +194,17 @@ pub fn id() -> MessageId {
 ///     let payload_bytes = msg::load_bytes().unwrap();
 /// }
 /// ```
+<<<<<<< HEAD
 pub fn load_bytes() -> Result<Vec<u8>> {
     let mut result = vec![0u8; size() as usize];
     gcore::msg::read(result.as_mut())?;
     Ok(result)
+=======
+pub fn load_bytes() -> Vec<u8> {
+    let mut result = vec![0u8; size()];
+    gcore::msg::load(result.as_mut());
+    result
+>>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
 }
 
 /// Same as [`reply`](crate::msg::reply), without encoding payload.
