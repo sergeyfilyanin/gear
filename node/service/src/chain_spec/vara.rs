@@ -26,6 +26,7 @@ use sp_runtime::Perbill;
 use vara_runtime::{
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     BabeConfig, BalancesConfig, GearConfig, GenesisConfig, GrandpaConfig, SessionConfig,
     SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
 =======
@@ -36,6 +37,11 @@ use vara_runtime::{
     constants::currency::UNITS as TOKEN, BabeConfig, BalancesConfig, GearConfig, GenesisConfig, GrandpaConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig,
     SudoConfig, SystemConfig, WASM_BINARY,
 >>>>>>> 4ca47efe (Merge branch 'master' into vara-stage-1)
+=======
+    constants::currency::UNITS as TOKEN, BabeConfig, BalancesConfig, GearConfig, GenesisConfig,
+    GrandpaConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SudoConfig,
+    SystemConfig, WASM_BINARY,
+>>>>>>> bd68e118 (Fix everything after merge)
 };
 
 // The URL for the telemetry server.
