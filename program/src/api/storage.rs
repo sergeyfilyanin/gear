@@ -58,6 +58,10 @@ mod gear {
     };
 
     impl Api {
+        pub async fn block_number(&self) -> Result<u32> {
+            Ok(self.storage().system().number(None).await?)
+        }
+
         /// Get `InstrumentedCode` by `code_hash`
         pub async fn code_storage(&self, code_hash: [u8; 32]) -> Result<Option<InstrumentedCode>> {
             Ok(self
