@@ -7,6 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  DB_PATH: /home/ec2-user/gear-data/chains/gear_staging_testnet_v4
 
 jobs:
 
@@ -54,9 +55,45 @@ jobs:
           push: true
           tags: ghcr.io/gear-tech/node:latest, ${{ needs.tag-image.outputs.image_tag }}
 
+  backup-before-upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Send telegram notify before create backup
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            🔥 Start backup DB before upgrade on:
+             - testnet-gear02
+             - testnet-archive-node
+
+      - name: Create backup
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          directory: ./ansible/
+          playbook: testnet-backup.yml
+          key: ${{secrets.SSH_PRIVATE_KEY}}
+          inventory: |
+            ${{secrets.GEAR_NODE_2}} build_number=${{ github.run_number }} db_path=${{ env.DB_PATH }}
+            ${{secrets.ARCHIVE_NODE}} build_number=${{ github.run_number }} db_path=${{ env.DB_PATH }}
+
+      - name: Send telegram notify after create backup
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ✅ Backup DB was successfully created on:
+             - testnet-gear02
+             - testnet-archive-node
+
   deploy-one-validator:
     runs-on: ubuntu-latest
-    needs: [docker, tag-image]
+    needs: [docker, tag-image, backup-before-upgrade]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -96,7 +133,7 @@ jobs:
   deploy-all-validators:
     runs-on: ubuntu-latest
     environment: production
-    needs: [docker, deploy-one-validator,tag-image]
+    needs: [docker, deploy-one-validator, tag-image, backup-before-upgrade]
     steps:
 
       - name: Checkout

@@ -1,0 +1,72 @@
+
+- name: Create testnet backup 
+  hosts: all
+  remote_user: ec2-user
+  become: yes
+
+  tasks:
+    - name: Prepair
+      shell: mkdir -p /mnt/backups/{{ ansible_fqdn }}/ /mnt/backups/.meta/{{ ansible_fqdn }}
+
+    - name: Stop docker container
+      shell: /usr/local/bin/docker-compose -f /home/ec2-user/docker-compose.yaml down
+
+    - name: Chain info
+      shell: docker run -it --rm -v /home/ec2-user/gear-data/:/gear/ ghcr.io/gear-tech/node /usr/local/bin/gear chain-info --base-path /gear/ 
+      register: chain_info
+
+    - debug:
+        var: chain_info.stdout
+
+    - name: Check if full backup exists
+      find:
+        paths: /mnt/backups/{{ ansible_fqdn }}/
+        pattern: full.tar.gz
+      register: full_backup_exist
+
+    - name: Check age of full backup 
+      find:
+        paths: /mnt/backups/{{ ansible_fqdn }}/
+        pattern: full.tar.gz
+        age: 7d
+      register: full_backup_age
+
+    - block:
+        - name: Remove all old backups
+          shell: |
+            rm -rvf /mnt/backups/{{ ansible_fqdn }}/*.gz /mnt/backups/{{ ansible_fqdn }}/backup_metadata
+            echo "`date +'%d.%m.%Y | %H-%M'`: All backups was successfully deleted" >> /mnt/backups/{{ ansible_fqdn }}/LOG
+        
+        - name: Create new full backup
+          shell: >
+            cd {{ db_path }}
+            && tar -cvz
+            -g /mnt/backups/{{ ansible_fqdn }}/backup_metadata
+            -f /mnt/backups/{{ ansible_fqdn }}/full.tar.gz
+            ./db
+            && echo "`date +'%d.%m.%Y | %H-%M'`: Full backup was successfully created" >> /mnt/backups/{{ ansible_fqdn }}/LOG
+        - set_fact: 
+            full_backup_was_created: true
+      when: full_backup_age.files | length > 0 or full_backup_exist.files | length == 0
+
+    - name: Create new incremental backup
+      shell: >
+        cd {{ db_path }}
+        && tar -cvz
+        -g /mnt/backups/{{ ansible_fqdn }}/backup_metadata
+        -f /mnt/backups/{{ ansible_fqdn }}/incremental_{{ build_number }}_`date +'%d.%m.%Y__%H-%M'`.tar.gz
+        ./db
+        && echo "`date +'%d.%m.%Y | %H-%M'`: Incremental backup {{ build_number }} was successfully created" >> /mnt/backups/{{ ansible_fqdn }}/LOG
+      when: full_backup_was_created is not defined
+
+    - name: Backup list
+      shell: >
+        cd /mnt/backups/{{ ansible_fqdn }}/
+        && ls -l --block-size=M *.gz|awk '{print$9,$5}' 
+      register: backup_list
+
+    - debug:
+        var: backup_list.stdout_lines 
+
+    - name: Start docker-compose
+      shell: /usr/local/bin/docker-compose -f /home/ec2-user/docker-compose.yaml up -d

@@ -1,0 +1,100 @@
+
+- name: Restore testnet backup 
+  hosts: all
+  remote_user: ec2-user
+  become: yes
+
+  tasks:
+    - name: Stop docker container
+      shell: /usr/local/bin/docker-compose -f /home/ec2-user/docker-compose.yaml down
+
+    - block:
+        - name: Backup info
+          shell: >
+            tar --list -f /mnt/backups/{{ ansible_fqdn }}/full.tar.gz 
+          register: backup_info
+
+        - debug:
+            var: backup_info.stdout_lines
+        
+        - name: Chain info before restore
+          shell: docker run -it --rm -v /home/ec2-user/gear-data/:/gear/ ghcr.io/gear-tech/node /usr/local/bin/gear chain-info --base-path /gear/ 
+          register: chain_info_before_restore
+
+        - debug:
+            var: chain_info_before_restore.stdout
+
+        - name: Rename previous db directory
+          shell: mv {{ db_path }}/db {{ db_path }}/db_before_restore_full_backup_`date +'%d.%m.%Y__%H-%M'`
+        
+        - name: Restore latest full backup
+          shell: >
+            mkdir -p {{ db_path }}
+            && tar -xz
+            -f /mnt/backups/{{ ansible_fqdn }}/full.tar.gz
+            -C {{ db_path }}/
+            && echo "`date +'%d.%m.%Y | %H-%M'`: Latest full backup was successfully restored" >> /mnt/backups/{{ ansible_fqdn }}/LOG
+        - set_fact: 
+            full_backup_was_restored: true
+        
+        - name: Chain info after restore
+          shell: docker run -it --rm -v /home/ec2-user/gear-data/:/gear/ ghcr.io/gear-tech/node /usr/local/bin/gear chain-info --base-path /gear/ 
+          register: chain_info_after_restore
+
+        - debug:
+            var: chain_info_after_restore.stdout
+
+        - name: Remove previous db directory
+          shell: rm -rf {{ db_path }}/db_before_restore_full*
+      when: restore_type is defined and restore_type == "full"
+
+    - block:
+        - name: Backup {{ increment_backup_name }} info
+          shell: >
+            tar --list -f /mnt/backups/{{ ansible_fqdn }}/{{ increment_backup_name }} 
+          register: backup_info
+
+        - debug:
+            var: backup_info.stdout_lines
+        
+        - name: Chain info before restore
+          shell: docker run -it --rm -v /home/ec2-user/gear-data/:/gear/ ghcr.io/gear-tech/node /usr/local/bin/gear chain-info --base-path /gear/ 
+          register: chain_info_before_restore
+
+        - debug:
+            var: chain_info_before_restore.stdout
+
+        - name: Rename previous db directory
+          shell: mv {{ db_path }}/db {{ db_path }}/db_before_restore_increment_backup_`date +'%d.%m.%Y__%H-%M'`
+        
+        - name: Restore {{ increment_backup_name }} backup
+          shell: |
+            mkdir -p {{ db_path }}
+            tar -xz \
+            -f /mnt/backups/{{ ansible_fqdn }}/full.tar.gz \
+            -C {{ db_path }}/ \
+            && for db_list in `find /mnt/backups/{{ ansible_fqdn }}/ -name "incremental*.tar.gz" -type f -printf "%f\n" | sort -n`
+            do
+              tar --incremental -xvzf $db_list -C {{ db_path }}
+              if [ {{ increment_backup_name }} = $db_list ]
+                then
+                  break
+              fi
+            done \
+            && echo "`date +'%d.%m.%Y | %H-%M'`: {{ increment_backup_name }} backup was successfully restored" >> /mnt/backups/{{ ansible_fqdn }}/LOG
+          args:
+            executable: /bin/bash
+        
+        - name: Chain info after restore
+          shell: docker run -it --rm -v /home/ec2-user/gear-data/:/gear/ ghcr.io/gear-tech/node /usr/local/bin/gear chain-info --base-path /gear/ 
+          register: chain_info_after_restore
+
+        - debug:
+            var: chain_info_after_restore.stdout
+
+        - name: Remove previous db directory
+          shell: rm -rf {{ db_path }}/db_before_restore_increment*
+      when: full_backup_was_restored is not defined and restore_type is defined and restore_type == "increment"
+
+    - name: Start docker-compose
+      shell: /usr/local/bin/docker-compose -f /home/ec2-user/docker-compose.yaml up -d
