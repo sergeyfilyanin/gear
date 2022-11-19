@@ -29,7 +29,7 @@ services:
       options:
         loki-url: "{{ loki_url }}"
         loki-tls-insecure-skip-verify: "true"
-        loki-external-labels: job=docker_node,gear_network=testnet
+        loki-external-labels: job=docker_node,gear_network=stable-testnet
         loki-pipeline-stages: |
           - regex:
               expression: '(?P<error>ERROR.*)'
