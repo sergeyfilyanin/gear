@@ -28,12 +28,17 @@ pallet-authorship = { version = "4.0.0-dev", default-features = false, git = "ht
 pallet-babe = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-bags-list = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
+pallet-bounties = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
+pallet-child-bounties = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-collective = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-conviction-voting = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-election-provider-multi-phase = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-grandpa = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-identity = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-im-online = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
+pallet-nomination-pools = { version = "1.0.0", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
+pallet-nomination-pools-runtime-api = { version = "1.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
+pallet-offences = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-preimage = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-ranked-collective = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
 pallet-referenda = { version = "4.0.0-dev", default-features = false, git = "https://github.com/gear-tech/substrate.git", branch = "gear-polkadot-v0.9.36" }
@@ -111,6 +116,8 @@ std = [
 	"pallet-babe/std",
 	"pallet-bags-list/std",
 	"pallet-balances/std",
+	"pallet-bounties/std",
+	"pallet-child-bounties/std",
 	"pallet-collective/std",
 	"pallet-conviction-voting/std",
 	"pallet-election-provider-multi-phase/std",
@@ -124,6 +131,9 @@ std = [
 	"pallet-grandpa/std",
 	"pallet-identity/std",
 	"pallet-im-online/std",
+	"pallet-nomination-pools/std",
+	"pallet-nomination-pools-runtime-api/std",
+	"pallet-offences/std",
 	"pallet-preimage/std",
 	"pallet-ranked-collective/std",
 	"pallet-referenda/std",
@@ -190,12 +200,18 @@ try-runtime = [
 	"pallet-authority-discovery/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-babe/try-runtime",
+	"pallet-bags-list/try-runtime",
 	"pallet-balances/try-runtime",
+	"pallet-bounties/try-runtime",
+	"pallet-child-bounties/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-conviction-voting/try-runtime",
+	"pallet-election-provider-multi-phase/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-im-online/try-runtime",
+	"pallet-nomination-pools/try-runtime",
+	"pallet-offences/try-runtime",
 	"pallet-preimage/try-runtime",
 	"pallet-ranked-collective/try-runtime",
 	"pallet-referenda/try-runtime",

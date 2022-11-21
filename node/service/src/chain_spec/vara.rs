@@ -28,9 +28,11 @@ use sp_core::{crypto::UncheckedInto, sr25519};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::Perbill;
 use vara_runtime::{
-    constants::currency::UNITS as TOKEN, AuthorityDiscoveryConfig, BabeConfig, BalancesConfig,
-    GearConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, SessionConfig, SessionKeys,
-    StakerStatus, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
+    constants::currency::{DOLLARS, UNITS as TOKEN},
+    AuthorityDiscoveryConfig, BabeConfig, BalancesConfig,
+    GearConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig,
+    NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SudoConfig,
+    SystemConfig, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -558,8 +560,6 @@ fn testnet_genesis(
     const ENDOWMENT: u128 = 1_000_000 * TOKEN;
     const STASH: u128 = 100 * TOKEN;
 
-    let _num_endowed_accounts = endowed_accounts.len();
-
     GenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
@@ -608,7 +608,13 @@ fn testnet_genesis(
         },
         im_online: ImOnlineConfig { keys: vec![] },
         authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+        treasury: Default::default(),
         transaction_payment: Default::default(),
+        nomination_pools: NominationPoolsConfig {
+            min_create_bond: 10 * DOLLARS,
+            min_join_bond: DOLLARS,
+            ..Default::default()
+        },
         gear: GearConfig {
             force_queue: Default::default(),
         },
