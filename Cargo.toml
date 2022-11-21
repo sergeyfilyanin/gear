@@ -13,6 +13,7 @@ members = [
     "core-processor",
     "core-errors",
     "examples/binaries/*",
+    "examples/light_sr25519",
     "galloc",
     "gclient",
     "gcore",
