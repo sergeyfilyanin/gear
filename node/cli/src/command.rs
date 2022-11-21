@@ -60,7 +60,7 @@ impl SubstrateCli for Cli {
             #[cfg(feature = "gear-native")]
             "staging" | "gear-staging" => Box::new(chain_spec::gear::staging_testnet_config()?),
             #[cfg(feature = "vara-native")]
-            "vara-staging" => Box::new(chain_spec::vara::staging_testnet_config()?),
+            "vara" => Box::new(chain_spec::vara::main()?),
             #[cfg(feature = "gear-native")]
             "stable" | "gear-stable" => Box::new(chain_spec::gear::stable_testnet_config()?),
             "" => Box::new(chain_spec::RawChainSpec::from_json_bytes(
