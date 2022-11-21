@@ -15,7 +15,7 @@ env:
   NIGHTLY_TOOLCHAIN_VERSION: ${{ secrets.NIGHTLY_TOOLCHAIN_VERSION }}
 
 jobs:
-  # Disable in vara branches
+  # TODO: add to specific branches.
   # spec_version:
   #   runs-on: [self-hosted, cachepot, epyc]
   #   steps:
@@ -36,7 +36,6 @@ jobs:
   #       run: ./scripts/check-spec.sh
 
   check:
-    # Disable in vara branches
     # needs: spec_version
     runs-on: [self-hosted, cachepot, epyc]
     env:
@@ -119,7 +118,6 @@ jobs:
           mv /tmp/*.tar /root/cache/
 
   build:
-    # Disable in vara branches
     # needs: spec_version
     runs-on: [self-hosted, cachepot, epyc]
     env:
@@ -460,7 +458,7 @@ jobs:
 
       - name: "Test: Client tests"
         run: ./scripts/gear.sh test client --run-node
-        
+
       - name: Stop Gear Node Force
         shell: powershell
         run: Get-Process gear* | Stop-Process -Force
@@ -489,7 +487,7 @@ jobs:
 
   build-macos-x86:
     if: github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'E2-forcemacos')
-    needs: spec_version
+    # needs: spec_version
     runs-on: macos-latest
     steps:
       - name: Cancel Previous Runs
