@@ -28,9 +28,10 @@ use sp_core::{crypto::UncheckedInto, sr25519};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{Perbill, Perquintill};
 use vara_runtime::{
-    constants::currency::UNITS as TOKEN, AuthorityDiscoveryConfig, BabeConfig, BalancesConfig,
-    GenesisConfig, GrandpaConfig, ImOnlineConfig, SessionConfig, SessionKeys, StakerStatus,
-    StakingConfig, StakingRewardsConfig, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY,
+    constants::currency::{DOLLARS, UNITS as TOKEN},
+    AuthorityDiscoveryConfig, BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
+    ImOnlineConfig, NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig,
+    StakingRewardsConfig, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -558,8 +559,6 @@ fn testnet_genesis(
     const ENDOWMENT: u128 = 1_000_000 * TOKEN;
     const STASH: u128 = 100 * TOKEN;
 
-    let _num_endowed_accounts = endowed_accounts.len();
-
     GenesisConfig {
         system: SystemConfig {
             // Add Wasm runtime to storage.
@@ -610,6 +609,11 @@ fn testnet_genesis(
         authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
         transaction_payment: Default::default(),
         treasury: Default::default(),
+        nomination_pools: NominationPoolsConfig {
+            min_create_bond: 10 * DOLLARS,
+            min_join_bond: DOLLARS,
+            ..Default::default()
+        },
         vesting: VestingConfig { vesting: vec![] },
         staking_rewards: StakingRewardsConfig {
             non_stakeable: Perquintill::from_rational(4108_u64, 10_000_u64), // 41.08%
