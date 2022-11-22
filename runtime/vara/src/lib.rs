@@ -98,8 +98,6 @@ pub use pallet_balances::Call as BalancesCall;
 #[cfg(any(feature = "std", test))]
 pub use pallet_staking::StakerStatus;
 #[cfg(any(feature = "std", test))]
-pub use pallet_sudo::Call as SudoCall;
-#[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
 pub use pallet_gear;
@@ -127,7 +125,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // The version of the runtime specification. A full node will not attempt to use its native
     //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
-    spec_version: 470,
+    spec_version: 471,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -1041,11 +1039,6 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_sudo::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-}
-
 impl pallet_utility::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
@@ -1188,7 +1181,6 @@ construct_runtime!(
         NominationPools: pallet_nomination_pools,
         Referenda: pallet_referenda,
         ConvictionVoting: pallet_conviction_voting,
-        Sudo: pallet_sudo,
         Scheduler: pallet_scheduler,
         Preimage: pallet_preimage,
         Utility: pallet_utility,
@@ -1240,7 +1232,6 @@ construct_runtime!(
         NominationPools: pallet_nomination_pools,
         Referenda: pallet_referenda,
         ConvictionVoting: pallet_conviction_voting,
-        Sudo: pallet_sudo,
         Scheduler: pallet_scheduler,
         Preimage: pallet_preimage,
         Utility: pallet_utility,

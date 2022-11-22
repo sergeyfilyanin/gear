@@ -31,8 +31,8 @@ use vara_runtime::{
     constants::currency::{DOLLARS, UNITS as TOKEN},
     AuthorityDiscoveryConfig, BabeConfig, BalancesConfig, CouncilConfig, DemocracyConfig,
     ElectionsConfig, GearConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig,
-    NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SudoConfig,
-    SystemConfig, TechnicalCommitteeConfig, WASM_BINARY,
+    NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SystemConfig,
+    TechnicalCommitteeConfig, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -109,8 +109,6 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 wasm_binary,
                 // Initial PoA authorities
                 vec![authority_keys_from_seed("Alice")],
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
                 // Pre-funded accounts
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -151,8 +149,6 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                     authority_keys_from_seed("Alice"),
                     authority_keys_from_seed("Bob"),
                 ],
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
                 // Pre-funded accounts
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -415,9 +411,6 @@ pub fn main() -> Result<ChainSpec, String> {
                             .unchecked_into(),
                     ),
                 ],
-                // Sudo account
-                // 5CtLwzLdsTZnyA3TN7FUV58FV4NZ1tUuTDM9yjwRuvt6ac1i
-                hex!["2455655ad2a1f9fbe510699026fc810a2b3cb91d432c141db54a9968da944955"].into(),
                 // Pre-funded accounts
                 vec![
                     // root_key
@@ -453,7 +446,6 @@ fn testnet_genesis(
         ImOnlineId,
         AuthorityDiscoveryId,
     )>,
-    root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
     _enable_println: bool,
 ) -> GenesisConfig {
@@ -515,10 +507,6 @@ fn testnet_genesis(
         technical_committee: TechnicalCommitteeConfig {
             members: endowed_accounts[0..(num_endowed_accounts + 1) / 2].to_vec(),
             phantom: Default::default(),
-        },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
         },
         im_online: ImOnlineConfig { keys: vec![] },
         authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
