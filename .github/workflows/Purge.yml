@@ -4,9 +4,9 @@ on: workflow_dispatch
 
 jobs:
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, cachepot, epyc]
     steps:
       - name: Clean up
         run: |
-          sudo ls -la /root/cache
-          sudo rm -rvf /root/cache/*
+          ls -la /root/cache
+          rm -rvf /root/cache/*
