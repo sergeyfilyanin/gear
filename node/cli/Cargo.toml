@@ -31,32 +31,32 @@ gear-runtime = { path = "../../runtime/gear", optional = true }
 vara-runtime = { path = "../../runtime/vara", optional = true }
 
 # Substrate client
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable", features = [
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging", features = [
 	"wasmtime",
 ] }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable", features = [
+sc-service = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging", features = [
 	"wasmtime",
 ] }
-sc-client-api = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sc-client-api = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
 
 # Substrate primitives
-sp-core = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-inherents = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-keyring = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sp-core = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-keyring = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
 
 # Substrate other (benchmarking etc)
-frame-system = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable", optional = true }
-try-runtime-cli = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable", optional = true }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging", optional = true }
+try-runtime-cli = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging", optional = true }
 
 # Program CLI
 gear-program = { path = "../../program", features = [ "cli" ], optional = true }
 
 [build-dependencies]
-substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
 
 [features]
 default = ["gear-native", "vara-native", "lazy-pages", "program"]

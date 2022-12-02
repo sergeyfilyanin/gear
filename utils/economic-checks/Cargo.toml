@@ -32,17 +32,17 @@ demo-mul-by-const = { path = "../../examples/binaries/mul-by-const" }
 demo-ncompose = { path = "../../examples/binaries/ncompose" }
 
 # Substrate deps
-frame-support = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-pallet-authorship = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-consensus-slots = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-consensus-babe = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-core = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-io = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-std = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+pallet-authorship = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-consensus-slots = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-consensus-babe = { version = "0.10.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-core = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-io = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "cl/fix-logging" }
 
 [dev-dependencies]
 wat = "1.0"
