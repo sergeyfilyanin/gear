@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 jobs:
   cleanup:
-    runs-on: [self-hosted, cachepot, epyc]
+    runs-on: [self-hosted, cachepot, epyc-4, k8s-runner]
     steps:
       - name: Clean up
         run: |
