@@ -9,15 +9,14 @@ env:
   NIGHTLY_TOOLCHAIN_VERSION: ${{ secrets.NIGHTLY_TOOLCHAIN_VERSION }}
 
 jobs:
-  # TODO: add to specific branches.
-  # spec_version:
-  #   runs-on: [self-hosted, cachepot, epyc]
-  #   steps:
-  #     - name: Cancel Previous Runs
-  #       if: ${{ github.event_name == 'pull_request' }}
-  #       uses: styfle/cancel-workflow-action@0.11.0
-  #       with:
-  #         access_token: ${{ github.token }}
+  spec_version:
+    runs-on: [self-hosted, cachepot, epyc-4, k8s-runner]
+    steps:
+      - name: Cancel Previous Runs
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
 
   #     - name: "ACTIONS: Checkout"
   #       uses: actions/checkout@v3
@@ -30,7 +29,7 @@ jobs:
   #       run: ./scripts/check-spec.sh
 
   check:
-    # needs: spec_version
+    needs: spec_version
     runs-on: [self-hosted, cachepot, epyc-4, k8s-runner]
     env:
       RUSTUP_HOME: /tmp/rustup_home
@@ -118,7 +117,7 @@ jobs:
           mv /tmp/*.tar /root/cache/
 
   build:
-    # needs: spec_version
+    needs: spec_version
     runs-on: [self-hosted, cachepot, epyc-4, k8s-runner]
     env:
       LLVM_PROFILE_FILE: "gear-%p-%m.profraw"
