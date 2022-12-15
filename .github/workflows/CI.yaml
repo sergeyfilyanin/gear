@@ -346,9 +346,7 @@ jobs:
           path: artifact
 
   build-win:
-    if: always() &&
-      (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'E1-forcewindows'))
-    needs: build
+    needs: spec_version
     runs-on: ci-win
     defaults:
       run:
@@ -492,9 +490,7 @@ jobs:
             --release
 
   build-macos-x86:
-    if: always() &&
-      (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'E2-forcemacos'))
-    needs: build
+    needs: spec_version
     runs-on: macos-latest
     steps:
       - name: Cancel Previous Runs
