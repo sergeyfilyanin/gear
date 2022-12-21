@@ -61,7 +61,7 @@ jobs:
           sudo apt install -y git clang curl libssl-dev llvm libudev-dev cmake protobuf-compiler
       - name: "Build gear-loader"
         run: |
-          cargo build --locked --package gear-node-loader
+          cargo build --package gear-node-loader
           
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
