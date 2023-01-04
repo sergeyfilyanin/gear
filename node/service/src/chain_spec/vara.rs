@@ -31,8 +31,8 @@ use vara_runtime::{
     constants::currency::{DOLLARS, UNITS as TOKEN},
     AuthorityDiscoveryConfig, BabeConfig, BalancesConfig, CouncilConfig, DemocracyConfig,
     ElectionsConfig, GearConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig,
-    NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SudoConfig,
-    SystemConfig, TechnicalCommitteeConfig, WASM_BINARY,
+    NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SystemConfig,
+    TechnicalCommitteeConfig, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -615,10 +615,6 @@ fn testnet_genesis(
         technical_committee: TechnicalCommitteeConfig {
             members: endowed_accounts[0..(num_endowed_accounts + 1) / 2].to_vec(),
             phantom: Default::default(),
-        },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
         },
         im_online: ImOnlineConfig { keys: vec![] },
         authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
