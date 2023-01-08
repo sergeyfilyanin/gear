@@ -31,7 +31,7 @@ use vara_runtime::{
     constants::currency::{DOLLARS, UNITS as TOKEN},
     AuthorityDiscoveryConfig, BabeConfig, BalancesConfig,
     GearConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig,
-    NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig, SudoConfig,
+    NominationPoolsConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig,
     SystemConfig, WASM_BINARY,
 };
 
@@ -553,7 +553,7 @@ fn testnet_genesis(
         ImOnlineId,
         AuthorityDiscoveryId,
     )>,
-    root_key: AccountId,
+    _root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
     _enable_println: bool,
 ) -> GenesisConfig {
@@ -601,10 +601,6 @@ fn testnet_genesis(
             invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
             slash_reward_fraction: Perbill::from_percent(10),
             ..Default::default()
-        },
-        sudo: SudoConfig {
-            // Assign network admin rights.
-            key: Some(root_key),
         },
         im_online: ImOnlineConfig { keys: vec![] },
         authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },

@@ -108,7 +108,6 @@ macro_rules! with_signed_payload {
                 $( $setup )*
 
                 let $extra: runtime::SignedExtra = (
-                    runtime::DisableValueTransfers,
                     frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
                     frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
                     frame_system::CheckTxVersion::<runtime::Runtime>::new(),
