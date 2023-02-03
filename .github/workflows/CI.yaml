@@ -9,14 +9,15 @@ env:
   NIGHTLY_TOOLCHAIN_VERSION: ${{ secrets.NIGHTLY_TOOLCHAIN_VERSION }}
 
 jobs:
-  spec_version:
-    runs-on: [self-hosted, cachepot, epyc-4, k8s-runner]
-    steps:
-      - name: Cancel Previous Runs
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
+  # TODO: add to specific branches.
+  # spec_version:
+  #   runs-on: [self-hosted, cachepot, epyc]
+  #   steps:
+  #     - name: Cancel Previous Runs
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       uses: styfle/cancel-workflow-action@0.11.0
+  #       with:
+  #         access_token: ${{ github.token }}
 
   #     - name: "ACTIONS: Checkout"
   #       uses: actions/checkout@v3
@@ -29,7 +30,7 @@ jobs:
   #       run: ./scripts/check-spec.sh
 
   check:
-    needs: spec_version
+    # needs: spec_version
     runs-on: [self-hosted, cachepot, epyc-4, k8s-runner]
     env:
       RUSTUP_HOME: /tmp/rustup_home
@@ -117,7 +118,7 @@ jobs:
           mv /tmp/*.tar /root/cache/
 
   build:
-    needs: spec_version
+    # needs: spec_version
     runs-on: [self-hosted, cachepot, epyc-4, k8s-runner]
     env:
       LLVM_PROFILE_FILE: "gear-%p-%m.profraw"
@@ -345,7 +346,7 @@ jobs:
           path: artifact
 
   build-win:
-    needs: spec_version
+    needs: build
     runs-on: ci-win
     defaults:
       run:
@@ -489,7 +490,7 @@ jobs:
             --release
 
   build-macos-x86:
-    needs: spec_version
+    needs: build
     runs-on: macos-latest
     steps:
       - name: Cancel Previous Runs
@@ -544,7 +545,7 @@ jobs:
             -p gear-lazy-pages
             -p gear-runtime-interface
             --features=lazy-pages
-
+q
   upload:
     runs-on: self-hosted
     needs: build
