@@ -545,7 +545,7 @@ jobs:
             -p gear-lazy-pages
             -p gear-runtime-interface
             --features=lazy-pages
-q
+
   upload:
     runs-on: self-hosted
     needs: build
