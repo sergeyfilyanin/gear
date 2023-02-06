@@ -106,7 +106,6 @@ where
 
             ctx.ext
                 .send(HandlePacket::new(destination.into(), payload, value), delay)
-                .into_ext_error(&mut ctx.err)
                 .map_err(Into::into)
         })
     }
@@ -216,7 +215,6 @@ where
 
             ctx.ext
                 .send_push(handle, &payload)
-                .into_ext_error(&mut ctx.err)
                 .map_err(Into::into)
         })
     }

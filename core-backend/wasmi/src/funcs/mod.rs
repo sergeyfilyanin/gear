@@ -25,7 +25,7 @@ use core::{convert::TryInto, marker::PhantomData};
 use gear_backend_common::{
     memory::{MemoryAccessError, MemoryAccessRecorder, MemoryOwner},
     ActorSyscallFuncError, BackendExt, BackendExtError, BackendState, IntoExtErrorForResult,
-    SyscallFuncError, TerminationReason,
+    FuncError, TerminationReason,
 };
 use gear_core::{
     env::Ext,

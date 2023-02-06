@@ -16,14 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use gear_backend_common::{BackendExtError, BackendState, SyscallFuncError};
+use gear_backend_common::{BackendExtError, BackendState, FuncError};
 use gear_core::env::Ext;
 
 pub type HostState<E> = Option<State<E>>;
 
 pub struct State<E: Ext> {
     pub ext: E,
-    pub err: SyscallFuncError<E::Error>,
+    pub err: FuncError<E::Error>,
 }
 
 impl<E> BackendState<E::Error> for State<E>
@@ -31,7 +31,7 @@ where
     E: Ext,
     E::Error: BackendExtError,
 {
-    fn err_mut(&mut self) -> &mut SyscallFuncError<E::Error> {
+    fn err_mut(&mut self) -> &mut FuncError<E::Error> {
         &mut self.err
     }
 }

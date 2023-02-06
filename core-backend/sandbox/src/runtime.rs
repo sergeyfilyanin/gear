@@ -26,9 +26,10 @@ use gear_backend_common::{
         MemoryAccessError, MemoryAccessManager, MemoryAccessRecorder, MemoryOwner, WasmMemoryRead,
         WasmMemoryReadAs, WasmMemoryReadDecoded, WasmMemoryWrite, WasmMemoryWriteAs,
     },
-    BackendExt, BackendExtError, BackendState, SyscallFuncError,
+    BackendExt, BackendExtError, FuncError, TerminationReason, TrapExplanation,
 };
 use gear_core::env::Ext;
+use gear_core_errors::ExtError;
 use gear_wasm_instrument::{GLOBAL_NAME_ALLOWANCE, GLOBAL_NAME_GAS};
 use sp_sandbox::{HostError, InstanceGlobals, ReturnValue, Value};
 
@@ -42,7 +43,8 @@ pub(crate) fn as_i64(v: Value) -> Option<i64> {
 pub(crate) struct Runtime<E: Ext> {
     pub ext: E,
     pub memory: MemoryWrap,
-    pub err: SyscallFuncError<E::Error>,
+    pub fallible_syscall_error: Option<ExtError>,
+    pub termination_reason: TerminationReason,
     pub globals: sp_sandbox::default_executor::InstanceGlobals,
     // TODO: make wrapper around runtime and move memory_manager there (issue #2067)
     pub memory_manager: MemoryAccessManager<E>,
@@ -91,42 +93,45 @@ where
 
     pub fn run_fallible<T: Sized, F, R>(&mut self, res_ptr: u32, f: F) -> SyscallOutput
     where
-        F: FnOnce(&mut Self) -> Result<Result<T, u32>, SyscallFuncError<E::Error>>,
+        F: FnOnce(&mut Self) -> Result<T, FuncError<E::Error>>,
         R: From<Result<T, u32>> + Sized,
     {
         self.prepare_run();
 
-        let mut res = f(self).map_err(|err| {
-            *self.err_mut() = err;
+        let write_res = self.memory_manager.register_write_as::<R>(res_ptr);
+
+        let res = match f(self) {
+            Err(err) => match err {
+                FuncError::Core(err) => match err.into_ext_error() {
+                    Ok(ext_err) => {
+                        self.fallible_syscall_error = Some(ext_err);
+                        Ok(Err(ext_err.encoded_size() as u32))
+                    }
+                    Err(err) => {
+                        self.termination_reason =
+                            TerminationReason::Trap(TrapExplanation::Core(err));
+                        Err(HostError)
+                    }
+                },
+                FuncError::Terminated(reason) => {
+                    self.termination_reason = reason;
+                    Err(HostError)
+                }
+            },
+            Ok(res) => Ok(Ok(res)),
+        }?;
+
+        self.write_as(write_res, R::from(res)).map_err(|err| {
+            self.termination_reason = err.into();
+            HostError
         });
 
-        if res.is_err() {
-            if let Ok(to_be_returned) = self.last_err() {
-                res = Ok(Err(to_be_returned.encoded_size() as u32));
-            }
-        }
-
-        let res = if let Ok(res) = res {
-            // TODO: move above or make normal process memory access.
-            let write_res = self.memory_manager.register_write_as::<R>(res_ptr);
-            self.write_as(write_res, R::from(res))
-                .map_err(|err| {
-                    *self.err_mut() = err.into();
-                    HostError
-                })
-                .map(|_| ReturnValue::Unit)
-        } else {
-            Err(HostError)
-        };
-
-        self.update_globals();
-
-        res
+        Ok(ReturnValue::Unit)
     }
 
     pub(crate) fn run_any<T, F>(&mut self, f: F) -> Result<T, HostError>
     where
-        F: FnOnce(&mut Self) -> Result<T, SyscallFuncError<E::Error>>,
+        F: FnOnce(&mut Self) -> Result<T, FuncError<E::Error>>,
     {
         self.prepare_run();
 
@@ -142,19 +147,9 @@ where
 
     pub(crate) fn run<F>(&mut self, f: F) -> SyscallOutput
     where
-        F: FnOnce(&mut Self) -> Result<(), SyscallFuncError<E::Error>>,
+        F: FnOnce(&mut Self) -> Result<(), FuncError<E::Error>>,
     {
         self.run_any(f).map(|_| ReturnValue::Unit)
-    }
-}
-
-impl<E> BackendState<E::Error> for Runtime<E>
-where
-    E: Ext,
-    E::Error: BackendExtError,
-{
-    fn err_mut(&mut self) -> &mut SyscallFuncError<E::Error> {
-        &mut self.err
     }
 }
 

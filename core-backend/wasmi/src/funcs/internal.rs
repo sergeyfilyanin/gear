@@ -160,7 +160,7 @@ where
     #[track_caller]
     pub fn run<T, F>(&mut self, f: F) -> Result<T, Trap>
     where
-        F: FnOnce(&mut Self) -> Result<T, SyscallFuncError<E::Error>>,
+        F: FnOnce(&mut Self) -> Result<T, FuncError<E::Error>>,
     {
         let result = f(self).map_err(|err| {
             self.host_state_mut().err = err;
@@ -223,7 +223,7 @@ where
     #[track_caller]
     pub fn run_state_taken<T, F>(&mut self, f: F) -> Result<T, Trap>
     where
-        F: FnOnce(&mut Self, &mut State<E>) -> Result<T, SyscallFuncError<E::Error>>,
+        F: FnOnce(&mut Self, &mut State<E>) -> Result<T, FuncError<E::Error>>,
     {
         let mut state = self
             .caller
