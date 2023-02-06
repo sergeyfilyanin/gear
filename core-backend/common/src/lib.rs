@@ -156,28 +156,6 @@ pub trait BackendExtError: CoreError + Clone {
     fn into_termination_reason(self) -> TerminationReason;
 }
 
-// pub trait BackendState<E: BackendExtError> {
-//     fn err_mut(&mut self) -> &mut FuncError<E>;
-
-//     fn last_err(&mut self) -> Result<ExtError, ExtError> {
-//         let last_err = if let FuncError::Actor(ActorSyscallFuncError::Core(maybe_ext)) =
-//             self.err_mut().clone()
-//         {
-//             maybe_ext
-//                 .into_ext_error()
-//                 .map_err(|_| ExtError::SyscallUsage)
-//         } else {
-//             Err(ExtError::SyscallUsage)
-//         };
-
-//         if let Err(err) = &last_err {
-//             *self.err_mut() = ActorSyscallFuncError::Core(E::from_ext_error(err.clone())).into();
-//         }
-
-//         last_err
-//     }
-// }
-
 pub struct BackendReport<MemWrap, Ext>
 where
     Ext: EnvExt,
