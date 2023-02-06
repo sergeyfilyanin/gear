@@ -30,9 +30,8 @@ use alloc::{
 use core::{any::Any, convert::Infallible, fmt::Display};
 use gear_backend_common::{
     lazy_pages::{GlobalsAccessError, GlobalsAccessMod, GlobalsAccessor, GlobalsConfig},
-    ActorSyscallFuncError, BackendExt, BackendExtError, BackendReport, Environment,
-    EnvironmentExecutionError, EnvironmentExecutionResult, TerminationReason,
-    STACK_END_EXPORT_NAME,
+    BackendExt, BackendExtError, BackendReport, Environment, EnvironmentExecutionError,
+    EnvironmentExecutionResult, TerminationReason, TrapExplanation, STACK_END_EXPORT_NAME,
 };
 use gear_core::{
     env::Ext,
@@ -189,7 +188,8 @@ where
 
         let runtime = State {
             ext,
-            err: ActorSyscallFuncError::Terminated(TerminationReason::Success).into(),
+            fallible_syscall_error: None,
+            termination_reason: TerminationReason::Success,
         };
 
         *store.state_mut() = Some(runtime);
@@ -338,16 +338,29 @@ where
 
         let State {
             mut ext,
-            err: runtime_err,
+            termination_reason,
             ..
         } = state;
+
+        let termination_reason = if res.is_err() {
+            // TODO: Parse result error to identify termination reason
+            if matches!(termination_reason, TerminationReason::Success) {
+                TerminationReason::Trap(TrapExplanation::Unknown)
+            } else {
+                termination_reason
+            }
+        } else if matches!(termination_reason, TerminationReason::Trap(_)) {
+            unreachable!("Termination reason is trap, but successfully end execution")
+        } else {
+            termination_reason
+        };
 
         ext.update_counters(gas as u64, allowance as u64);
 
         log::debug!("WasmiEnvironment::execute result = {res:?}");
 
         Ok(BackendReport {
-            err: (res.is_err()).then_some(runtime_err),
+            termination_reason,
             memory_wrap: MemoryWrap::new(memory, store),
             ext,
         })

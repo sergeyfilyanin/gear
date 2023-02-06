@@ -610,7 +610,9 @@ impl AllocationsContext {
                     unreachable!("Cannot increment last allocation: {}, but we checked in loop above that it can be done", err)
                 }))
                 .unwrap_or(self.static_pages);
-            let end = start.add(pages).map_err(|_| Error::ProgramAllocOutOfBounds)?;
+            let end = start
+                .add(pages)
+                .map_err(|_| Error::ProgramAllocOutOfBounds)?;
             if end > self.max_pages {
                 return Err(Error::ProgramAllocOutOfBounds);
             }
@@ -731,7 +733,7 @@ mod tests {
     #[test]
     fn free_fails() {
         let mut ctx = AllocationsContext::new(BTreeSet::default(), WasmPage(0), WasmPage(0));
-        assert_eq!(ctx.free(WasmPage(1)), Err(Error::OutOfBounds));
+        assert_eq!(ctx.free(WasmPage(1)), Err(Error::InvalidFree(1)));
 
         let mut ctx = AllocationsContext::new(BTreeSet::default(), WasmPage(1), WasmPage(0));
         assert_eq!(ctx.free(WasmPage(0)), Err(Error::InvalidFree(0)));

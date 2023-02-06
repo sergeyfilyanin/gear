@@ -35,7 +35,7 @@ use gear_core::{
     env::Ext,
     memory::{Memory, MemoryInterval},
 };
-use gear_core_errors::{MemoryError, ExtError};
+use gear_core_errors::MemoryError;
 
 /// Memory access error during sys-call that lazy-pages have caught.
 #[derive(Debug, Clone, Copy, Encode, Decode)]
@@ -227,8 +227,7 @@ impl<E: BackendExt> MemoryAccessManager<E> {
     ) -> Result<T, MemoryAccessError> {
         let mut buff = RuntimeBuffer::try_new_default(T::max_encoded_len())?.into_vec();
         self.read_into_buf(memory, read.ptr, &mut buff)?;
-        let decoded =
-            T::decode_all(&mut &buff[..]).map_err(|_| MemoryAccessError::Decode)?;
+        let decoded = T::decode_all(&mut &buff[..]).map_err(|_| MemoryAccessError::Decode)?;
         Ok(decoded)
     }
 

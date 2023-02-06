@@ -1093,7 +1093,7 @@ mod tests {
         assert_eq!(
             ext.free(non_existing_page),
             Err(ProcessorError::Core(ExtError::Memory(
-                MemoryError::OutOfBounds
+                MemoryError::InvalidFree(non_existing_page.raw())
             )))
         );
 
@@ -1177,7 +1177,10 @@ mod tests {
 
         impl Memory for TestMemory {
             fn grow(&mut self, pages: WasmPage) -> Result<(), MemoryError> {
-                self.0 = self.0.add(pages).map_err(|_| MemoryError::OutOfBounds)?;
+                self.0 = self
+                    .0
+                    .add(pages)
+                    .map_err(|_| MemoryError::ProgramAllocOutOfBounds)?;
                 Ok(())
             }
 
@@ -1233,7 +1236,8 @@ mod tests {
         fn assert_alloc_error(err: <Ext as EnvExt>::Error) {
             match err {
                 ProcessorError::Core(ExtError::Memory(
-                    MemoryError::OutOfBounds | MemoryError::IncorrectAllocationsSetOrMemSize,
+                    MemoryError::ProgramAllocOutOfBounds
+                    | MemoryError::IncorrectAllocationsSetOrMemSize,
                 )) => {}
                 err => Err(err).unwrap(),
             }
@@ -1242,9 +1246,7 @@ mod tests {
         #[track_caller]
         fn assert_free_error(err: <Ext as EnvExt>::Error) {
             match err {
-                ProcessorError::Core(ExtError::Memory(
-                    MemoryError::InvalidFree(_) | MemoryError::OutOfBounds,
-                )) => {}
+                ProcessorError::Core(ExtError::Memory(MemoryError::InvalidFree(_))) => {}
                 err => Err(err).unwrap(),
             }
         }

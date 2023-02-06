@@ -26,7 +26,7 @@ use gear_backend_common::{
         MemoryAccessError, MemoryAccessManager, MemoryAccessRecorder, MemoryOwner, WasmMemoryRead,
         WasmMemoryReadAs, WasmMemoryReadDecoded, WasmMemoryWrite, WasmMemoryWriteAs,
     },
-    BackendExt, BackendExtError, FuncError, TerminationReason, TrapExplanation,
+    BackendExt, BackendExtError, FuncError, TerminationReason,
 };
 use gear_core::env::Ext;
 use gear_core_errors::ExtError;
@@ -104,12 +104,12 @@ where
             Err(err) => match err {
                 FuncError::Core(err) => match err.into_ext_error() {
                     Ok(ext_err) => {
+                        let len = ext_err.encoded_size() as u32;
                         self.fallible_syscall_error = Some(ext_err);
-                        Ok(Err(ext_err.encoded_size() as u32))
+                        Ok(Err(len))
                     }
                     Err(err) => {
-                        self.termination_reason =
-                            TerminationReason::Trap(TrapExplanation::Core(err));
+                        self.termination_reason = err.into_termination_reason();
                         Err(HostError)
                     }
                 },
@@ -121,12 +121,12 @@ where
             Ok(res) => Ok(Ok(res)),
         }?;
 
-        self.write_as(write_res, R::from(res)).map_err(|err| {
-            self.termination_reason = err.into();
-            HostError
-        });
-
-        Ok(ReturnValue::Unit)
+        self.write_as(write_res, R::from(res))
+            .map_err(|err| {
+                self.termination_reason = Into::<FuncError<E::Error>>::into(err).into();
+                HostError
+            })
+            .map(|_| ReturnValue::Unit)
     }
 
     pub(crate) fn run_any<T, F>(&mut self, f: F) -> Result<T, HostError>
@@ -136,7 +136,7 @@ where
         self.prepare_run();
 
         let result = f(self).map_err(|err| {
-            self.err = err;
+            self.termination_reason = err.into();
             HostError
         });
 

@@ -22,7 +22,7 @@ use gear_backend_common::{
         MemoryAccessManager, MemoryOwner, WasmMemoryRead, WasmMemoryReadAs, WasmMemoryReadDecoded,
         WasmMemoryWrite, WasmMemoryWriteAs,
     },
-    ActorSyscallFuncError, BackendExt,
+    BackendExt,
 };
 
 use super::*;
@@ -56,8 +56,8 @@ where
         };
 
         if forbidden {
-            wrapper.host_state_mut().err =
-                ActorSyscallFuncError::Core(E::Error::forbidden_function()).into();
+            wrapper.host_state_mut().termination_reason =
+                E::Error::forbidden_function().into_termination_reason();
             return Err(TrapCode::Unreachable.into());
         }
 
@@ -126,31 +126,41 @@ where
     #[track_caller]
     pub fn run_fallible<T: Sized, F, R>(&mut self, res_ptr: u32, f: F) -> Result<(), Trap>
     where
-        F: FnOnce(&mut Self) -> Result<Result<T, u32>, SyscallFuncError<E::Error>>,
+        F: FnOnce(&mut Self) -> Result<T, FuncError<E::Error>>,
         R: From<Result<T, u32>> + Sized,
     {
-        let mut res = f(self).map_err(|err| {
-            self.host_state_mut().err = err;
+        let res = f(self);
+
+        let state = self.host_state_mut();
+        let res = match res {
+            Err(err) => match err {
+                FuncError::Core(err) => match err.into_ext_error() {
+                    Ok(ext_err) => {
+                        let len = ext_err.encoded_size() as u32;
+                        state.fallible_syscall_error = Some(ext_err);
+                        Ok(Err(len))
+                    }
+                    Err(err) => {
+                        state.termination_reason = err.into_termination_reason();
+                        Err(Trap::from(TrapCode::Unreachable))
+                    }
+                },
+                FuncError::Terminated(reason) => {
+                    state.termination_reason = reason;
+                    Err(Trap::from(TrapCode::Unreachable))
+                }
+            },
+            Ok(res) => Ok(Ok(res)),
+        }?;
+
+        // TODO: move above or make normal process memory access.
+        let write_res = self.register_write_as::<R>(res_ptr);
+
+        let res = self.write_as(write_res, R::from(res)).map_err(|err| {
+            self.host_state_mut().termination_reason =
+                Into::<FuncError<E::Error>>::into(err).into();
+            Trap::from(TrapCode::Unreachable)
         });
-
-        if res.is_err() {
-            if let Ok(to_be_returned) = self.host_state_mut().last_err() {
-                res = Ok(Err(to_be_returned.encoded_size() as u32));
-            }
-        }
-
-        let res = if let Ok(res) = res {
-            // TODO: move above or make normal process memory access.
-            let write_res = self.register_write_as::<R>(res_ptr);
-            self.write_as(write_res, R::from(res))
-                .map_err(|err| {
-                    self.host_state_mut().err = err.into();
-                    Trap::from(TrapCode::Unreachable)
-                })
-                .map(|_| ())
-        } else {
-            Err(Trap::from(TrapCode::Unreachable))
-        };
 
         self.update_globals();
 
@@ -163,7 +173,7 @@ where
         F: FnOnce(&mut Self) -> Result<T, FuncError<E::Error>>,
     {
         let result = f(self).map_err(|err| {
-            self.host_state_mut().err = err;
+            self.host_state_mut().termination_reason = err.into();
             Trap::from(TrapCode::Unreachable)
         });
 
@@ -179,7 +189,7 @@ where
         f: F,
     ) -> Result<(), Trap>
     where
-        F: FnOnce(&mut Self, &mut State<E>) -> Result<Result<T, u32>, SyscallFuncError<E::Error>>,
+        F: FnOnce(&mut Self, &mut State<E>) -> Result<T, FuncError<E::Error>>,
         R: From<Result<T, u32>> + Sized,
     {
         let mut state = self
@@ -190,30 +200,37 @@ where
 
         let res = f(self, &mut state);
 
+        let res = match res {
+            Err(err) => match err {
+                FuncError::Core(err) => match err.into_ext_error() {
+                    Ok(ext_err) => {
+                        let len = ext_err.encoded_size() as u32;
+                        state.fallible_syscall_error = Some(ext_err);
+                        Ok(Err(len))
+                    }
+                    Err(err) => {
+                        state.termination_reason = err.into_termination_reason();
+                        Err(Trap::from(TrapCode::Unreachable))
+                    }
+                },
+                FuncError::Terminated(reason) => {
+                    state.termination_reason = reason;
+                    Err(Trap::from(TrapCode::Unreachable))
+                }
+            },
+            Ok(res) => Ok(Ok(res)),
+        }?;
+
         self.caller.host_data_mut().replace(state);
 
-        let mut res = res.map_err(|err| {
-            self.host_state_mut().err = err;
+        // TODO: move above or make normal process memory access.
+        let write_res = self.register_write_as::<R>(res_ptr);
+
+        let res = self.write_as(write_res, R::from(res)).map_err(|err| {
+            self.host_state_mut().termination_reason =
+                Into::<FuncError<E::Error>>::into(err).into();
+            Trap::from(TrapCode::Unreachable)
         });
-
-        if res.is_err() {
-            if let Ok(to_be_returned) = self.host_state_mut().last_err() {
-                res = Ok(Err(to_be_returned.encoded_size() as u32));
-            }
-        }
-
-        let res = if let Ok(res) = res {
-            // TODO: move above or make normal process memory access.
-            let write_res = self.register_write_as::<R>(res_ptr);
-            self.write_as(write_res, R::from(res))
-                .map_err(|err| {
-                    self.host_state_mut().err = err.into();
-                    Trap::from(TrapCode::Unreachable)
-                })
-                .map(|_| ())
-        } else {
-            Err(Trap::from(TrapCode::Unreachable))
-        };
 
         self.update_globals();
 
@@ -238,7 +255,7 @@ where
         self.update_globals();
 
         result.map_err(|err| {
-            self.host_state_mut().err = err;
+            self.host_state_mut().termination_reason = err.into();
             Trap::from(TrapCode::Unreachable)
         })
     }

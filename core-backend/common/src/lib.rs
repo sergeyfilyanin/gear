@@ -31,10 +31,7 @@ pub mod mock;
 
 pub mod memory;
 
-use crate::{
-    memory::MemoryAccessError,
-    utils::TrimmedString,
-};
+use crate::{memory::MemoryAccessError, utils::TrimmedString};
 use alloc::{
     collections::{BTreeMap, BTreeSet},
     string::FromUtf8Error,
@@ -78,9 +75,20 @@ pub enum TerminationReason {
 }
 
 #[derive(
-    Decode, Encode, TypeInfo, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, derive_more::Display,
+    Decode,
+    Encode,
+    TypeInfo,
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    derive_more::Display,
+    derive_more::From,
 )]
 pub enum TrapExplanation {
+    #[from]
     #[display(fmt = "{_0}")]
     Core(ExtError),
     #[display(fmt = "{_0}")]
@@ -248,9 +256,7 @@ pub enum FuncError<E: BackendExtError> {
 impl<E: BackendExtError> From<MemoryAccessError> for FuncError<E> {
     fn from(err: MemoryAccessError) -> Self {
         match err {
-            MemoryAccessError::Memory(err) => {
-                E::from_ext_error(err.into())
-            }
+            MemoryAccessError::Memory(err) => E::from_ext_error(err.into()),
             MemoryAccessError::RuntimeBuffer(_) => {
                 E::from_ext_error(MemoryError::RuntimeAllocOutOfBounds.into())
             }
@@ -260,18 +266,12 @@ impl<E: BackendExtError> From<MemoryAccessError> for FuncError<E> {
     }
 }
 
-impl From<MemoryAccessError> for TerminationReason {
-    fn from(err: MemoryAccessError) -> Self {
-        let err: ExtError = match err {
-            MemoryAccessError::Memory(err) => {
-                err.into()
-            }
-            MemoryAccessError::RuntimeBuffer(_) => {
-                MemoryError::RuntimeAllocOutOfBounds.into(),
-            }
-            MemoryAccessError::Decode => ExtError::Decode,
-        };
-        TerminationReason::Trap(TrapExplanation::Core(err))
+impl<E: BackendExtError> From<FuncError<E>> for TerminationReason {
+    fn from(err: FuncError<E>) -> Self {
+        match err {
+            FuncError::Core(err) => err.into_termination_reason(),
+            FuncError::Terminated(reason) => reason,
+        }
     }
 }
 
@@ -282,7 +282,7 @@ impl<E: BackendExtError> From<PayloadSizeError> for FuncError<E> {
 }
 
 impl<E: BackendExtError> From<RuntimeBufferSizeError> for FuncError<E> {
-    fn from(err: RuntimeBufferSizeError) -> Self {
+    fn from(_: RuntimeBufferSizeError) -> Self {
         E::from_ext_error(MemoryError::RuntimeAllocOutOfBounds.into()).into()
     }
 }

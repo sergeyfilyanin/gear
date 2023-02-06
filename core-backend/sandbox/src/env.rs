@@ -27,9 +27,8 @@ use alloc::{collections::BTreeSet, string::ToString};
 use core::{convert::Infallible, fmt::Display};
 use gear_backend_common::{
     lazy_pages::{GlobalsAccessMod, GlobalsConfig},
-    ActorSyscallFuncError, BackendExt, BackendExtError, BackendReport, Environment,
-    EnvironmentExecutionError, EnvironmentExecutionResult, TerminationReason,
-    STACK_END_EXPORT_NAME,
+    BackendExt, BackendExtError, BackendReport, Environment, EnvironmentExecutionError,
+    EnvironmentExecutionResult, TerminationReason, TrapExplanation, STACK_END_EXPORT_NAME,
 };
 use gear_core::{
     env::Ext,
@@ -219,9 +218,10 @@ where
         let mut runtime = Runtime {
             ext,
             memory: MemoryWrap::new(memory),
-            err: ActorSyscallFuncError::Terminated(TerminationReason::Success).into(),
             globals: Default::default(),
             memory_manager: Default::default(),
+            fallible_syscall_error: None,
+            termination_reason: TerminationReason::Success,
         };
 
         match Instance::new(binary, &env_builder, &mut runtime) {
@@ -313,7 +313,7 @@ where
             .ok_or(Environment(WrongInjectedAllowance))?;
 
         let Runtime {
-            err: runtime_err,
+            termination_reason,
             mut ext,
             memory,
             ..
@@ -323,8 +323,21 @@ where
 
         log::debug!("SandboxEnvironment::execute res = {res:?}");
 
+        let termination_reason = if res.is_err() {
+            // TODO: Parse result error to identify termination reason
+            if matches!(termination_reason, TerminationReason::Success) {
+                TerminationReason::Trap(TrapExplanation::Unknown)
+            } else {
+                termination_reason
+            }
+        } else if matches!(termination_reason, TerminationReason::Trap(..)) {
+            unreachable!("Termination reason is trap, but successfully end execution")
+        } else {
+            termination_reason
+        };
+
         Ok(BackendReport {
-            err: (res.is_err()).then_some(runtime_err),
+            termination_reason,
             memory_wrap: memory,
             ext,
         })
