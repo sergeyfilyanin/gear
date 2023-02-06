@@ -3076,6 +3076,7 @@ dependencies = [
  "anyhow",
  "async-std",
  "async-trait",
+ "demo-backend-error",
  "demo-meta-io",
  "env_logger 0.10.0",
  "futures",
