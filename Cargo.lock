@@ -3399,7 +3399,7 @@ dependencies = [
  "futures",
  "futures-util",
  "gear-core",
- "gear-runtime",
+ "gear-runtime-interface",
  "hex",
  "jsonrpsee",
  "keyring",
@@ -3411,16 +3411,19 @@ dependencies = [
  "parity-scale-codec",
  "parity-wasm 0.45.0",
  "rand 0.8.5",
+ "sc-executor",
+ "sc-executor-common",
  "scale-info",
  "schnorrkel",
  "serde",
  "serde_json",
+ "sp-io",
+ "substrate-wasm-builder",
  "subxt",
  "subxt-codegen 0.25.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn",
  "thiserror",
  "tokio",
- "vara-runtime",
  "wasmtime",
  "whoami",
 ]
@@ -3719,6 +3722,22 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "trie-db 0.25.0",
+]
+
+[[package]]
+name = "gear-validator-checks"
+version = "0.1.0"
+dependencies = [
+ "clap 4.1.4",
+ "env_logger 0.10.0",
+ "futures-util",
+ "gear-program",
+ "log",
+ "parity-scale-codec",
+ "sp-consensus-babe",
+ "subxt",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
