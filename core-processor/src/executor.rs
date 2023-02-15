@@ -270,7 +270,7 @@ where
     let program_id = program.id();
     let kind = dispatch.kind();
 
-    log::debug!("Executing program {}", program_id);
+    log::debug!(target: "lol", "Executing program {}", program_id);
     log::debug!("Executing dispatch {:?}", dispatch);
 
     let static_pages = program.static_pages();

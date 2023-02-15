@@ -619,6 +619,9 @@ impl EnvExt for Ext {
 
     fn debug(&mut self, data: &str) -> Result<(), Self::Error> {
         log::debug!(target: "gwasm", "DEBUG: {}", data);
+        if data.starts_with("Gear program") {
+            log::debug!(target: "lol", "{data}");
+        }
         Ok(())
     }
 
