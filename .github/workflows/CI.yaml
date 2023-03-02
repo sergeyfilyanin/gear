@@ -563,7 +563,7 @@ jobs:
           
       - name: "Install: Wine"
         run: |
-          sudo apt install wine64 winetricks
+          sudo apt install -y wine64 winetricks
           wineboot
           winetricks vcrun2015
 
