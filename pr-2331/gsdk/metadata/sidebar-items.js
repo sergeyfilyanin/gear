@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Event"],"mod":["balances","gear","grandpa","runtime_types","session","sudo","system","transaction_payment","utility"],"type":["DispatchError"]};
