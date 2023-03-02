@@ -26,4 +26,4 @@ RUN cargo install cargo-fuzz
 
 USER root
 RUN chmod +x /gear/scripts/gear.sh
-CMD ["/gear/scripts/gear.sh test fuzz"]
+CMD ["/gear/scripts/gear.sh", "-c", "test fuzz"]
