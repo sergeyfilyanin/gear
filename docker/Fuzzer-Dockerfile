@@ -23,5 +23,7 @@ RUN git clone -b st-node-fuzzer https://github.com/gear-tech/gear.git
 RUN cd gear
 RUN cargo install cargo-fuzz
 
+
 USER root
+RUN chmod +x /gear/scripts/gear.sh
 CMD ["/gear/scripts/gear.sh test fuzz"]
