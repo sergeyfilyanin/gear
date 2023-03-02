@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["error","exec","ext","msg","prog"],"struct":["ActorId","CodeId","MessageHandle","MessageId","ReservationId"]};

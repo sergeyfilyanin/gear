@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ExecutionError","ExtError","MemoryError","MessageError","ReservationError","SimpleExecutionError","SimpleReplyError","SimpleSignalError","WaitError"],"trait":["SimpleCodec"]};
