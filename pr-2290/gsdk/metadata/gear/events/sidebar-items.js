@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["CodeChanged","MessageQueued","MessageWaited","MessageWoken","MessagesDispatched","ProgramChanged","QueueProcessingReverted","UserMessageRead","UserMessageSent"]};

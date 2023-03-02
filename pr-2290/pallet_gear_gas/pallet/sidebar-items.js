@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Call","Error"],"struct":["GasAllowance","GasNodesWrap","Pallet","TotalIssuanceWrap"],"trait":["Config"],"type":["Allowance","Balance","GasNodes","Key","Module","NodeOf","TotalIssuance"]};
