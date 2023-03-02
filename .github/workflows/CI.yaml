@@ -559,7 +559,13 @@ jobs:
       - name: "Install: Build deps"
         run: |
           sudo apt update
-          sudo apt install -y git curl libssl-dev libudev-dev cmake wabt protobuf-compiler wget bzip2 wine64
+          sudo apt install -y git curl libssl-dev libudev-dev cmake wabt protobuf-compiler wget bzip2
+          
+      - name: "Install: Wine"
+        run: |
+          sudo apt install wine64 winetricks
+          wineboot
+          winetricks vcrun2015
 
       - name: "Install: Install LLVM"
         run: |
