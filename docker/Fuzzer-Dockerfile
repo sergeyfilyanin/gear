@@ -18,7 +18,7 @@ RUN rustup update nightly && rustup target add wasm32-unknown-unknown --toolchai
 # Clone gear repo
 
 RUN git clone https://github.com/gear-tech/gear.git
-cd gear
+RUN cd gear
 RUN git checkout st-node-fuzzer
 
 # Run fuzzer
