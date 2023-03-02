@@ -1,0 +1,22 @@
+FROM amazonlinux:latest
+
+MAINTAINER GEAR
+
+# Install Rust and toolchains
+RUN  wget https://sh.rustup.rs/rustup-init.sh
+RUN chmod +x rustup-init.sh
+RUN ./rustup-init.sh -y
+ENV PATH="/root/.cargo/bin:$PATH"
+RUN rustup default stable
+RUN cargo --version
+RUN rustc --version
+RUN rustup update nightly && rustup target add wasm32-unknown-unknown --toolchain nightly
+
+# Clone gear repo
+
+RUN git clone https://github.com/gear-tech/gear.git
+RUN git checkout st-node-fuzzer
+
+USER root
+
+CMD ["./scripts/gear.sh test fuzz"]
