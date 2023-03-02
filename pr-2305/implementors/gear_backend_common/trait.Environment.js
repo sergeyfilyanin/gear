@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"gear_backend_sandbox":[["impl&lt;E, EP&gt; Environment&lt;EP&gt; for <a class=\"struct\" href=\"gear_backend_sandbox/env/struct.SandboxEnvironment.html\" title=\"struct gear_backend_sandbox::env::SandboxEnvironment\">SandboxEnvironment</a>&lt;E, EP&gt;<span class=\"where fmt-newline\">where\n    E: BackendExt + 'static,\n    E::Error: BackendExtError,\n    E::AllocError: BackendAllocExtError&lt;ExtError = E::Error&gt;,\n    EP: WasmEntry,</span>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

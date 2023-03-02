@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Call","Error"],"struct":["MissedBlocksWrap","OnChange","Pallet","TaskPoolCallbacksImpl","TaskPoolWrap","Weight"],"trait":["Config"],"type":["Cost","Module"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["InitError","InitializeForProgramError","LazyPagesVersion","MemoryProtectionError"],"fn":["get_released_pages","get_status","init","initialize_for_program","pre_process_memory_accesses","set_lazy_pages_protection","set_wasm_mem_begin_addr","set_wasm_mem_size","unset_lazy_pages_protection"],"struct":["WasmMemAddrError","WasmMemSizeError"]};

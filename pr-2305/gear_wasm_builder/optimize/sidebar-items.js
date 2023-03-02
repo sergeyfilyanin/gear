@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["OptType"],"fn":["do_optimization","optimize_wasm"],"struct":["OptimizationResult","Optimizer","OptimizerError"]};
