@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["manager","migration","pallet","weights"],"struct":["GasInfo","HostFnWeights","InstructionWeights","Limits","Schedule"],"trait":["DebugInfo"],"type":["Authorship","BlockGasLimitOf","GasAllowanceOf","GasHandlerOf","GasUnitOf","ProgramStorageOf"]};

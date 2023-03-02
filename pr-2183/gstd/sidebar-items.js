@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"attr":["async_init","async_main"],"fn":["handle_signal","message_loop","record_reply"],"macro":["bail","debug","export","metadata"],"mod":["errors","exec","ext","lock","macros","msg","prelude","prog"],"struct":["ActorId","CodeId","Config","MessageId","ReservationId"]};

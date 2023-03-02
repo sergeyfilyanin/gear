@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["GlobalsAccessMod","Status"],"struct":["GlobalsAccessError","GlobalsConfig","LazyPagesWeights"],"trait":["GlobalsAccessor"]};
