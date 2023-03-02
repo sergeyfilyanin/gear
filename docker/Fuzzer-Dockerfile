@@ -2,6 +2,9 @@ FROM amazonlinux:latest
 
 MAINTAINER GEAR
 
+# Install dependecies
+RUN yum update -y && yum install -y amazon-linux-extras git gzip wget unzip
+
 # Install Rust and toolchains
 RUN  wget https://sh.rustup.rs/rustup-init.sh
 RUN chmod +x rustup-init.sh
