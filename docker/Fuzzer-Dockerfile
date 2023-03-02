@@ -3,7 +3,7 @@ FROM amazonlinux:latest
 MAINTAINER GEAR
 
 # Install dependecies
-RUN yum update -y && yum install -y amazon-linux-extras git gzip wget unzip
+RUN yum update -y && yum install -y amazon-linux-extras clang gcc git gzip wget unzip
 
 # Install Rust and toolchains
 RUN  wget https://sh.rustup.rs/rustup-init.sh
@@ -19,7 +19,9 @@ RUN rustup update nightly && rustup target add wasm32-unknown-unknown --toolchai
 
 RUN git clone -b st-node-fuzzer https://github.com/gear-tech/gear.git
 
-# Run fuzzer
+# Install cargo-fuzz
+RUN cd gear
+RUN cargo install cargo-fuzz
 
 USER root
-CMD ["./gear/scripts/gear.sh test fuzz"]
+CMD ["/gear/scripts/gear.sh test fuzz"]
