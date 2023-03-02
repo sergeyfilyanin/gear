@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ChargeError","ChargeResult"],"struct":["GasAllowanceCounter","GasAmount","GasCounter","GasLeft","ValueCounter"],"trait":["CountersOwner","Token"]};
